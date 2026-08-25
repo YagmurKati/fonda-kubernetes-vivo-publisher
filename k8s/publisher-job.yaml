@@ -1,0 +1,147 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: __JOB_NAME__
+  namespace: __NAMESPACE__
+  labels:
+    app.kubernetes.io/name: fonda-kubernetes-vivo-publisher
+    fonda.hu-berlin.de/run-id: "__RUN_ID_LABEL__"
+spec:
+  backoffLimit: 0
+  activeDeadlineSeconds: 3600
+  ttlSecondsAfterFinished: 86400
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: fonda-kubernetes-vivo-publisher
+        fonda.hu-berlin.de/run-id: "__RUN_ID_LABEL__"
+    spec:
+      serviceAccountName: __SERVICE_ACCOUNT__
+      restartPolicy: Never
+      containers:
+        - name: collect-and-publish
+          image: nextflow/nextflow@sha256:b035b9fa7243ed09b9896c2b752d9e399f337827932bd45495efb0aed8e1dca1
+          imagePullPolicy: IfNotPresent
+          command: ["/bin/bash", "-lc"]
+          args:
+            - |
+              set -euo pipefail
+              trace_file="${TRACE_PATH_TEMPLATE/\{run_id\}/${RUN_ID}}"
+              console_log="${CONSOLE_LOG_PATH_TEMPLATE/\{run_id\}/${RUN_ID}}"
+              output_dir=/workspace/vivo-outbox
+              artifact_base="${RUN_ID}-${OUTPUT_STAMP}"
+              ttl_file="$output_dir/${artifact_base}.ttl"
+              mkdir -p "$output_dir"
+
+              test -r "$trace_file"
+              test -r "$console_log"
+              test -r "$DEBUG_LOG_PATH"
+              test -d "$CODE_PATH"
+
+              collector_args=(
+                python3 /opt/fonda-vivo/collector.py
+                --namespace "$NAMESPACE"
+                --trace-file "$trace_file"
+                --console-log-file "$console_log"
+                --debug-log-file "$DEBUG_LOG_PATH"
+                --trace-timezone "$TRACE_TIMEZONE"
+                --code-path "$CODE_PATH"
+                --workflow-name "$WORKFLOW_NAME"
+                --workflow-uri "$WORKFLOW_URI"
+                --workflow-repo-url "$WORKFLOW_REPO_URL"
+                --code-uri "$CODE_URI"
+                --publication-uri "$PUBLICATION_URI"
+                --trace-archive "$TRACE_ARCHIVE"
+                --application-domain-uri "$APPLICATION_DOMAIN_URI"
+                --run-operator-uri "$RUN_OPERATOR_URI"
+                --backend-uri "$BACKEND_URI"
+                --cluster-uri "$CLUSTER_URI"
+                --cluster-label "$CLUSTER_LABEL"
+                --engine-uri "$ENGINE_URI"
+                --prom-url "$PROM_URL"
+                --carbon-intensity-source "$CARBON_SOURCE"
+                --carbon-intensity "$CARBON_INTENSITY"
+                --electricity-maps-zone "$ELECTRICITY_MAPS_ZONE"
+                --input-metadata-file /opt/fonda-vivo/input_datasets.json
+                --base-uri "$BASE_URI"
+                --ontology-uri "$ONTOLOGY_URI"
+                --output-file "$ttl_file"
+              )
+
+              if [[ -n "$GIT_COMMIT" ]]; then
+                collector_args+=(--git-commit "$GIT_COMMIT")
+              fi
+              if [[ "$INCLUDE_CACHED_ORIGIN_METRICS" == "1" ]]; then
+                collector_args+=(--include-cached-origin-metrics)
+              fi
+              IFS=',' read -r -a researcher_uris <<< "$RESPONSIBLE_RESEARCHER_URIS"
+              for uri in "${researcher_uris[@]}"; do
+                [[ -n "$uri" ]] && collector_args+=(--responsible-researcher-uri "$uri")
+              done
+              IFS=',' read -r -a subproject_uris <<< "$SUBPROJECT_URIS"
+              for uri in "${subproject_uris[@]}"; do
+                [[ -n "$uri" ]] && collector_args+=(--subproject-uri "$uri")
+              done
+              IFS=',' read -r -a language_uris <<< "$LANGUAGE_URIS"
+              for uri in "${language_uris[@]}"; do
+                [[ -n "$uri" ]] && collector_args+=(--language-uri "$uri")
+              done
+
+              "${collector_args[@]}"
+
+              python3 /opt/fonda-vivo/publisher.py \
+                "$ttl_file" \
+                --endpoint "$VIVO_ENDPOINT" \
+                --graph "$VIVO_GRAPH" \
+                --email-file /var/run/secrets/fonda-vivo/email \
+                --password-file /var/run/secrets/fonda-vivo/password \
+                --receipt-file "$output_dir/${artifact_base}.published.json"
+          envFrom:
+            - configMapRef:
+                name: fonda-vivo-publisher-settings
+          env:
+            - name: NAMESPACE
+              value: "__NAMESPACE__"
+            - name: RUN_ID
+              value: "__RUN_ID__"
+            - name: OUTPUT_STAMP
+              value: "__OUTPUT_STAMP__"
+            - name: INCLUDE_CACHED_ORIGIN_METRICS
+              value: "__INCLUDE_CACHED_ORIGIN_METRICS__"
+            - name: ELECTRICITY_MAPS_API_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: electricity-maps-api-token
+                  key: token
+                  optional: true
+            - name: PYTHONDONTWRITEBYTECODE
+              value: "1"
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: "1"
+              memory: 2Gi
+          securityContext:
+            runAsUser: 0
+          volumeMounts:
+            - name: workspace
+              mountPath: /workspace
+            - name: publisher-code
+              mountPath: /opt/fonda-vivo
+              readOnly: true
+            - name: vivo-credentials
+              mountPath: /var/run/secrets/fonda-vivo
+              readOnly: true
+      volumes:
+        - name: workspace
+          persistentVolumeClaim:
+            claimName: __PVC_NAME__
+        - name: publisher-code
+          configMap:
+            name: fonda-vivo-publisher-code
+        - name: vivo-credentials
+          secret:
+            secretName: fonda-vivo-credentials
+            defaultMode: 0400

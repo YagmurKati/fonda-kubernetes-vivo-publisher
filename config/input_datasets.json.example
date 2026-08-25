@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "datasets": [
+    {
+      "uri": "https://example.org/dataset/replace-me",
+      "label": "Replace with the public dataset title",
+      "description": "Replace with a concise description of the exact workflow input.",
+      "access_instructions_url": "https://example.org/dataset/access",
+      "checksum_manifest_url": "https://example.org/dataset/SHA256SUMS",
+      "upstream_source_url": "https://example.org/dataset/source",
+      "format_documentation_url": "https://example.org/dataset/format",
+      "storage_location": "Replace with the repository or managed storage location",
+      "access_statement": "Replace with public access conditions",
+      "link_to_workflow": true,
+      "link_to_run": true
+    }
+  ]
+}

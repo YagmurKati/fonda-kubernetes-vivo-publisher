@@ -1,0 +1,98 @@
+# User guide
+
+## 1. Request VIVO publishing access
+
+Send the VIVO administrator:
+
+- your name and institutional email;
+- your FONDA Kubernetes namespace;
+- your workflow title and repository URL;
+- the VIVO person and FONDA subproject pages that should be linked.
+
+The administrator provides or enables a non-admin publisher account. Never ask
+for the site administrator password.
+
+## 2. Clone and configure
+
+```bash
+git clone https://github.com/YagmurKati/fonda-kubernetes-vivo-publisher.git
+cd fonda-kubernetes-vivo-publisher
+cp config/publisher.env.example config/publisher.env
+```
+
+Edit `config/publisher.env`. Values ending in `URIS` are comma-separated lists
+without spaces. Use underlying stable resource URIs, not a copied HTML label.
+
+If the workflow uses a known input dataset, copy
+`config/input_datasets.json.example` over `config/input_datasets.json`, replace
+all placeholders, and link to a checksum manifest for the exact input version.
+Otherwise leave the provided empty dataset list unchanged.
+
+## 3. Store credentials in your Kubernetes namespace
+
+```bash
+./scripts/configure-secrets.sh
+```
+
+The script prompts for VIVO email, VIVO password, password confirmation, and—if
+configured—an Electricity Maps token. Input is stored in Kubernetes Secrets;
+it is not written to this repository or printed.
+
+Confirm only the Secret names and keys:
+
+```bash
+source config/publisher.env
+kubectl -n "$NS" get secret fonda-vivo-credentials
+kubectl -n "$NS" get secret electricity-maps-api-token
+```
+
+Do not decode or paste Secret values into support messages.
+
+## 4. Deploy and preflight
+
+```bash
+./scripts/deploy.sh
+```
+
+This checks the namespace, PVC, service account, configuration, JSON input
+metadata, and Secrets. It creates namespace-scoped ConfigMaps only. It does not
+run the workflow or publish RDF.
+
+## 5. Run and publish
+
+Run your workflow normally, using a unique run ID and the configured file
+paths. When it succeeds:
+
+```bash
+./scripts/publish-run.sh RUN_ID
+```
+
+Wait for all pod metrics to be collected. Success ends with:
+
+```text
+Published TTL to VIVO: ...
+HTTP 200
+Receipt: ...published.json
+```
+
+No additional upload is needed.
+
+## 6. Verify
+
+Open <https://vivo-fonda.hu-berlin.de/vivo/runs>, wait several seconds, and
+search for the workflow title and run time. Keep the three timestamped files on
+the PVC together.
+
+## Retry rules
+
+- Missing trace/log: correct the paths in `config/publisher.env`, then rerun
+  `publish-run.sh`.
+- VIVO or network failure: rerun `publish-run.sh`; do not rerun the workflow.
+- An identical completed artifact has a receipt and is not sent twice unless
+  the publisher is explicitly forced.
+- A new collection gets a new timestamp and new audit/receipt files.
+
+VIVO stores RDF triples, not the source filename. Removal must be performed by
+the VIVO administrator using the exact preserved TTL/audit and a run-scoped RDF
+deletion; do not use the entire TTL as a removal file because it also describes
+shared workflow and infrastructure resources.
