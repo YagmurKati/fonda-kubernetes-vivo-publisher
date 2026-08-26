@@ -1,0 +1,501 @@
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix vivo: <http://vivoweb.org/ontology/core#> .
+@prefix bibo: <http://purl.org/ontology/bibo/> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix rm: <http://example.org/ontology/run-metadata#> .
+@prefix ex: <http://example.org/vivo-import/run-metadata/> .
+
+<http://example.org/vivo-import/run-metadata/engine/nextflow>
+  rdf:type rm:WorkflowEngine ;
+  rdf:type vivo:InformationResource ;
+  rdfs:label "Nextflow"@en ;
+  dcterms:title "Nextflow"@en ;
+  rm:hasWorkflow <http://example.org/vivo-import/run-metadata/workflow/long-term-vegetation-dynamics-in-the-mediterranean-force2nxf> .
+
+<http://example.org/vivo-import/run-metadata/language/shell>
+  rdf:type rm:Language ;
+  rdf:type vivo:InformationResource ;
+  rdfs:label "Shell"@en ;
+  dcterms:title "Shell"@en ;
+  rm:hasWorkflow <http://example.org/vivo-import/run-metadata/workflow/long-term-vegetation-dynamics-in-the-mediterranean-force2nxf> .
+
+<http://172.28.33.178:8080/vivo/individual/n5703>
+  rm:hasWorkflow <http://example.org/vivo-import/run-metadata/workflow/long-term-vegetation-dynamics-in-the-mediterranean-force2nxf> .
+
+<http://example.org/vivo-import/run-metadata/cluster/fonda-cluster>
+  rdf:type rm:ComputeCluster ;
+  rdf:type vivo:InformationResource ;
+  rdfs:label "FONDA Kubernetes Cluster"@en ;
+  dcterms:title "FONDA Kubernetes Cluster"@en ;
+  rm:hasRun <http://example.org/vivo-import/run-metadata/run/default-long-term-vegetation-dynamics-in-the-mediterranean-force2nxf-e5295c77-62e8-4773-afc5-706750fb1a33-2026-08-25t18-25-43-637000-00-00> ;
+  rm:hasWorkflow <http://example.org/vivo-import/run-metadata/workflow/long-term-vegetation-dynamics-in-the-mediterranean-force2nxf> .
+
+<http://example.org/vivo-import/run-metadata/workflow/long-term-vegetation-dynamics-in-the-mediterranean-force2nxf>
+  rdf:type rm:Workflow ;
+  rdf:type vivo:InformationResource ;
+  rdf:type prov:Entity ;
+  rdfs:label "Long-term vegetation dynamics in the Mediterranean (FORCE2NXF)"@en ;
+  dcterms:title "Long-term vegetation dynamics in the Mediterranean (FORCE2NXF)"@en ;
+  rm:workflowName "Long-term vegetation dynamics in the Mediterranean (FORCE2NXF)" ;
+  rm:traceTypes "Nextflow trace, execution report, timeline, and execution logs" ;
+  rm:traceDataFormat "TSV, HTML, and plain text" ;
+  rm:workflowEngine <http://example.org/vivo-import/run-metadata/engine/nextflow> ;
+  rm:computeCluster <http://example.org/vivo-import/run-metadata/cluster/fonda-cluster> ;
+  rm:workflowCodeLink "https://github.com/CRC-FONDA/FORCE2NXF-Rangeland"^^xsd:anyURI ;
+  rm:applicationDomain <http://172.28.33.178:8080/vivo/individual/n5261> ;
+  rm:describesSoftwareExecution <http://141.20.184.157:8080/vivo/individual/a1-publication-key-lehmann2021forceon> ;
+  rm:backend <http://172.28.33.178:8080/vivo/individual/n5703> ;
+  rm:responsibleResearcher <https://fonda.hu-berlin.de/?page_id=2066#FelixKummer> ;
+  rm:subproject <http://141.20.184.157:8080/vivo/individual/fonda-group-b5-transparent-multi-site-data-analysis-workflows-for-earth-observation> ;
+  rm:language <http://example.org/vivo-import/run-metadata/language/shell> ;
+  rm:language <http://example.org/vivo-import/run-metadata/language/r> ;
+  rm:hasUsedInputData <http://example.org/vivo-import/run-metadata/dataset/fonda-b5-eo-01-rangeland-input> ;
+  rm:hasRun <http://example.org/vivo-import/run-metadata/run/default-long-term-vegetation-dynamics-in-the-mediterranean-force2nxf-e5295c77-62e8-4773-afc5-706750fb1a33-2026-08-25t18-25-43-637000-00-00> ;
+  rm:hasWorkflowRun <http://example.org/vivo-import/run-metadata/run/default-long-term-vegetation-dynamics-in-the-mediterranean-force2nxf-e5295c77-62e8-4773-afc5-706750fb1a33-2026-08-25t18-25-43-637000-00-00> .
+
+<https://fonda.hu-berlin.de/?page_id=2066#FelixKummer>
+  rm:workflows <http://example.org/vivo-import/run-metadata/workflow/long-term-vegetation-dynamics-in-the-mediterranean-force2nxf> .
+
+<http://141.20.184.157:8080/vivo/individual/fonda-group-b5-transparent-multi-site-data-analysis-workflows-for-earth-observation>
+  rm:hasWorkflow <http://example.org/vivo-import/run-metadata/workflow/long-term-vegetation-dynamics-in-the-mediterranean-force2nxf> .
+
+<http://example.org/vivo-import/run-metadata/run/default-long-term-vegetation-dynamics-in-the-mediterranean-force2nxf-e5295c77-62e8-4773-afc5-706750fb1a33-2026-08-25t18-25-43-637000-00-00>
+  rdf:type rm:RunMetadata ;
+  rdf:type vivo:InformationResource ;
+  rdf:type prov:Entity ;
+  rdfs:label "Long-term vegetation dynamics in the Mediterranean (FORCE2NXF) · run 2026-08-25 20:25–21:04 CEST"@en ;
+  dcterms:title "Long-term vegetation dynamics in the Mediterranean (FORCE2NXF) · run 2026-08-25 20:25–21:04 CEST"@en ;
+  rm:workflow <http://example.org/vivo-import/run-metadata/workflow/long-term-vegetation-dynamics-in-the-mediterranean-force2nxf> ;
+  rm:computeCluster <http://example.org/vivo-import/run-metadata/cluster/fonda-cluster> ;
+  rm:codeVersion "sha256:704fb6f55ff30ae7e55279fb2611aba9876b0b2255898b1b8e9f7fa0810166a1" ;
+  rm:runStatus "Succeeded with warnings" ;
+  rm:workflowEngine <http://example.org/vivo-import/run-metadata/engine/nextflow> ;
+  prov:startedAtTime "2026-08-25T20:25:43"^^xsd:dateTime ;
+  prov:endedAtTime "2026-08-25T21:04:05"^^xsd:dateTime ;
+  rm:startTime "2026-08-25T20:25:43"^^xsd:dateTime ;
+  rm:endTime "2026-08-25T21:04:05"^^xsd:dateTime ;
+  rm:durationSeconds "2302"^^xsd:integer ;
+  rm:durationCalculationMethod "Wall-clock time from the first to last timestamp in the Nextflow debug log, with trace timestamps as a fallback." ;
+  dcterms:created "2026-08-26T11:11:02+02:00"^^xsd:dateTime ;
+  vivo:dateTimeValue <http://example.org/vivo-import/run-metadata/datetime/default-long-term-vegetation-dynamics-in-the-mediterranean-force2nxf-e5295c77-62e8-4773-afc5-706750fb1a33-2026-08-25t18-25-43-637000-00-00> ;
+  rm:jobName "voluminous_williams" ;
+  rm:taskCount "3092"^^xsd:integer ;
+  rm:podCount "3092"^^xsd:integer ;
+  rm:succeededTaskCount "3060"^^xsd:integer ;
+  rm:cachedTaskCount "2796"^^xsd:integer ;
+  rm:failedTaskCount "32"^^xsd:integer ;
+  rm:abortedTaskCount "0"^^xsd:integer ;
+  rm:resourceAccountingScope "Current Nextflow execution plus origin pods for tasks reused from the Nextflow cache." ;
+  rm:resourceAccountingStartTime "2026-08-16T09:05:14"^^xsd:dateTime ;
+  rm:resourceAccountingEndTime "2026-08-25T21:04:05"^^xsd:dateTime ;
+  rm:traceTypes "Nextflow trace, execution report, timeline, and execution logs" ;
+  rm:traceDataFormat "TSV, HTML, and plain text" ;
+  rm:backend <http://172.28.33.178:8080/vivo/individual/n5703> ;
+  rm:describesSoftwareExecution <http://141.20.184.157:8080/vivo/individual/a1-publication-key-lehmann2021forceon> ;
+  rm:inputData <http://example.org/vivo-import/run-metadata/dataset/fonda-b5-eo-01-rangeland-input> ;
+  rm:nextflowSessionId "e5295c77-62e8-4773-afc5-706750fb1a33" ;
+  rm:nextflowVersion "25.04.8" ;
+  rm:gitCommit "179ea79ee7cadc7975be2442f3dfcd250f59202e" ;
+  rm:codeCommitLink "https://github.com/CRC-FONDA/FORCE2NXF-Rangeland/commit/179ea79ee7cadc7975be2442f3dfcd250f59202e"^^xsd:anyURI ;
+  rm:cpuTimeSeconds "120549.0546500811"^^xsd:double ;
+  rm:cpuTimeCalculationMethod "CPU time is the sum of Prometheus container_cpu_usage_seconds_total counter increases for 292 of 3092 pod(s). A counter-maximum fallback was used for 28 short-lived pod(s). Metrics include the original Kubernetes pods that produced outputs reused from the Nextflow cache." ;
+  rm:memoryCalculationMethod "Memory is derived from Prometheus container_memory_working_set_bytes. Values are summed across concurrent workflow pods at each sample; the reported average and peak are calculated from that aggregate time series. Metrics include the original Kubernetes pods that produced outputs reused from the Nextflow cache." ;
+  rm:energyKWh "0.9177014366497663"^^xsd:double ;
+  rm:carbonEmissionKgCO2e "0.24777938789543694"^^xsd:double ;
+  rm:carbonIntensityAssumptionKgCO2ePerKWh "0.27"^^xsd:double ;
+  rm:carbonIntensitySource "Electricity Maps latest available flow-traced carbon intensity (collection-time proxy)" ;
+  rm:energyMetricSource "kepler_container_joules_total" ;
+  rm:energyCalculationMethod "Energy is the sum of per-pod Kepler measurements for 284 of 3092 pod(s). At least one short-lived pod required a counter-range or counter-maximum estimate because a reliable counter increase was unavailable. Metrics include the original Kubernetes pods that produced outputs reused from the Nextflow cache." ;
+  rm:energyCalculationUsesFallbackEstimate "true"^^xsd:boolean ;
+  rm:carbonCalculationMethod "Carbon emissions are calculated using the emissions factor method: energy consumption (kWh) multiplied by 0.27 kg/kWh (lifecycle CO2e) from Electricity Maps latest available flow-traced carbon intensity (collection-time proxy). The value is the latest value available from the free-tier endpoint when metadata was collected. It is used as a proxy and is not guaranteed to represent the exact workflow execution interval." ;
+  rm:carbonIntensitySourceLink "https://api.electricitymaps.com/v4/carbon-intensity/latest"^^xsd:anyURI ;
+  rm:carbonIntensityZone "DE" ;
+  rm:carbonIntensityDataPointCount "1"^^xsd:integer ;
+  rm:carbonIntensityWindowStart "2026-08-26T08:00:00Z"^^xsd:dateTime ;
+  rm:carbonIntensityWindowEnd "2026-08-26T09:00:00Z"^^xsd:dateTime ;
+  rm:carbonIntensityIncludesEstimatedData "true"^^xsd:boolean ;
+  rm:carbonIntensityEmissionsBasis "lifecycle CO2e" ;
+  rm:carbonIntensityTemporalGranularity "hourly" ;
+  rm:containerImage "docker.io/davidfrantz/force:3.6.5" ;
+  rm:containerImage "docker.io/katiyagm/force-dev-raster:20260825" ;
+  rm:containerImage "katiyagm/force-dev-raster:20260825" ;
+  rm:containerImage "davidfrantz/force:3.6.5" ;
+  rm:executionHost "hu-worker-c44" ;
+  rm:executionHost "hu-worker-c35" ;
+  rm:executionHost "hu-worker-c26" ;
+  rm:executionHost "hu-worker-c33" ;
+  rm:executionHost "hu-worker-c28" ;
+  rm:executionHost "hu-worker-c24" ;
+  rm:executionHost "hu-worker-c36" ;
+  rm:executionHost "hu-worker-c37" ;
+  rm:executionHost "hu-worker-c43" ;
+  rm:executionHost "hu-worker-c40" ;
+  rm:executionHost "hu-worker-c41" ;
+  rm:executionHost "hu-worker-c34" ;
+  rm:executionHost "hu-worker-c32" ;
+  rm:executionHost "hu-worker-c38" ;
+  rm:executionHost "hu-worker-c23" ;
+  rm:executionHost "hu-worker-c39" ;
+  rm:executionHost "hu-worker-c27" ;
+  rm:executionHost "hu-worker-c42" ;
+  rm:executionHost "hu-master-c22" ;
+  rm:executionHost "hu-master-c21" ;
+  rm:executionHost "hu-worker-c25" ;
+  rm:executionHost "hu-worker-c45" ;
+  rm:gpuRequested "false"^^xsd:boolean ;
+  rm:gpuMetricsAvailable "false"^^xsd:boolean ;
+  rm:gpuCapableNodeUsed "false"^^xsd:boolean ;
+  rm:gpuUsageStatus "CPU-only workflow run" ;
+  rm:hasWorkflowProcess <http://example.org/vivo-import/run-metadata/process/long-term-vegetation-dynamics-in-the-mediterranean-force2nxf-higherlevel-processhigherlevel-e5295c77-62e8-4773-afc5-706750fb1a33> ;
+  rm:hasWorkflowProcess <http://example.org/vivo-import/run-metadata/process/long-term-vegetation-dynamics-in-the-mediterranean-force2nxf-higherlevel-processmosaic-e5295c77-62e8-4773-afc5-706750fb1a33> ;
+  rm:hasWorkflowProcess <http://example.org/vivo-import/run-metadata/process/long-term-vegetation-dynamics-in-the-mediterranean-force2nxf-higherlevel-processpyramid-e5295c77-62e8-4773-afc5-706750fb1a33> ;
+  rm:hasWorkflowProcess <http://example.org/vivo-import/run-metadata/process/long-term-vegetation-dynamics-in-the-mediterranean-force2nxf-preprocessing-generateanalysismask-e5295c77-62e8-4773-afc5-706750fb1a33> ;
+  rm:hasWorkflowProcess <http://example.org/vivo-import/run-metadata/process/long-term-vegetation-dynamics-in-the-mediterranean-force2nxf-preprocessing-generatetileallowlist-e5295c77-62e8-4773-afc5-706750fb1a33> ;
+  rm:hasWorkflowProcess <http://example.org/vivo-import/run-metadata/process/long-term-vegetation-dynamics-in-the-mediterranean-force2nxf-preprocessing-mergeboa-e5295c77-62e8-4773-afc5-706750fb1a33> ;
+  rm:hasWorkflowProcess <http://example.org/vivo-import/run-metadata/process/long-term-vegetation-dynamics-in-the-mediterranean-force2nxf-preprocessing-mergeqai-e5295c77-62e8-4773-afc5-706750fb1a33> ;
+  rm:hasWorkflowProcess <http://example.org/vivo-import/run-metadata/process/long-term-vegetation-dynamics-in-the-mediterranean-force2nxf-preprocessing-preprocess-e5295c77-62e8-4773-afc5-706750fb1a33> .
+
+<http://example.org/vivo-import/run-metadata/dataset/fonda-b5-eo-01-rangeland-input>
+  rdf:type rm:InputDataset ;
+  rdf:type vivo:InformationResource ;
+  rdf:type prov:Entity ;
+  rdfs:label "FONDA B5 EO-01 rangeland input dataset"@en ;
+  dcterms:title "FONDA B5 EO-01 rangeland input dataset"@en ;
+  dcterms:description "Shared read-only FORCE2NXF-Rangeland input containing Landsat Level 1 scenes, DEM, water vapour data, AOI vectors, and endmember data."@en ;
+  rm:storageLocation "/shared/b5/eo-01" ;
+  rm:accessStatement "Managed FONDA cluster dataset; access is subject to FONDA authorization and upstream data licences."@en ;
+  rm:inputDataOfWorkflow <http://example.org/vivo-import/run-metadata/workflow/long-term-vegetation-dynamics-in-the-mediterranean-force2nxf> ;
+  rm:usedByWorkflowRun <http://example.org/vivo-import/run-metadata/run/default-long-term-vegetation-dynamics-in-the-mediterranean-force2nxf-e5295c77-62e8-4773-afc5-706750fb1a33-2026-08-25t18-25-43-637000-00-00> .
+
+<http://141.20.184.157:8080/vivo/individual/a1-publication-key-lehmann2021forceon>
+  rm:hasWorkflowRun <http://example.org/vivo-import/run-metadata/run/default-long-term-vegetation-dynamics-in-the-mediterranean-force2nxf-e5295c77-62e8-4773-afc5-706750fb1a33-2026-08-25t18-25-43-637000-00-00> .
+
+<http://example.org/vivo-import/run-metadata/datetime/default-long-term-vegetation-dynamics-in-the-mediterranean-force2nxf-e5295c77-62e8-4773-afc5-706750fb1a33-2026-08-25t18-25-43-637000-00-00>
+  rdf:type vivo:DateTimeValue ;
+  vivo:dateTime "2026-08-25T20:25:43"^^xsd:dateTime ;
+  vivo:dateTimePrecision vivo:yearMonthDayTimePrecision .
+
+<http://example.org/vivo-import/run-metadata/process/long-term-vegetation-dynamics-in-the-mediterranean-force2nxf-higherlevel-processhigherlevel-e5295c77-62e8-4773-afc5-706750fb1a33>
+  rdf:type rm:WorkflowProcessRun ;
+  rdf:type vivo:InformationResource ;
+  rdf:type prov:Entity ;
+  rdfs:label "HigherLevel / processHigherLevel"@en ;
+  dcterms:title "HigherLevel / processHigherLevel"@en ;
+  rm:jobName "HigherLevel / processHigherLevel" ;
+  rm:runStatus "Succeeded with warnings" ;
+  rm:taskCount "32"^^xsd:integer ;
+  rm:podCount "32"^^xsd:integer ;
+  rm:succeededTaskCount "28"^^xsd:integer ;
+  rm:cachedTaskCount "0"^^xsd:integer ;
+  rm:failedTaskCount "4"^^xsd:integer ;
+  rm:abortedTaskCount "0"^^xsd:integer ;
+  prov:startedAtTime "2026-08-25T20:48:44"^^xsd:dateTime ;
+  prov:endedAtTime "2026-08-25T21:01:44"^^xsd:dateTime ;
+  rm:durationSeconds "781"^^xsd:integer ;
+  rm:durationCalculationMethod "Wall-clock time from the earliest task submission to the latest task completion or workflow termination in this stage." ;
+  rm:isWorkflowProcessOf <http://example.org/vivo-import/run-metadata/run/default-long-term-vegetation-dynamics-in-the-mediterranean-force2nxf-e5295c77-62e8-4773-afc5-706750fb1a33-2026-08-25t18-25-43-637000-00-00> ;
+  rm:taskName "higherLevel:processHigherLevel" ;
+  rm:cpuTimeSeconds "20890.845511104326"^^xsd:double ;
+  rm:cpuTimeCalculationMethod "CPU time is the sum of Prometheus container_cpu_usage_seconds_total counter increases for 32 of 32 pod(s)." ;
+  rm:memoryCalculationMethod "Memory is derived from Prometheus container_memory_working_set_bytes. Values are summed across concurrent workflow pods at each sample; the reported average and peak are calculated from that aggregate time series." ;
+  rm:energyKWh "0.1529759809663939"^^xsd:double ;
+  rm:carbonEmissionKgCO2e "0.04130351486092635"^^xsd:double ;
+  rm:carbonIntensityAssumptionKgCO2ePerKWh "0.27"^^xsd:double ;
+  rm:carbonIntensitySource "Electricity Maps latest available flow-traced carbon intensity (collection-time proxy)" ;
+  rm:energyMetricSource "kepler_container_joules_total" ;
+  rm:energyCalculationMethod "Energy is the sum of per-pod Kepler measurements for 32 of 32 pod(s). At least one short-lived pod required a counter-range or counter-maximum estimate because a reliable counter increase was unavailable." ;
+  rm:energyCalculationUsesFallbackEstimate "true"^^xsd:boolean ;
+  rm:carbonCalculationMethod "Carbon emissions are calculated using the emissions factor method: energy consumption (kWh) multiplied by 0.27 kg/kWh (lifecycle CO2e) from Electricity Maps latest available flow-traced carbon intensity (collection-time proxy). The value is the latest value available from the free-tier endpoint when metadata was collected. It is used as a proxy and is not guaranteed to represent the exact workflow execution interval." ;
+  rm:carbonIntensitySourceLink "https://api.electricitymaps.com/v4/carbon-intensity/latest"^^xsd:anyURI ;
+  rm:carbonIntensityZone "DE" ;
+  rm:carbonIntensityDataPointCount "1"^^xsd:integer ;
+  rm:carbonIntensityWindowStart "2026-08-26T08:00:00Z"^^xsd:dateTime ;
+  rm:carbonIntensityWindowEnd "2026-08-26T09:00:00Z"^^xsd:dateTime ;
+  rm:carbonIntensityIncludesEstimatedData "true"^^xsd:boolean ;
+  rm:carbonIntensityEmissionsBasis "lifecycle CO2e" ;
+  rm:carbonIntensityTemporalGranularity "hourly" ;
+  rm:parallelismNote "CPU time can exceed wall-clock duration because Nextflow tasks execute concurrently." .
+
+<http://example.org/vivo-import/run-metadata/process/long-term-vegetation-dynamics-in-the-mediterranean-force2nxf-higherlevel-processmosaic-e5295c77-62e8-4773-afc5-706750fb1a33>
+  rdf:type rm:WorkflowProcessRun ;
+  rdf:type vivo:InformationResource ;
+  rdf:type prov:Entity ;
+  rdfs:label "HigherLevel / processMosaic"@en ;
+  dcterms:title "HigherLevel / processMosaic"@en ;
+  rm:jobName "HigherLevel / processMosaic" ;
+  rm:runStatus "Succeeded" ;
+  rm:taskCount "10"^^xsd:integer ;
+  rm:podCount "10"^^xsd:integer ;
+  rm:succeededTaskCount "10"^^xsd:integer ;
+  rm:cachedTaskCount "0"^^xsd:integer ;
+  rm:failedTaskCount "0"^^xsd:integer ;
+  rm:abortedTaskCount "0"^^xsd:integer ;
+  prov:startedAtTime "2026-08-25T21:01:48"^^xsd:dateTime ;
+  prov:endedAtTime "2026-08-25T21:02:50"^^xsd:dateTime ;
+  rm:durationSeconds "63"^^xsd:integer ;
+  rm:durationCalculationMethod "Wall-clock time from the earliest task submission to the latest task completion or workflow termination in this stage." ;
+  rm:isWorkflowProcessOf <http://example.org/vivo-import/run-metadata/run/default-long-term-vegetation-dynamics-in-the-mediterranean-force2nxf-e5295c77-62e8-4773-afc5-706750fb1a33-2026-08-25t18-25-43-637000-00-00> ;
+  rm:taskName "higherLevel:processMosaic" ;
+  rm:cpuTimeSeconds "53.886272000000005"^^xsd:double ;
+  rm:cpuTimeCalculationMethod "CPU time is the sum of Prometheus container_cpu_usage_seconds_total counter increases for 5 of 10 pod(s). A counter-maximum fallback was used for 4 short-lived pod(s)." ;
+  rm:memoryCalculationMethod "Memory is derived from Prometheus container_memory_working_set_bytes. Values are summed across concurrent workflow pods at each sample; the reported average and peak are calculated from that aggregate time series." ;
+  rm:energyKWh "0.000209675"^^xsd:double ;
+  rm:carbonEmissionKgCO2e "5.661225e-05"^^xsd:double ;
+  rm:carbonIntensityAssumptionKgCO2ePerKWh "0.27"^^xsd:double ;
+  rm:carbonIntensitySource "Electricity Maps latest available flow-traced carbon intensity (collection-time proxy)" ;
+  rm:energyMetricSource "kepler_container_joules_total" ;
+  rm:energyCalculationMethod "Energy is the sum of per-pod Kepler measurements for 1 of 10 pod(s)." ;
+  rm:energyCalculationUsesFallbackEstimate "false"^^xsd:boolean ;
+  rm:carbonCalculationMethod "Carbon emissions are calculated using the emissions factor method: energy consumption (kWh) multiplied by 0.27 kg/kWh (lifecycle CO2e) from Electricity Maps latest available flow-traced carbon intensity (collection-time proxy). The value is the latest value available from the free-tier endpoint when metadata was collected. It is used as a proxy and is not guaranteed to represent the exact workflow execution interval." ;
+  rm:carbonIntensitySourceLink "https://api.electricitymaps.com/v4/carbon-intensity/latest"^^xsd:anyURI ;
+  rm:carbonIntensityZone "DE" ;
+  rm:carbonIntensityDataPointCount "1"^^xsd:integer ;
+  rm:carbonIntensityWindowStart "2026-08-26T08:00:00Z"^^xsd:dateTime ;
+  rm:carbonIntensityWindowEnd "2026-08-26T09:00:00Z"^^xsd:dateTime ;
+  rm:carbonIntensityIncludesEstimatedData "true"^^xsd:boolean ;
+  rm:carbonIntensityEmissionsBasis "lifecycle CO2e" ;
+  rm:carbonIntensityTemporalGranularity "hourly" ;
+  rm:parallelismNote "CPU time can exceed wall-clock duration because Nextflow tasks execute concurrently." .
+
+<http://example.org/vivo-import/run-metadata/process/long-term-vegetation-dynamics-in-the-mediterranean-force2nxf-higherlevel-processpyramid-e5295c77-62e8-4773-afc5-706750fb1a33>
+  rdf:type rm:WorkflowProcessRun ;
+  rdf:type vivo:InformationResource ;
+  rdf:type prov:Entity ;
+  rdfs:label "HigherLevel / processPyramid"@en ;
+  dcterms:title "HigherLevel / processPyramid"@en ;
+  rm:jobName "HigherLevel / processPyramid" ;
+  rm:runStatus "Succeeded with warnings" ;
+  rm:taskCount "56"^^xsd:integer ;
+  rm:podCount "56"^^xsd:integer ;
+  rm:succeededTaskCount "28"^^xsd:integer ;
+  rm:cachedTaskCount "0"^^xsd:integer ;
+  rm:failedTaskCount "28"^^xsd:integer ;
+  rm:abortedTaskCount "0"^^xsd:integer ;
+  prov:startedAtTime "2026-08-25T21:01:47"^^xsd:dateTime ;
+  prov:endedAtTime "2026-08-25T21:03:54"^^xsd:dateTime ;
+  rm:durationSeconds "127"^^xsd:integer ;
+  rm:durationCalculationMethod "Wall-clock time from the earliest task submission to the latest task completion or workflow termination in this stage." ;
+  rm:isWorkflowProcessOf <http://example.org/vivo-import/run-metadata/run/default-long-term-vegetation-dynamics-in-the-mediterranean-force2nxf-e5295c77-62e8-4773-afc5-706750fb1a33-2026-08-25t18-25-43-637000-00-00> ;
+  rm:taskName "higherLevel:processPyramid" ;
+  rm:cpuTimeSeconds "1134.3030885"^^xsd:double ;
+  rm:cpuTimeCalculationMethod "CPU time is the sum of Prometheus container_cpu_usage_seconds_total counter increases for 56 of 56 pod(s). A counter-maximum fallback was used for 22 short-lived pod(s)." ;
+  rm:memoryCalculationMethod "Memory is derived from Prometheus container_memory_working_set_bytes. Values are summed across concurrent workflow pods at each sample; the reported average and peak are calculated from that aggregate time series." ;
+  rm:energyKWh "0.013222987641604164"^^xsd:double ;
+  rm:carbonEmissionKgCO2e "0.0035702066632331245"^^xsd:double ;
+  rm:carbonIntensityAssumptionKgCO2ePerKWh "0.27"^^xsd:double ;
+  rm:carbonIntensitySource "Electricity Maps latest available flow-traced carbon intensity (collection-time proxy)" ;
+  rm:energyMetricSource "kepler_container_joules_total" ;
+  rm:energyCalculationMethod "Energy is the sum of per-pod Kepler measurements for 53 of 56 pod(s). At least one short-lived pod required a counter-range or counter-maximum estimate because a reliable counter increase was unavailable." ;
+  rm:energyCalculationUsesFallbackEstimate "true"^^xsd:boolean ;
+  rm:carbonCalculationMethod "Carbon emissions are calculated using the emissions factor method: energy consumption (kWh) multiplied by 0.27 kg/kWh (lifecycle CO2e) from Electricity Maps latest available flow-traced carbon intensity (collection-time proxy). The value is the latest value available from the free-tier endpoint when metadata was collected. It is used as a proxy and is not guaranteed to represent the exact workflow execution interval." ;
+  rm:carbonIntensitySourceLink "https://api.electricitymaps.com/v4/carbon-intensity/latest"^^xsd:anyURI ;
+  rm:carbonIntensityZone "DE" ;
+  rm:carbonIntensityDataPointCount "1"^^xsd:integer ;
+  rm:carbonIntensityWindowStart "2026-08-26T08:00:00Z"^^xsd:dateTime ;
+  rm:carbonIntensityWindowEnd "2026-08-26T09:00:00Z"^^xsd:dateTime ;
+  rm:carbonIntensityIncludesEstimatedData "true"^^xsd:boolean ;
+  rm:carbonIntensityEmissionsBasis "lifecycle CO2e" ;
+  rm:carbonIntensityTemporalGranularity "hourly" ;
+  rm:parallelismNote "CPU time can exceed wall-clock duration because Nextflow tasks execute concurrently." .
+
+<http://example.org/vivo-import/run-metadata/process/long-term-vegetation-dynamics-in-the-mediterranean-force2nxf-preprocessing-generateanalysismask-e5295c77-62e8-4773-afc5-706750fb1a33>
+  rdf:type rm:WorkflowProcessRun ;
+  rdf:type vivo:InformationResource ;
+  rdf:type prov:Entity ;
+  rdfs:label "Preprocessing / generateAnalysisMask"@en ;
+  dcterms:title "Preprocessing / generateAnalysisMask"@en ;
+  rm:jobName "Preprocessing / generateAnalysisMask" ;
+  rm:runStatus "Succeeded" ;
+  rm:taskCount "1"^^xsd:integer ;
+  rm:podCount "1"^^xsd:integer ;
+  rm:succeededTaskCount "1"^^xsd:integer ;
+  rm:cachedTaskCount "1"^^xsd:integer ;
+  rm:failedTaskCount "0"^^xsd:integer ;
+  rm:abortedTaskCount "0"^^xsd:integer ;
+  prov:startedAtTime "2026-08-16T09:05:14"^^xsd:dateTime ;
+  prov:endedAtTime "2026-08-16T09:05:19"^^xsd:dateTime ;
+  rm:durationSeconds "6"^^xsd:integer ;
+  rm:durationCalculationMethod "Original execution window of the Kubernetes pods that produced outputs reused from the Nextflow cache." ;
+  rm:isWorkflowProcessOf <http://example.org/vivo-import/run-metadata/run/default-long-term-vegetation-dynamics-in-the-mediterranean-force2nxf-e5295c77-62e8-4773-afc5-706750fb1a33-2026-08-25t18-25-43-637000-00-00> ;
+  rm:taskName "preprocessing:generateAnalysisMask" ;
+  rm:cpuTimeCalculationMethod "CPU time is the sum of Prometheus container_cpu_usage_seconds_total counter increases for 0 of 1 pod(s). Metrics include the original Kubernetes pods that produced outputs reused from the Nextflow cache." ;
+  rm:memoryCalculationMethod "Memory is derived from Prometheus container_memory_working_set_bytes. Values are summed across concurrent workflow pods at each sample; the reported average and peak are calculated from that aggregate time series. Metrics include the original Kubernetes pods that produced outputs reused from the Nextflow cache." ;
+  rm:carbonIntensityAssumptionKgCO2ePerKWh "0.27"^^xsd:double ;
+  rm:carbonIntensitySource "Electricity Maps latest available flow-traced carbon intensity (collection-time proxy)" ;
+  rm:energyMetricSource "kepler_container_joules_total" ;
+  rm:energyCalculationMethod "Energy is the sum of per-pod Kepler measurements for 0 of 1 pod(s). Metrics include the original Kubernetes pods that produced outputs reused from the Nextflow cache." ;
+  rm:energyCalculationUsesFallbackEstimate "false"^^xsd:boolean ;
+  rm:carbonCalculationMethod "Carbon emissions are calculated using the emissions factor method: energy consumption (kWh) multiplied by 0.27 kg/kWh (lifecycle CO2e) from Electricity Maps latest available flow-traced carbon intensity (collection-time proxy). The value is the latest value available from the free-tier endpoint when metadata was collected. It is used as a proxy and is not guaranteed to represent the exact workflow execution interval." ;
+  rm:carbonIntensitySourceLink "https://api.electricitymaps.com/v4/carbon-intensity/latest"^^xsd:anyURI ;
+  rm:carbonIntensityZone "DE" ;
+  rm:carbonIntensityDataPointCount "1"^^xsd:integer ;
+  rm:carbonIntensityWindowStart "2026-08-26T08:00:00Z"^^xsd:dateTime ;
+  rm:carbonIntensityWindowEnd "2026-08-26T09:00:00Z"^^xsd:dateTime ;
+  rm:carbonIntensityIncludesEstimatedData "true"^^xsd:boolean ;
+  rm:carbonIntensityEmissionsBasis "lifecycle CO2e" ;
+  rm:carbonIntensityTemporalGranularity "hourly" ;
+  rm:parallelismNote "CPU time can exceed wall-clock duration because Nextflow tasks execute concurrently." .
+
+<http://example.org/vivo-import/run-metadata/process/long-term-vegetation-dynamics-in-the-mediterranean-force2nxf-preprocessing-generatetileallowlist-e5295c77-62e8-4773-afc5-706750fb1a33>
+  rdf:type rm:WorkflowProcessRun ;
+  rdf:type vivo:InformationResource ;
+  rdf:type prov:Entity ;
+  rdfs:label "Preprocessing / generateTileAllowList"@en ;
+  dcterms:title "Preprocessing / generateTileAllowList"@en ;
+  rm:jobName "Preprocessing / generateTileAllowList" ;
+  rm:runStatus "Succeeded" ;
+  rm:taskCount "1"^^xsd:integer ;
+  rm:podCount "1"^^xsd:integer ;
+  rm:succeededTaskCount "1"^^xsd:integer ;
+  rm:cachedTaskCount "1"^^xsd:integer ;
+  rm:failedTaskCount "0"^^xsd:integer ;
+  rm:abortedTaskCount "0"^^xsd:integer ;
+  prov:startedAtTime "2026-08-16T09:05:14"^^xsd:dateTime ;
+  prov:endedAtTime "2026-08-16T09:05:24"^^xsd:dateTime ;
+  rm:durationSeconds "11"^^xsd:integer ;
+  rm:durationCalculationMethod "Original execution window of the Kubernetes pods that produced outputs reused from the Nextflow cache." ;
+  rm:isWorkflowProcessOf <http://example.org/vivo-import/run-metadata/run/default-long-term-vegetation-dynamics-in-the-mediterranean-force2nxf-e5295c77-62e8-4773-afc5-706750fb1a33-2026-08-25t18-25-43-637000-00-00> ;
+  rm:taskName "preprocessing:generateTileAllowList" ;
+  rm:cpuTimeCalculationMethod "CPU time is the sum of Prometheus container_cpu_usage_seconds_total counter increases for 0 of 1 pod(s). Metrics include the original Kubernetes pods that produced outputs reused from the Nextflow cache." ;
+  rm:memoryCalculationMethod "Memory is derived from Prometheus container_memory_working_set_bytes. Values are summed across concurrent workflow pods at each sample; the reported average and peak are calculated from that aggregate time series. Metrics include the original Kubernetes pods that produced outputs reused from the Nextflow cache." ;
+  rm:carbonIntensityAssumptionKgCO2ePerKWh "0.27"^^xsd:double ;
+  rm:carbonIntensitySource "Electricity Maps latest available flow-traced carbon intensity (collection-time proxy)" ;
+  rm:energyMetricSource "kepler_container_joules_total" ;
+  rm:energyCalculationMethod "Energy is the sum of per-pod Kepler measurements for 0 of 1 pod(s). Metrics include the original Kubernetes pods that produced outputs reused from the Nextflow cache." ;
+  rm:energyCalculationUsesFallbackEstimate "false"^^xsd:boolean ;
+  rm:carbonCalculationMethod "Carbon emissions are calculated using the emissions factor method: energy consumption (kWh) multiplied by 0.27 kg/kWh (lifecycle CO2e) from Electricity Maps latest available flow-traced carbon intensity (collection-time proxy). The value is the latest value available from the free-tier endpoint when metadata was collected. It is used as a proxy and is not guaranteed to represent the exact workflow execution interval." ;
+  rm:carbonIntensitySourceLink "https://api.electricitymaps.com/v4/carbon-intensity/latest"^^xsd:anyURI ;
+  rm:carbonIntensityZone "DE" ;
+  rm:carbonIntensityDataPointCount "1"^^xsd:integer ;
+  rm:carbonIntensityWindowStart "2026-08-26T08:00:00Z"^^xsd:dateTime ;
+  rm:carbonIntensityWindowEnd "2026-08-26T09:00:00Z"^^xsd:dateTime ;
+  rm:carbonIntensityIncludesEstimatedData "true"^^xsd:boolean ;
+  rm:carbonIntensityEmissionsBasis "lifecycle CO2e" ;
+  rm:carbonIntensityTemporalGranularity "hourly" ;
+  rm:parallelismNote "CPU time can exceed wall-clock duration because Nextflow tasks execute concurrently." .
+
+<http://example.org/vivo-import/run-metadata/process/long-term-vegetation-dynamics-in-the-mediterranean-force2nxf-preprocessing-mergeboa-e5295c77-62e8-4773-afc5-706750fb1a33>
+  rdf:type rm:WorkflowProcessRun ;
+  rdf:type vivo:InformationResource ;
+  rdf:type prov:Entity ;
+  rdfs:label "Preprocessing / mergeBOA"@en ;
+  dcterms:title "Preprocessing / mergeBOA"@en ;
+  rm:jobName "Preprocessing / mergeBOA" ;
+  rm:runStatus "Succeeded" ;
+  rm:taskCount "99"^^xsd:integer ;
+  rm:podCount "99"^^xsd:integer ;
+  rm:succeededTaskCount "99"^^xsd:integer ;
+  rm:cachedTaskCount "0"^^xsd:integer ;
+  rm:failedTaskCount "0"^^xsd:integer ;
+  rm:abortedTaskCount "0"^^xsd:integer ;
+  prov:startedAtTime "2026-08-25T20:25:55"^^xsd:dateTime ;
+  prov:endedAtTime "2026-08-25T20:48:38"^^xsd:dateTime ;
+  rm:durationSeconds "1364"^^xsd:integer ;
+  rm:durationCalculationMethod "Wall-clock time from the earliest task submission to the latest task completion or workflow termination in this stage." ;
+  rm:isWorkflowProcessOf <http://example.org/vivo-import/run-metadata/run/default-long-term-vegetation-dynamics-in-the-mediterranean-force2nxf-e5295c77-62e8-4773-afc5-706750fb1a33-2026-08-25t18-25-43-637000-00-00> ;
+  rm:taskName "preprocessing:mergeBOA" ;
+  rm:cpuTimeSeconds "59342.73551915649"^^xsd:double ;
+  rm:cpuTimeCalculationMethod "CPU time is the sum of Prometheus container_cpu_usage_seconds_total counter increases for 99 of 99 pod(s). A counter-maximum fallback was used for 1 short-lived pod(s)." ;
+  rm:memoryCalculationMethod "Memory is derived from Prometheus container_memory_working_set_bytes. Values are summed across concurrent workflow pods at each sample; the reported average and peak are calculated from that aggregate time series." ;
+  rm:energyKWh "0.4579340924626464"^^xsd:double ;
+  rm:carbonEmissionKgCO2e "0.12364220496491453"^^xsd:double ;
+  rm:carbonIntensityAssumptionKgCO2ePerKWh "0.27"^^xsd:double ;
+  rm:carbonIntensitySource "Electricity Maps latest available flow-traced carbon intensity (collection-time proxy)" ;
+  rm:energyMetricSource "kepler_container_joules_total" ;
+  rm:energyCalculationMethod "Energy is the sum of per-pod Kepler measurements for 99 of 99 pod(s). At least one short-lived pod required a counter-range or counter-maximum estimate because a reliable counter increase was unavailable." ;
+  rm:energyCalculationUsesFallbackEstimate "true"^^xsd:boolean ;
+  rm:carbonCalculationMethod "Carbon emissions are calculated using the emissions factor method: energy consumption (kWh) multiplied by 0.27 kg/kWh (lifecycle CO2e) from Electricity Maps latest available flow-traced carbon intensity (collection-time proxy). The value is the latest value available from the free-tier endpoint when metadata was collected. It is used as a proxy and is not guaranteed to represent the exact workflow execution interval." ;
+  rm:carbonIntensitySourceLink "https://api.electricitymaps.com/v4/carbon-intensity/latest"^^xsd:anyURI ;
+  rm:carbonIntensityZone "DE" ;
+  rm:carbonIntensityDataPointCount "1"^^xsd:integer ;
+  rm:carbonIntensityWindowStart "2026-08-26T08:00:00Z"^^xsd:dateTime ;
+  rm:carbonIntensityWindowEnd "2026-08-26T09:00:00Z"^^xsd:dateTime ;
+  rm:carbonIntensityIncludesEstimatedData "true"^^xsd:boolean ;
+  rm:carbonIntensityEmissionsBasis "lifecycle CO2e" ;
+  rm:carbonIntensityTemporalGranularity "hourly" ;
+  rm:parallelismNote "CPU time can exceed wall-clock duration because Nextflow tasks execute concurrently." .
+
+<http://example.org/vivo-import/run-metadata/process/long-term-vegetation-dynamics-in-the-mediterranean-force2nxf-preprocessing-mergeqai-e5295c77-62e8-4773-afc5-706750fb1a33>
+  rdf:type rm:WorkflowProcessRun ;
+  rdf:type vivo:InformationResource ;
+  rdf:type prov:Entity ;
+  rdfs:label "Preprocessing / mergeQAI"@en ;
+  dcterms:title "Preprocessing / mergeQAI"@en ;
+  rm:jobName "Preprocessing / mergeQAI" ;
+  rm:runStatus "Succeeded" ;
+  rm:taskCount "99"^^xsd:integer ;
+  rm:podCount "99"^^xsd:integer ;
+  rm:succeededTaskCount "99"^^xsd:integer ;
+  rm:cachedTaskCount "0"^^xsd:integer ;
+  rm:failedTaskCount "0"^^xsd:integer ;
+  rm:abortedTaskCount "0"^^xsd:integer ;
+  prov:startedAtTime "2026-08-25T20:25:55"^^xsd:dateTime ;
+  prov:endedAtTime "2026-08-25T20:45:18"^^xsd:dateTime ;
+  rm:durationSeconds "1163"^^xsd:integer ;
+  rm:durationCalculationMethod "Wall-clock time from the earliest task submission to the latest task completion or workflow termination in this stage." ;
+  rm:isWorkflowProcessOf <http://example.org/vivo-import/run-metadata/run/default-long-term-vegetation-dynamics-in-the-mediterranean-force2nxf-e5295c77-62e8-4773-afc5-706750fb1a33-2026-08-25t18-25-43-637000-00-00> ;
+  rm:taskName "preprocessing:mergeQAI" ;
+  rm:cpuTimeSeconds "38906.13732007027"^^xsd:double ;
+  rm:cpuTimeCalculationMethod "CPU time is the sum of Prometheus container_cpu_usage_seconds_total counter increases for 99 of 99 pod(s). A counter-maximum fallback was used for 1 short-lived pod(s)." ;
+  rm:memoryCalculationMethod "Memory is derived from Prometheus container_memory_working_set_bytes. Values are summed across concurrent workflow pods at each sample; the reported average and peak are calculated from that aggregate time series." ;
+  rm:energyKWh "0.29057243738467775"^^xsd:double ;
+  rm:carbonEmissionKgCO2e "0.078454558093863"^^xsd:double ;
+  rm:carbonIntensityAssumptionKgCO2ePerKWh "0.27"^^xsd:double ;
+  rm:carbonIntensitySource "Electricity Maps latest available flow-traced carbon intensity (collection-time proxy)" ;
+  rm:energyMetricSource "kepler_container_joules_total" ;
+  rm:energyCalculationMethod "Energy is the sum of per-pod Kepler measurements for 98 of 99 pod(s)." ;
+  rm:energyCalculationUsesFallbackEstimate "false"^^xsd:boolean ;
+  rm:carbonCalculationMethod "Carbon emissions are calculated using the emissions factor method: energy consumption (kWh) multiplied by 0.27 kg/kWh (lifecycle CO2e) from Electricity Maps latest available flow-traced carbon intensity (collection-time proxy). The value is the latest value available from the free-tier endpoint when metadata was collected. It is used as a proxy and is not guaranteed to represent the exact workflow execution interval." ;
+  rm:carbonIntensitySourceLink "https://api.electricitymaps.com/v4/carbon-intensity/latest"^^xsd:anyURI ;
+  rm:carbonIntensityZone "DE" ;
+  rm:carbonIntensityDataPointCount "1"^^xsd:integer ;
+  rm:carbonIntensityWindowStart "2026-08-26T08:00:00Z"^^xsd:dateTime ;
+  rm:carbonIntensityWindowEnd "2026-08-26T09:00:00Z"^^xsd:dateTime ;
+  rm:carbonIntensityIncludesEstimatedData "true"^^xsd:boolean ;
+  rm:carbonIntensityEmissionsBasis "lifecycle CO2e" ;
+  rm:carbonIntensityTemporalGranularity "hourly" ;
+  rm:parallelismNote "CPU time can exceed wall-clock duration because Nextflow tasks execute concurrently." .
+
+<http://example.org/vivo-import/run-metadata/process/long-term-vegetation-dynamics-in-the-mediterranean-force2nxf-preprocessing-preprocess-e5295c77-62e8-4773-afc5-706750fb1a33>
+  rdf:type rm:WorkflowProcessRun ;
+  rdf:type vivo:InformationResource ;
+  rdf:type prov:Entity ;
+  rdfs:label "Preprocessing / preprocess"@en ;
+  dcterms:title "Preprocessing / preprocess"@en ;
+  rm:jobName "Preprocessing / preprocess" ;
+  rm:runStatus "Succeeded" ;
+  rm:taskCount "2794"^^xsd:integer ;
+  rm:podCount "2794"^^xsd:integer ;
+  rm:succeededTaskCount "2794"^^xsd:integer ;
+  rm:cachedTaskCount "2794"^^xsd:integer ;
+  rm:failedTaskCount "0"^^xsd:integer ;
+  rm:abortedTaskCount "0"^^xsd:integer ;
+  prov:startedAtTime "2026-08-16T09:05:28"^^xsd:dateTime ;
+  prov:endedAtTime "2026-08-25T19:39:36"^^xsd:dateTime ;
+  rm:durationSeconds "815648"^^xsd:integer ;
+  rm:durationCalculationMethod "Original execution window of the Kubernetes pods that produced outputs reused from the Nextflow cache." ;
+  rm:isWorkflowProcessOf <http://example.org/vivo-import/run-metadata/run/default-long-term-vegetation-dynamics-in-the-mediterranean-force2nxf-e5295c77-62e8-4773-afc5-706750fb1a33-2026-08-25t18-25-43-637000-00-00> ;
+  rm:taskName "preprocessing:preprocess" ;
+  rm:cpuTimeSeconds "221.14693924999997"^^xsd:double ;
+  rm:cpuTimeCalculationMethod "CPU time is the sum of Prometheus container_cpu_usage_seconds_total counter increases for 1 of 2794 pod(s). Metrics include the original Kubernetes pods that produced outputs reused from the Nextflow cache." ;
+  rm:memoryCalculationMethod "Memory is derived from Prometheus container_memory_working_set_bytes. Values are summed across concurrent workflow pods at each sample; the reported average and peak are calculated from that aggregate time series. Metrics include the original Kubernetes pods that produced outputs reused from the Nextflow cache." ;
+  rm:energyKWh "0.0027862631944444442"^^xsd:double ;
+  rm:carbonEmissionKgCO2e "0.0007522910625"^^xsd:double ;
+  rm:carbonIntensityAssumptionKgCO2ePerKWh "0.27"^^xsd:double ;
+  rm:carbonIntensitySource "Electricity Maps latest available flow-traced carbon intensity (collection-time proxy)" ;
+  rm:energyMetricSource "kepler_container_joules_total" ;
+  rm:energyCalculationMethod "Energy is the sum of per-pod Kepler measurements for 1 of 2794 pod(s). Metrics include the original Kubernetes pods that produced outputs reused from the Nextflow cache." ;
+  rm:energyCalculationUsesFallbackEstimate "false"^^xsd:boolean ;
+  rm:carbonCalculationMethod "Carbon emissions are calculated using the emissions factor method: energy consumption (kWh) multiplied by 0.27 kg/kWh (lifecycle CO2e) from Electricity Maps latest available flow-traced carbon intensity (collection-time proxy). The value is the latest value available from the free-tier endpoint when metadata was collected. It is used as a proxy and is not guaranteed to represent the exact workflow execution interval." ;
+  rm:carbonIntensitySourceLink "https://api.electricitymaps.com/v4/carbon-intensity/latest"^^xsd:anyURI ;
+  rm:carbonIntensityZone "DE" ;
+  rm:carbonIntensityDataPointCount "1"^^xsd:integer ;
+  rm:carbonIntensityWindowStart "2026-08-26T08:00:00Z"^^xsd:dateTime ;
+  rm:carbonIntensityWindowEnd "2026-08-26T09:00:00Z"^^xsd:dateTime ;
+  rm:carbonIntensityIncludesEstimatedData "true"^^xsd:boolean ;
+  rm:carbonIntensityEmissionsBasis "lifecycle CO2e" ;
+  rm:carbonIntensityTemporalGranularity "hourly" ;
+  rm:parallelismNote "CPU time can exceed wall-clock duration because Nextflow tasks execute concurrently." .

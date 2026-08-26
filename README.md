@@ -26,15 +26,42 @@ You do **not** need to be a VIVO administrator. You need:
 Do not use or share the VIVO administrator account. See
 [Administrator onboarding](docs/ADMIN_SETUP.md).
 
+## Tested workflow profiles
+
+The collector and publisher code is shared. Each workflow has a separate
+configuration profile because its namespace, PVC, trace paths, source
+repository, input data, and VIVO links differ.
+
+| Workflow | Tested result | Profile |
+| --- | --- | --- |
+| Geoflow annual land-cover mapping | Successful Kubernetes run and VIVO publication | [Geoflow profile](examples/geoflow/README.md) |
+| FORCE2NXF rangeland workflow | Successful resumed run: 3,092 trace rows, 2,796 cached tasks, and 32 retry attempts | [FORCE2NXF profile](examples/force2nxf/README.md) |
+
+Nextflow task tags such as tile or sample identifiers are aggregated under the
+real process name. This keeps large FORCE2NXF RDF files compact while the
+metrics audit retains the task-level evidence.
+
 ## Five-minute setup
 
 ```bash
 git clone https://github.com/YagmurKati/fonda-kubernetes-vivo-publisher.git
 cd fonda-kubernetes-vivo-publisher
-cp config/publisher.env.example config/publisher.env
 ```
 
-Edit `config/publisher.env`. At minimum replace:
+Choose one profile:
+
+```bash
+# Geoflow
+cp examples/geoflow/publisher.env.example config/publisher.env
+cp examples/geoflow/input_datasets.json config/input_datasets.json
+
+# OR: FORCE2NXF
+cp examples/force2nxf/publisher.env.example config/publisher.env
+cp examples/force2nxf/input_datasets.json config/input_datasets.json
+```
+
+Edit `config/publisher.env` and replace every `REPLACE_ME` value. At minimum
+confirm:
 
 - `NS`, `PVC_NAME`;
 - `WORKFLOW_NAME`, `WORKFLOW_URI`;
@@ -61,6 +88,13 @@ After run `my-run-01` has finished successfully:
 
 The last command collects the metadata and uploads it to VIVO automatically.
 No browser upload and no second command are required.
+
+For a resumed run, include metrics from the original pods of cached tasks when
+those metrics are still retained:
+
+```bash
+INCLUDE_CACHED_ORIGIN_METRICS=1 ./scripts/publish-run.sh my-run-01-resume
+```
 
 ## Add it after an existing workflow command
 

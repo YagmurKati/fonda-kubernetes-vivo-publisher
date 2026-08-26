@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "datasets": [
+    {
+      "uri": "http://example.org/vivo-import/run-metadata/dataset/fonda-b5-eo-01-rangeland-input",
+      "label": "FONDA B5 EO-01 rangeland input dataset",
+      "description": "Shared read-only FORCE2NXF-Rangeland input containing Landsat Level 1 scenes, DEM, water vapour data, AOI vectors, and endmember data.",
+      "storage_location": "/shared/b5/eo-01",
+      "access_statement": "Managed FONDA cluster dataset; access is subject to FONDA authorization and upstream data licences.",
+      "link_to_workflow": true,
+      "link_to_run": true
+    }
+  ]
+}

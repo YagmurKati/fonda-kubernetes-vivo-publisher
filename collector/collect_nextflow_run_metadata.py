@@ -373,13 +373,18 @@ def parse_log_metadata(
     session_match = SESSION_RE.search(debug_log)
     run_name_match = RUN_NAME_RE.search(debug_log)
     version_match = NEXTFLOW_VERSION_RE.search(debug_log)
+    finished = "Execution complete" in debug_log
+    terminal_failure = bool(
+        re.search(r"(?m)^ERROR\s*~", console_log)
+    ) or "Session aborted -- Cause" in debug_log
     return {
         "start": min(timestamps) if timestamps else None,
         "end": max(timestamps) if timestamps else None,
         "session_id": session_match.group(1) if session_match else None,
         "run_name": run_name_match.group(1) if run_name_match else None,
         "nextflow_version": version_match.group(1) if version_match else None,
-        "finished": "Execution complete" in debug_log,
+        "finished": finished,
+        "successful": finished and not terminal_failure,
         "failure_reason": extract_failure_reason(debug_log, console_log),
     }
 
@@ -392,14 +397,23 @@ def normalize_finished_tasks(tasks: List[TaskRecord], run_finished: bool) -> Non
             task.status = "ABORTED"
 
 
-def derive_status(tasks: Sequence[TaskRecord], run_finished: bool) -> str:
+def derive_status(
+    tasks: Sequence[TaskRecord],
+    run_finished: bool,
+    workflow_succeeded: bool = False,
+) -> str:
     statuses = {task.status for task in tasks}
-    if statuses & {"FAILED", "ERROR"}:
-        return "Failed"
     if statuses & {"RUNNING", "SUBMITTED", "NEW", "PENDING"}:
         return "Running"
     if not run_finished:
         return "Running"
+    if workflow_succeeded:
+        if statuses & {"FAILED", "ERROR", "ABORTED"}:
+            return "Succeeded with warnings"
+        if statuses and statuses <= {"COMPLETED", "CACHED"}:
+            return "Succeeded"
+    if statuses & {"FAILED", "ERROR"}:
+        return "Failed"
     if statuses and statuses <= {"COMPLETED", "CACHED"}:
         return "Succeeded"
     if "ABORTED" in statuses:
@@ -1157,6 +1171,11 @@ def joules_to_kwh(value: Optional[float]) -> Optional[float]:
     return value / 3_600_000.0 if value is not None else None
 
 
+def canonical_task_name(task_name: str) -> str:
+    """Remove Nextflow's trailing task tag while preserving the process name."""
+    return re.sub(r"\s+\([^()]*\)$", "", task_name).strip()
+
+
 def classify_stage(task_name: str) -> Tuple[str, str]:
     if task_name.startswith("calc_indices:"):
         return "spectral-index-calculation", "Spectral index calculation"
@@ -1164,7 +1183,7 @@ def classify_stage(task_name: str) -> Tuple[str, str]:
         return "base-band-extraction", "Base-band extraction"
     if task_name.startswith("build_vrt_stack:"):
         return "vrt-stack-construction", "VRT stack construction"
-    base_name = re.sub(r"\s+\(\d+\)$", "", task_name).strip()
+    base_name = canonical_task_name(task_name)
     label = base_name.replace(":", " / ").replace("_", " ")
     label = label[:1].upper() + label[1:] if label else "Workflow process"
     return slugify(base_name), label
@@ -1808,7 +1827,11 @@ def build_ttl(
             stage_end = max(
                 (task.end or run_end) for task in timed_stage_tasks
             )
-        stage_status = derive_status(stage_tasks, True)
+        stage_status = derive_status(
+            stage_tasks,
+            True,
+            run_status in {"Succeeded", "Succeeded with warnings"},
+        )
         stage_pods = unique(
             task.pod_name
             for task in stage_tasks
@@ -2367,7 +2390,9 @@ def build_ttl(
             ),
             ("rm:isWorkflowProcessOf", ttl_uri(run_uri)),
         ]
-        for task_name in unique(task.name for task in stage["tasks"]):
+        for task_name in unique(
+            canonical_task_name(task.name) for task in stage["tasks"]
+        ):
             predicates.append(("rm:taskName", ttl_literal(task_name)))
         append_metric_predicates(
             predicates,
@@ -2743,7 +2768,11 @@ def main() -> None:
         if task.end is None and log_metadata["finished"]:
             task.end = run_end
 
-    run_status = derive_status(tasks, bool(log_metadata["finished"]))
+    run_status = derive_status(
+        tasks,
+        bool(log_metadata["finished"]),
+        bool(log_metadata["successful"]),
+    )
     if run_status == "Running" and not args.allow_active_run:
         raise RuntimeError(
             "The selected trace still describes an active run. Wait for "

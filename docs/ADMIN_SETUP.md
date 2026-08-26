@@ -52,6 +52,28 @@ Ask the user to publish a small completed run and provide only:
 They must not send passwords, API tokens, decoded Secrets, or full Kubernetes
 configuration files.
 
+## VIVO request-size limits
+
+The VIVO SPARQL Update request passes through Nginx and Tomcat. If Nginx returns
+`413 Request Entity Too Large`, an administrator must set an appropriate limit
+inside the active HTTPS proxy `location` block, for example:
+
+```nginx
+client_max_body_size 25m;
+```
+
+Validate with `nginx -t` before reloading Nginx. The active Tomcat HTTP
+Connector must also accept the form-encoded request, for example:
+
+```xml
+maxPostSize="26214400"
+```
+
+Use ordinary straight XML quotes and restart Tomcat after changing
+`server.xml`. Keep both limits bounded; do not disable them globally. The
+collector aggregates tagged task instances by process name, so tested Geoflow
+and FORCE2NXF TTL files remain well below these limits.
+
 ## Revocation
 
 1. Disable the user's VIVO API permission/account.

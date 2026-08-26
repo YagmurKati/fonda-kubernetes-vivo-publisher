@@ -17,11 +17,24 @@ for the site administrator password.
 ```bash
 git clone https://github.com/YagmurKati/fonda-kubernetes-vivo-publisher.git
 cd fonda-kubernetes-vivo-publisher
-cp config/publisher.env.example config/publisher.env
 ```
 
-Edit `config/publisher.env`. Values ending in `URIS` are comma-separated lists
-without spaces. Use underlying stable resource URIs, not a copied HTML label.
+Select the profile for the workflow:
+
+```bash
+# Geoflow
+cp examples/geoflow/publisher.env.example config/publisher.env
+cp examples/geoflow/input_datasets.json config/input_datasets.json
+
+# OR: FORCE2NXF
+cp examples/force2nxf/publisher.env.example config/publisher.env
+cp examples/force2nxf/input_datasets.json config/input_datasets.json
+```
+
+Edit `config/publisher.env` and replace every `REPLACE_ME` value. Values ending
+in `URIS` are comma-separated lists without spaces. Use underlying stable
+resource URIs, not a copied HTML label. Review every path even when starting
+from a tested profile, because the PVC layout can differ between users.
 
 If the workflow uses a known input dataset, copy
 `config/input_datasets.json.example` over `config/input_datasets.json`, replace
@@ -76,6 +89,17 @@ Receipt: ...published.json
 ```
 
 No additional upload is needed.
+
+For a resumed Nextflow run, include cached-origin metrics when Prometheus still
+retains them:
+
+```bash
+INCLUDE_CACHED_ORIGIN_METRICS=1 ./scripts/publish-run.sh RUN_ID
+```
+
+The published RDF reports a successful workflow with historical retry attempts
+as `Succeeded with warnings`; a recovered task attempt does not turn the whole
+workflow into a failed run.
 
 ## 6. Verify
 

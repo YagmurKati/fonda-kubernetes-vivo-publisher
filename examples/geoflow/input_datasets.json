@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "datasets": [
+    {
+      "uri": "http://example.org/vivo-import/run-metadata/input-dataset/geoflow-force-x0103-y0103",
+      "label": "Geoflow FORCE Level-2 input tile X0103_Y0103 (15 scenes, 1986-2006)",
+      "description": "Exact tested input for the Geoflow runs: 15 FORCE Level-2 scenes, each with BOA and QAI GeoTIFFs.",
+      "access_instructions_url": "https://github.com/YagmurKati/geoflow-kubernetes-vivo-metadata/blob/main/docs/INPUT_DATA.md",
+      "checksum_manifest_url": "https://github.com/YagmurKati/geoflow-kubernetes-vivo-metadata/blob/main/data/X0103_Y0103/SHA256SUMS",
+      "upstream_source_url": "https://www.usgs.gov/landsat-missions/landsat-data-access",
+      "format_documentation_url": "https://force-eo.readthedocs.io/en/latest/components/lower-level/level2/format.html",
+      "storage_location": "FONDA Kubernetes persistent storage: /workspace/input/X0103_Y0103",
+      "access_statement": "The exact FORCE-derived BOA and QAI files are not distributed by this repository. The access guide and checksum manifest document the tested copy.",
+      "link_to_workflow": true,
+      "link_to_run": true
+    }
+  ]
+}

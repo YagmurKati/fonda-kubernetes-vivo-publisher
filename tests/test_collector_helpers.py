@@ -11,11 +11,59 @@ from collector.collect_nextflow_run_metadata import (
     PodMetrics,
     TaskRecord,
     build_ttl,
+    classify_stage,
     commit_url,
+    derive_status,
+    group_tasks,
     load_input_datasets,
     resolve_electricity_maps_latest_intensity,
     resolve_output_path,
 )
+
+
+def task_record(name: str, status: str, second: int) -> TaskRecord:
+    submit = datetime(2026, 8, 25, 18, 0, second, tzinfo=timezone.utc)
+    return TaskRecord(
+        task_id=str(second),
+        hash_value=f"aa/{second}",
+        pod_name=f"nf-{second}",
+        name=name,
+        status=status,
+        exit_code=0 if status == "COMPLETED" else 1,
+        submit=submit,
+        duration_seconds=1.0,
+        realtime_seconds=1.0,
+        end=submit + timedelta(seconds=1),
+    )
+
+
+class WorkflowStatusAndGroupingTests(unittest.TestCase):
+    def test_retried_failure_is_a_success_with_warnings(self) -> None:
+        tasks = [
+            task_record("process (sample)", "FAILED", 1),
+            task_record("process (sample)", "COMPLETED", 2),
+        ]
+        self.assertEqual(
+            derive_status(tasks, True, workflow_succeeded=True),
+            "Succeeded with warnings",
+        )
+
+    def test_terminal_workflow_failure_remains_failed(self) -> None:
+        tasks = [task_record("process (sample)", "FAILED", 1)]
+        self.assertEqual(derive_status(tasks, True), "Failed")
+
+    def test_nextflow_tags_do_not_create_thousands_of_stages(self) -> None:
+        tasks = [
+            task_record("higherLevel:processPyramid (X0103_Y0101)", "FAILED", 1),
+            task_record("higherLevel:processPyramid (X0111_Y0103)", "COMPLETED", 2),
+        ]
+        self.assertEqual(
+            classify_stage(tasks[0].name),
+            ("higherlevel-processpyramid", "HigherLevel / processPyramid"),
+        )
+        groups = group_tasks(tasks)
+        self.assertEqual(len(groups), 1)
+        self.assertEqual(len(groups[0]["tasks"]), 2)
 
 
 class CommitUrlTests(unittest.TestCase):
