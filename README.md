@@ -1,4 +1,4 @@
-# FONDA Kubernetes run publisher for VIVO
+# FONDA Kubernetes workflow-run publisher for VIVO
 
 Publish metadata from supported workflow runs on the FONDA Kubernetes cluster
 directly to [FONDA VIVO](https://vivo-fonda.hu-berlin.de/vivo/runs). Tested
@@ -31,18 +31,18 @@ Do not use or share the VIVO administrator account. See
 ## Tested workflow profiles
 
 The collector and publisher code is shared. Each workflow has a separate
-configuration profile because its namespace, PVC, trace paths, source
-repository, input data, and VIVO links differ.
+configuration profile because its workflow engine, execution-evidence paths,
+source repository, input data, and VIVO links differ.
 
-| Workflow | Tested result | Profile |
-| --- | --- | --- |
-| Geoflow annual land-cover mapping | Successful Kubernetes run and VIVO publication | [Geoflow profile](examples/geoflow/README.md) |
-| FORCE2NXF rangeland workflow | Successful resumed run: 3,092 trace rows, 2,796 cached tasks, and 32 retry attempts | [FORCE2NXF profile](examples/force2nxf/README.md) |
-| A2 MG-4 metagenomic read mapping | Successful Snakemake reproduction: six resumable Kubernetes attempts and HTTP 200 VIVO publication | [A2 MG-4 profile](examples/a2-mg4/README.md) |
+| Workflow | Workflow engine | Tested result | Profile |
+| --- | --- | --- | --- |
+| Geoflow annual land-cover mapping | Nextflow | Successful Kubernetes run and VIVO publication | [Geoflow profile](examples/geoflow/README.md) |
+| FORCE2NXF rangeland workflow | Nextflow | Successful resumed run: 3,092 trace rows, 2,796 cached tasks, and 32 retry attempts | [FORCE2NXF profile](examples/force2nxf/README.md) |
+| A2 MG-4 metagenomic read mapping | Snakemake | Successful reproduction: six resumable Kubernetes attempts and HTTP 200 VIVO publication | [A2 MG-4 profile](examples/a2-mg4/README.md) |
 
-Nextflow task tags such as tile or sample identifiers are aggregated under the
-real process name. This keeps large FORCE2NXF RDF files compact while the
-metrics audit retains the task-level evidence.
+For the Nextflow profiles, task tags such as tile or sample identifiers are
+aggregated under the real process name. This keeps large FORCE2NXF RDF files
+compact while the metrics audit retains the task-level evidence.
 
 ## Five-minute setup
 
@@ -73,7 +73,8 @@ confirm:
 - `NS`, `PVC_NAME`;
 - `WORKFLOW_NAME`, `WORKFLOW_URI`;
 - `WORKFLOW_REPO_URL`, `CODE_URI`;
-- the trace, console-log, debug-log, and code paths when your layout differs.
+- the engine-specific evidence paths and selectors documented by the selected
+  profile.
 
 Store credentials with hidden terminal prompts:
 
@@ -107,8 +108,8 @@ non-dry-run publication for the same run ID is refused unless
 `FORCE_REPUBLISH=1` is deliberately set after reviewing the existing VIVO
 record.
 
-For a resumed run, include metrics from the original pods of cached tasks when
-those metrics are still retained:
+For a resumed Nextflow run, include metrics from the original pods of cached
+tasks when those metrics are still retained:
 
 ```bash
 INCLUDE_CACHED_ORIGIN_METRICS=1 ./scripts/publish-run.sh my-run-01-resume
@@ -118,14 +119,16 @@ INCLUDE_CACHED_ORIGIN_METRICS=1 ./scripts/publish-run.sh my-run-01-resume
 
 ```bash
 RUN_ID="my-run-01"
-./your-existing-nextflow-run-command "$RUN_ID" && \
+./your-existing-workflow-command "$RUN_ID" && \
   ./scripts/publish-run.sh "$RUN_ID"
 ```
 
 Publication starts only when the workflow command exits successfully. A VIVO
 outage does not rerun the scientific workflow; rerun only `publish-run.sh`.
 
-## Required Nextflow files
+## Engine-specific execution evidence
+
+### Nextflow profiles
 
 For one `RUN_ID`, the default configuration expects:
 
@@ -139,20 +142,25 @@ For one `RUN_ID`, the default configuration expects:
 The trace must include `task_id`, `hash`, `native_id`, `name`, `status`, and
 `submit`. See [Adapting a Nextflow workflow](docs/ADAPT_NEXTFLOW.md).
 
-The MG-4 Snakemake profile instead discovers terminal attempt Pods through the
-read-only Kubernetes API and verifies the run marker, provenance, checksum,
-and final SAM output on the PVC. See the
+### Snakemake MG-4 profile
+
+The MG-4 profile discovers terminal workflow-attempt Pods through the read-only
+Kubernetes API and verifies the run marker, provenance, checksum, and final SAM
+output on the PVC. See the
 [A2 MG-4 profile](examples/a2-mg4/README.md).
 
 ## Output and verification
 
-On success the command prints paths like:
+For the Nextflow profiles, a successful command prints paths like:
 
 ```text
 /workspace/vivo-outbox/my-run-01-20260825T144622Z.ttl
 /workspace/vivo-outbox/my-run-01-20260825T144622Z.metrics.json
 /workspace/vivo-outbox/my-run-01-20260825T144622Z.published.json
 ```
+
+The MG-4 profile writes the same three artifact types under
+`RUN_ROOT/vivo-outbox`.
 
 It also prints `HTTP 200`. Then open the
 [VIVO Runs page](https://vivo-fonda.hu-berlin.de/vivo/runs); allow a few seconds
