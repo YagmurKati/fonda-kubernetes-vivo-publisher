@@ -35,7 +35,7 @@ printf '%s\n' \
   'apiVersion: v1' \
   'kind: Secret' \
   'metadata:' \
-  '  name: fonda-vivo-credentials' \
+  "  name: $VIVO_CREDENTIALS_SECRET" \
   "  namespace: $NS" \
   'type: Opaque' \
   'data:' \
@@ -64,4 +64,5 @@ if [[ "$CARBON_SOURCE" == "electricity-maps-latest" ]]; then
   unset token token_b64
 fi
 
-printf 'Publisher credentials are stored in namespace %s.\n' "$NS"
+printf 'Publisher credentials are stored in Secret %s in namespace %s.\n' \
+  "$VIVO_CREDENTIALS_SECRET" "$NS"

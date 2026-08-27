@@ -4,7 +4,8 @@ metadata:
   name: __JOB_NAME__
   namespace: __NAMESPACE__
   labels:
-    app.kubernetes.io/name: fonda-kubernetes-vivo-publisher
+    app.kubernetes.io/name: fonda-vivo-snakemake-publisher
+    app.kubernetes.io/managed-by: fonda-kubernetes-vivo-publisher
     fonda.hu-berlin.de/run-id: "__RUN_ID_LABEL__"
 spec:
   backoffLimit: 0
@@ -13,7 +14,8 @@ spec:
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: fonda-kubernetes-vivo-publisher
+        app.kubernetes.io/name: fonda-vivo-snakemake-publisher
+        app.kubernetes.io/managed-by: fonda-kubernetes-vivo-publisher
         fonda.hu-berlin.de/run-id: "__RUN_ID_LABEL__"
     spec:
       serviceAccountName: __SERVICE_ACCOUNT__
@@ -26,12 +28,10 @@ spec:
           args:
             - |
               set -euo pipefail
-              trace_file="${TRACE_PATH_TEMPLATE/\{run_id\}/${RUN_ID}}"
-              console_log="${CONSOLE_LOG_PATH_TEMPLATE/\{run_id\}/${RUN_ID}}"
-              output_dir=/workspace/vivo-outbox
+              output_dir="${RUN_ROOT}/vivo-outbox"
               artifact_base="${RUN_ID}-${OUTPUT_STAMP}"
-              ttl_file="$output_dir/${artifact_base}.ttl"
-              receipt_file="$output_dir/${artifact_base}.published.json"
+              ttl_file="${output_dir}/${artifact_base}.ttl"
+              receipt_file="${output_dir}/${artifact_base}.published.json"
               mkdir -p "$output_dir"
 
               if [[ "$DRY_RUN" != "1" && "$FORCE_REPUBLISH" != "1" ]]; then
@@ -46,61 +46,10 @@ spec:
                 fi
               fi
 
-              test -r "$trace_file"
-              test -r "$console_log"
-              test -r "$DEBUG_LOG_PATH"
-              test -d "$CODE_PATH"
-
-              collector_args=(
-                python3 /opt/fonda-vivo/collector.py
-                --namespace "$NAMESPACE"
-                --trace-file "$trace_file"
-                --console-log-file "$console_log"
-                --debug-log-file "$DEBUG_LOG_PATH"
-                --trace-timezone "$TRACE_TIMEZONE"
-                --code-path "$CODE_PATH"
-                --workflow-name "$WORKFLOW_NAME"
-                --workflow-uri "$WORKFLOW_URI"
-                --workflow-repo-url "$WORKFLOW_REPO_URL"
-                --code-uri "$CODE_URI"
-                --publication-uri "$PUBLICATION_URI"
-                --trace-archive "$TRACE_ARCHIVE"
-                --application-domain-uri "$APPLICATION_DOMAIN_URI"
-                --run-operator-uri "$RUN_OPERATOR_URI"
-                --backend-uri "$BACKEND_URI"
-                --cluster-uri "$CLUSTER_URI"
-                --cluster-label "$CLUSTER_LABEL"
-                --engine-uri "$ENGINE_URI"
-                --prom-url "$PROM_URL"
-                --carbon-intensity-source "$CARBON_SOURCE"
-                --carbon-intensity "$CARBON_INTENSITY"
-                --electricity-maps-zone "$ELECTRICITY_MAPS_ZONE"
-                --input-metadata-file /opt/fonda-vivo/input_datasets.json
-                --base-uri "$BASE_URI"
-                --ontology-uri "$ONTOLOGY_URI"
+              python3 /opt/fonda-vivo/collector.py \
+                --run-id "$RUN_ID" \
+                --input-metadata-file /opt/fonda-vivo/input_datasets.json \
                 --output-file "$ttl_file"
-              )
-
-              if [[ -n "$GIT_COMMIT" ]]; then
-                collector_args+=(--git-commit "$GIT_COMMIT")
-              fi
-              if [[ "$INCLUDE_CACHED_ORIGIN_METRICS" == "1" ]]; then
-                collector_args+=(--include-cached-origin-metrics)
-              fi
-              IFS=',' read -r -a researcher_uris <<< "$RESPONSIBLE_RESEARCHER_URIS"
-              for uri in "${researcher_uris[@]}"; do
-                [[ -n "$uri" ]] && collector_args+=(--responsible-researcher-uri "$uri")
-              done
-              IFS=',' read -r -a subproject_uris <<< "$SUBPROJECT_URIS"
-              for uri in "${subproject_uris[@]}"; do
-                [[ -n "$uri" ]] && collector_args+=(--subproject-uri "$uri")
-              done
-              IFS=',' read -r -a language_uris <<< "$LANGUAGE_URIS"
-              for uri in "${language_uris[@]}"; do
-                [[ -n "$uri" ]] && collector_args+=(--language-uri "$uri")
-              done
-
-              "${collector_args[@]}"
 
               publisher_args=(
                 python3 /opt/fonda-vivo/publisher.py
@@ -125,8 +74,6 @@ spec:
               value: "__RUN_ID__"
             - name: OUTPUT_STAMP
               value: "__OUTPUT_STAMP__"
-            - name: INCLUDE_CACHED_ORIGIN_METRICS
-              value: "__INCLUDE_CACHED_ORIGIN_METRICS__"
             - name: DRY_RUN
               value: "__DRY_RUN__"
             - name: FORCE_REPUBLISH
@@ -147,6 +94,7 @@ spec:
               cpu: "1"
               memory: 2Gi
           securityContext:
+            allowPrivilegeEscalation: false
             runAsUser: 0
           volumeMounts:
             - name: workspace

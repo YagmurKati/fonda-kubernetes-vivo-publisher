@@ -8,9 +8,17 @@ need_command python3
 load_config
 require_namespace
 
+if [[ "$WORKFLOW_ENGINE" == "snakemake-mg4" ]]; then
+  sed \
+    -e "s/__NAMESPACE__/$NS/g" \
+    -e "s/__SERVICE_ACCOUNT__/$SERVICE_ACCOUNT/g" \
+    "$ROOT_DIR/k8s/snakemake-reader-rbac.yaml" |
+    kubectl apply -f -
+fi
+
 kubectl -n "$NS" get pvc "$PVC_NAME" >/dev/null
 kubectl -n "$NS" get serviceaccount "$SERVICE_ACCOUNT" >/dev/null
-kubectl -n "$NS" get secret fonda-vivo-credentials >/dev/null
+kubectl -n "$NS" get secret "$VIVO_CREDENTIALS_SECRET" >/dev/null
 if [[ "$CARBON_SOURCE" == "electricity-maps-latest" ]]; then
   kubectl -n "$NS" get secret electricity-maps-api-token >/dev/null
 fi
@@ -22,22 +30,46 @@ if grep -Eqi 'replace-me|Replace with' "$input_file"; then
   die "Replace all placeholders in $input_file or use an empty datasets list"
 fi
 
+code_args=(
+  --from-file=publisher.py="$ROOT_DIR/publisher/publish_vivo.py"
+  --from-file=input_datasets.json="$input_file"
+)
+if [[ "$WORKFLOW_ENGINE" == "snakemake-mg4" ]]; then
+  code_args+=(
+    --from-file=collector.py="$ROOT_DIR/collector/collect_snakemake_kubernetes_metadata.py"
+    --from-file=collector_core.py="$ROOT_DIR/collector/collect_nextflow_run_metadata.py"
+  )
+else
+  code_args+=(
+    --from-file=collector.py="$ROOT_DIR/collector/collect_nextflow_run_metadata.py"
+  )
+fi
+
 kubectl -n "$NS" create configmap fonda-vivo-publisher-code \
-  --from-file=collector.py="$ROOT_DIR/collector/collect_nextflow_run_metadata.py" \
-  --from-file=publisher.py="$ROOT_DIR/publisher/publish_vivo.py" \
-  --from-file=input_datasets.json="$input_file" \
-  --dry-run=client -o yaml |
+  "${code_args[@]}" --dry-run=client -o yaml |
   kubectl -n "$NS" apply -f -
 
-setting_names=(
-  TRACE_PATH_TEMPLATE CONSOLE_LOG_PATH_TEMPLATE DEBUG_LOG_PATH CODE_PATH
-  TRACE_TIMEZONE WORKFLOW_NAME WORKFLOW_URI WORKFLOW_REPO_URL CODE_URI
-  GIT_COMMIT PUBLICATION_URI TRACE_ARCHIVE RESPONSIBLE_RESEARCHER_URIS
-  SUBPROJECT_URIS LANGUAGE_URIS APPLICATION_DOMAIN_URI RUN_OPERATOR_URI
-  BACKEND_URI CLUSTER_URI CLUSTER_LABEL ENGINE_URI PROM_URL CARBON_SOURCE
-  CARBON_INTENSITY ELECTRICITY_MAPS_ZONE BASE_URI ONTOLOGY_URI
-  VIVO_ENDPOINT VIVO_GRAPH
-)
+if [[ "$WORKFLOW_ENGINE" == "snakemake-mg4" ]]; then
+  setting_names=(
+    RUN_ROOT CODE_PATH POD_LABEL_SELECTOR FALLBACK_RUN_ID JOB_NAME_REGEX WORKFLOW_NAME
+    WORKFLOW_URI WORKFLOW_REPO_URL CODE_URI PUBLICATION_URI TRACE_ARCHIVE
+    RESPONSIBLE_RESEARCHER_URIS SUBPROJECT_URIS LANGUAGE_URIS
+    APPLICATION_DOMAIN_URI RUN_OPERATOR_URI BACKEND_URI CLUSTER_URI
+    CLUSTER_LABEL ENGINE_URI PROM_URL CARBON_SOURCE CARBON_INTENSITY
+    ELECTRICITY_MAPS_ZONE ALLOW_MISSING_METRICS BASE_URI ONTOLOGY_URI
+    VIVO_ENDPOINT VIVO_GRAPH
+  )
+else
+  setting_names=(
+    TRACE_PATH_TEMPLATE CONSOLE_LOG_PATH_TEMPLATE DEBUG_LOG_PATH CODE_PATH
+    TRACE_TIMEZONE WORKFLOW_NAME WORKFLOW_URI WORKFLOW_REPO_URL CODE_URI
+    GIT_COMMIT PUBLICATION_URI TRACE_ARCHIVE RESPONSIBLE_RESEARCHER_URIS
+    SUBPROJECT_URIS LANGUAGE_URIS APPLICATION_DOMAIN_URI RUN_OPERATOR_URI
+    BACKEND_URI CLUSTER_URI CLUSTER_LABEL ENGINE_URI PROM_URL CARBON_SOURCE
+    CARBON_INTENSITY ELECTRICITY_MAPS_ZONE BASE_URI ONTOLOGY_URI
+    VIVO_ENDPOINT VIVO_GRAPH
+  )
+fi
 settings_args=()
 for setting_name in "${setting_names[@]}"; do
   settings_args+=("--from-literal=${setting_name}=${!setting_name}")

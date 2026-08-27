@@ -1,0 +1,41 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: __SERVICE_ACCOUNT__
+  namespace: __NAMESPACE__
+  labels:
+    app.kubernetes.io/name: fonda-vivo-snakemake-reader
+    app.kubernetes.io/managed-by: fonda-kubernetes-vivo-publisher
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: __SERVICE_ACCOUNT__
+  namespace: __NAMESPACE__
+  labels:
+    app.kubernetes.io/name: fonda-vivo-snakemake-reader
+    app.kubernetes.io/managed-by: fonda-kubernetes-vivo-publisher
+rules:
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list"]
+  - apiGroups: ["batch"]
+    resources: ["jobs"]
+    verbs: ["get", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: __SERVICE_ACCOUNT__
+  namespace: __NAMESPACE__
+  labels:
+    app.kubernetes.io/name: fonda-vivo-snakemake-reader
+    app.kubernetes.io/managed-by: fonda-kubernetes-vivo-publisher
+subjects:
+  - kind: ServiceAccount
+    name: __SERVICE_ACCOUNT__
+    namespace: __NAMESPACE__
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: __SERVICE_ACCOUNT__

@@ -56,9 +56,6 @@ load_config() {
   : "${NS:?Set NS in config/publisher.env}"
   : "${PVC_NAME:?Set PVC_NAME in config/publisher.env}"
   : "${SERVICE_ACCOUNT:?Set SERVICE_ACCOUNT in config/publisher.env}"
-  : "${TRACE_PATH_TEMPLATE:?Set TRACE_PATH_TEMPLATE}"
-  : "${CONSOLE_LOG_PATH_TEMPLATE:?Set CONSOLE_LOG_PATH_TEMPLATE}"
-  : "${DEBUG_LOG_PATH:?Set DEBUG_LOG_PATH}"
   : "${CODE_PATH:?Set CODE_PATH}"
   : "${WORKFLOW_NAME:?Set WORKFLOW_NAME}"
   : "${WORKFLOW_URI:?Set WORKFLOW_URI}"
@@ -72,7 +69,26 @@ load_config() {
   : "${VIVO_ENDPOINT:?Set VIVO_ENDPOINT}"
   : "${VIVO_GRAPH:?Set VIVO_GRAPH}"
 
+  WORKFLOW_ENGINE="${WORKFLOW_ENGINE:-nextflow}"
+  case "$WORKFLOW_ENGINE" in
+    nextflow)
+      : "${TRACE_PATH_TEMPLATE:?Set TRACE_PATH_TEMPLATE}"
+      : "${CONSOLE_LOG_PATH_TEMPLATE:?Set CONSOLE_LOG_PATH_TEMPLATE}"
+      : "${DEBUG_LOG_PATH:?Set DEBUG_LOG_PATH}"
+      ;;
+    snakemake-mg4)
+      : "${RUN_ROOT:?Set RUN_ROOT}"
+      : "${POD_LABEL_SELECTOR:?Set POD_LABEL_SELECTOR}"
+      : "${FALLBACK_RUN_ID:?Set FALLBACK_RUN_ID}"
+      : "${JOB_NAME_REGEX:?Set JOB_NAME_REGEX}"
+      ;;
+    *)
+      die "WORKFLOW_ENGINE must be nextflow or snakemake-mg4"
+      ;;
+  esac
+
   TRACE_TIMEZONE="${TRACE_TIMEZONE:-UTC}"
+  VIVO_CREDENTIALS_SECRET="${VIVO_CREDENTIALS_SECRET:-fonda-vivo-credentials}"
   WORKFLOW_REPO_URL="${WORKFLOW_REPO_URL:-}"
   CODE_URI="${CODE_URI:-}"
   GIT_COMMIT="${GIT_COMMIT:-}"
@@ -87,14 +103,18 @@ load_config() {
   CLUSTER_LABEL="${CLUSTER_LABEL:-FONDA Kubernetes Cluster}"
   CARBON_INTENSITY="${CARBON_INTENSITY:-0.4}"
   ELECTRICITY_MAPS_ZONE="${ELECTRICITY_MAPS_ZONE:-DE}"
+  ALLOW_MISSING_METRICS="${ALLOW_MISSING_METRICS:-0}"
 
   validate_dns_name "$NS" "NS"
   validate_dns_name "$PVC_NAME" "PVC_NAME"
   validate_dns_name "$SERVICE_ACCOUNT" "SERVICE_ACCOUNT"
-  [[ "$TRACE_PATH_TEMPLATE" == *'{run_id}'* ]] ||
-    die "TRACE_PATH_TEMPLATE must contain {run_id}"
-  [[ "$CONSOLE_LOG_PATH_TEMPLATE" == *'{run_id}'* ]] ||
-    die "CONSOLE_LOG_PATH_TEMPLATE must contain {run_id}"
+  validate_dns_name "$VIVO_CREDENTIALS_SECRET" "VIVO_CREDENTIALS_SECRET"
+  if [[ "$WORKFLOW_ENGINE" == "nextflow" ]]; then
+    [[ "$TRACE_PATH_TEMPLATE" == *'{run_id}'* ]] ||
+      die "TRACE_PATH_TEMPLATE must contain {run_id}"
+    [[ "$CONSOLE_LOG_PATH_TEMPLATE" == *'{run_id}'* ]] ||
+      die "CONSOLE_LOG_PATH_TEMPLATE must contain {run_id}"
+  fi
   [[ "$WORKFLOW_NAME" != *REPLACE_ME* ]] || die "Replace WORKFLOW_NAME"
   [[ "$NS" != *REPLACE_ME* ]] || die "Replace NS"
   [[ "$PVC_NAME" != *REPLACE_ME* ]] || die "Replace PVC_NAME"
@@ -123,6 +143,8 @@ load_config() {
   [[ "$CARBON_SOURCE" == "electricity-maps-latest" ||
      "$CARBON_SOURCE" == "fixed" ]] ||
     die "CARBON_SOURCE must be electricity-maps-latest or fixed"
+  [[ "$ALLOW_MISSING_METRICS" == "0" || "$ALLOW_MISSING_METRICS" == "1" ]] ||
+    die "ALLOW_MISSING_METRICS must be 0 or 1"
   [[ -z "$GIT_COMMIT" || "$GIT_COMMIT" =~ ^[0-9a-fA-F]{40}$ ]] ||
     die "GIT_COMMIT must be empty or a 40-character commit SHA"
 }

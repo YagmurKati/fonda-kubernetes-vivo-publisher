@@ -31,8 +31,9 @@ Do not ask users to invent duplicate Person or Subproject resources.
 
 ## Kubernetes boundary
 
-The repository creates only Secrets, ConfigMaps, and Jobs in the user's own
-namespace. It does not require cluster administrator rights.
+The repository creates only Secrets, ConfigMaps, Jobs, and—where a trace
+adapter needs Kubernetes discovery—namespace-scoped read-only RBAC in the
+user's own namespace. It does not require cluster administrator rights.
 
 The collector attempts to read Kubernetes Node metadata. If the selected
 service account cannot read Nodes, it logs a warning and omits node hardware

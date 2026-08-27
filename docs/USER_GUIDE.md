@@ -29,6 +29,10 @@ cp examples/geoflow/input_datasets.json config/input_datasets.json
 # OR: FORCE2NXF
 cp examples/force2nxf/publisher.env.example config/publisher.env
 cp examples/force2nxf/input_datasets.json config/input_datasets.json
+
+# OR: A2 MG-4 (Snakemake)
+cp examples/a2-mg4/publisher.env.example config/publisher.env
+cp examples/a2-mg4/input_datasets.json config/input_datasets.json
 ```
 
 Edit `config/publisher.env` and replace every `REPLACE_ME` value. Values ending
@@ -55,7 +59,7 @@ Confirm only the Secret names and keys:
 
 ```bash
 source config/publisher.env
-kubectl -n "$NS" get secret fonda-vivo-credentials
+kubectl -n "$NS" get secret "$VIVO_CREDENTIALS_SECRET"
 kubectl -n "$NS" get secret electricity-maps-api-token
 ```
 
@@ -68,8 +72,9 @@ Do not decode or paste Secret values into support messages.
 ```
 
 This checks the namespace, PVC, service account, configuration, JSON input
-metadata, and Secrets. It creates namespace-scoped ConfigMaps only. It does not
-run the workflow or publish RDF.
+metadata, and Secrets. It creates namespace-scoped ConfigMaps. The MG-4 profile
+also applies publisher-owned, read-only Pod/Job RBAC. It does not run the
+workflow or publish RDF.
 
 ## 5. Run and publish
 
@@ -89,6 +94,12 @@ Receipt: ...published.json
 ```
 
 No additional upload is needed.
+
+Validate collection and RDF generation without contacting VIVO:
+
+```bash
+./scripts/publish-run.sh RUN_ID --dry-run
+```
 
 For a resumed Nextflow run, include cached-origin metrics when Prometheus still
 retains them:
@@ -112,9 +123,9 @@ the PVC together.
 - Missing trace/log: correct the paths in `config/publisher.env`, then rerun
   `publish-run.sh`.
 - VIVO or network failure: rerun `publish-run.sh`; do not rerun the workflow.
-- An identical completed artifact has a receipt and is not sent twice unless
-  the publisher is explicitly forced.
-- A new collection gets a new timestamp and new audit/receipt files.
+- A run ID with an existing successful receipt is not sent twice unless
+  `FORCE_REPUBLISH=1` is deliberately set after reviewing the VIVO record.
+- A dry run gets a new timestamped TTL and audit but no receipt or VIVO write.
 
 VIVO stores RDF triples, not the source filename. Removal must be performed by
 the VIVO administrator using the exact preserved TTL/audit and a run-scoped RDF

@@ -1382,8 +1382,9 @@ def source_files(path: Path) -> List[Path]:
         ".json",
         ".yaml",
         ".yml",
+        ".smk",
     }
-    allowed_names = {"Dockerfile", "environment.yml"}
+    allowed_names = {"Dockerfile", "Snakefile", "environment.yml"}
     ignored_dirs = {
         ".git",
         ".nextflow",
@@ -1755,6 +1756,7 @@ def build_ttl(
     language_uris: Sequence[str],
     input_datasets: Sequence[InputDatasetMetadata],
 ) -> Tuple[str, Dict[str, Any]]:
+    engine_label = getattr(args, "engine_label", "Nextflow")
     base_uri = args.base_uri.rstrip("/") + "/"
     ontology_uri = (
         args.ontology_uri
@@ -1762,7 +1764,8 @@ def build_ttl(
         else args.ontology_uri + "#"
     )
     session_key = (
-        log_metadata.get("session_id")
+        log_metadata.get("run_id")
+        or log_metadata.get("session_id")
         or f"{run_start.isoformat()}-{run_end.isoformat()}"
     )
     run_slug = slugify(
@@ -1827,10 +1830,14 @@ def build_ttl(
             stage_end = max(
                 (task.end or run_end) for task in timed_stage_tasks
             )
+        stage_has_success = any(
+            task.status in {"COMPLETED", "CACHED"} for task in stage_tasks
+        )
         stage_status = derive_status(
             stage_tasks,
             True,
-            run_status in {"Succeeded", "Succeeded with warnings"},
+            stage_has_success
+            and run_status in {"Succeeded", "Succeeded with warnings"},
         )
         stage_pods = unique(
             task.pod_name
@@ -1900,8 +1907,8 @@ def build_ttl(
         [
             ("rdf:type", "rm:WorkflowEngine"),
             ("rdf:type", "vivo:InformationResource"),
-            ("rdfs:label", ttl_label("Nextflow")),
-            ("dcterms:title", ttl_label("Nextflow")),
+            ("rdfs:label", ttl_label(engine_label)),
+            ("dcterms:title", ttl_label(engine_label)),
             # reverse link -> engine page's "workflows" list
             ("rm:hasWorkflow", ttl_uri(workflow_uri)),
         ],
@@ -1951,6 +1958,11 @@ def build_ttl(
         # Workflow OR Workflow Run in VIVO)
         ("rm:computeCluster", ttl_uri(cluster_uri)),
     ]
+    workflow_description = getattr(args, "workflow_description", "")
+    if workflow_description:
+        workflow_predicates.append(
+            ("dcterms:description", ttl_label(workflow_description))
+        )
     if args.code_uri:
         workflow_predicates.append(
             ("rm:workflowCodeLink", ttl_literal(args.code_uri, "xsd:anyURI"))
@@ -2047,8 +2059,12 @@ def build_ttl(
         (
             "rm:durationCalculationMethod",
             ttl_literal(
-                "Wall-clock time from the first to last timestamp in the "
-                "Nextflow debug log, with trace timestamps as a fallback."
+                getattr(
+                    args,
+                    "duration_calculation_method",
+                    "Wall-clock time from the first to last timestamp in the "
+                    "Nextflow debug log, with trace timestamps as a fallback.",
+                )
             ),
         ),
         (
@@ -2064,7 +2080,7 @@ def build_ttl(
         ),
         (
             "rm:jobName",
-            ttl_literal(log_metadata.get("run_name") or "geoflow"),
+            ttl_literal(log_metadata.get("run_name") or args.workflow_name),
         ),
         (
             "rm:taskCount",
@@ -2099,11 +2115,15 @@ def build_ttl(
         (
             "rm:resourceAccountingScope",
             ttl_literal(
-                (
-                    "Current Nextflow execution plus origin pods for tasks "
-                    "reused from the Nextflow cache."
-                    if args.include_cached_origin_metrics
-                    else "Pods executed by the current Nextflow execution."
+                getattr(
+                    args,
+                    "resource_accounting_scope",
+                    (
+                        "Current Nextflow execution plus origin pods for tasks "
+                        "reused from the Nextflow cache."
+                        if args.include_cached_origin_metrics
+                        else "Pods executed by the current Nextflow execution."
+                    ),
                 )
             ),
         ),
@@ -2122,6 +2142,11 @@ def build_ttl(
         ("rm:traceTypes", ttl_literal(args.trace_types)),
         ("rm:traceDataFormat", ttl_literal(args.trace_data_format)),
     ]
+    run_description = getattr(args, "run_description", "")
+    if run_description:
+        run_predicates.append(
+            ("dcterms:description", ttl_label(run_description))
+        )
     if args.backend_uri:
         run_predicates.append(("rm:backend", ttl_uri(args.backend_uri)))
     if args.trace_archive:
@@ -2139,7 +2164,7 @@ def build_ttl(
         run_predicates.append(
             ("rm:runOperator", ttl_uri(args.run_operator_uri))
         )
-    if log_metadata.get("session_id"):
+    if engine_label.lower() == "nextflow" and log_metadata.get("session_id"):
         run_predicates.append(
             (
                 "rm:nextflowSessionId",
@@ -2405,8 +2430,12 @@ def build_ttl(
             (
                 "rm:parallelismNote",
                 ttl_literal(
-                    "CPU time can exceed wall-clock duration because "
-                    "Nextflow tasks execute concurrently."
+                    getattr(
+                        args,
+                        "parallelism_note",
+                        "CPU time can exceed wall-clock duration when "
+                        f"{engine_label} tasks execute concurrently.",
+                    )
                 ),
             )
         )
@@ -2437,6 +2466,16 @@ def build_ttl(
         "include_cached_origin_metrics": (
             args.include_cached_origin_metrics
         ),
+        "engine": {
+            "label": engine_label,
+            "session_id": log_metadata.get("session_id"),
+            "run_name": log_metadata.get("run_name"),
+            "version": (
+                log_metadata.get("engine_version")
+                or log_metadata.get("nextflow_version")
+            ),
+            "failure_reason": log_metadata.get("failure_reason"),
+        },
         "nextflow": {
             "session_id": log_metadata.get("session_id"),
             "run_name": log_metadata.get("run_name"),

@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "datasets": [
+    {
+      "uri": "http://example.org/vivo-import/run-metadata/input-dataset/mg4-raptor-simulated-4-bin-smoke-20260826",
+      "label": "Raptor-simulated MG-4 four-bin smoke dataset (2026-08-26)",
+      "description": "Deterministically generated smoke-scale input for the FONDA MG-4 workflow: four genomic bins, two read shards, a 1 MiB reference, 3,200 reads of length 150, five simulated errors, four haplotypes, SNP rate 0.01, and small-indel rate 0.001.",
+      "access_instructions_url": "https://github.com/eseiler/raptor_data_simulation/blob/master/README.md",
+      "upstream_source_url": "https://github.com/eseiler/raptor_data_simulation",
+      "format_documentation_url": "https://github.com/CRC-FONDA/A2-job-granularity/blob/main/simulation_config.yaml",
+      "storage_location": "User-controlled FONDA shared PVC; configure the private path in publisher.env",
+      "access_statement": "The generated tested copy is retained in the user's FONDA Kubernetes namespace and is not published in this repository. It can be regenerated from the pinned simulator and parameters documented by the reproduction example.",
+      "link_to_workflow": true,
+      "link_to_run": true
+    }
+  ]
+}
