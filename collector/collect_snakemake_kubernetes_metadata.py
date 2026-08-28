@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-"""Collect VIVO-ready metadata for the resumable MG-4 Kubernetes run."""
+"""Collect VIVO-ready metadata for supported Snakemake Kubernetes runs."""
 
 from __future__ import annotations
 
 import argparse
+import gzip
 import json
 import os
 import re
@@ -36,6 +37,15 @@ def csv_env(name: str) -> List[str]:
         for value in os.environ.get(name, "").split(",")
         if value.strip()
     ]
+
+
+def snakemake_profile() -> str:
+    profile = required_env("SNAKEMAKE_PROFILE").lower()
+    if profile not in {"mg4", "popinsnake"}:
+        raise RuntimeError(
+            "SNAKEMAKE_PROFILE must be either 'mg4' or 'popinsnake'"
+        )
+    return profile
 
 
 def parse_time(value: str) -> datetime:
@@ -127,7 +137,7 @@ def select_attempt_pods(
         ]
     if not selected:
         raise RuntimeError(
-            f"No MG-4 attempt Pods matched run {run_id!r}; "
+            f"No Snakemake attempt Pods matched run {run_id!r}; "
             f"selector={selector!r}"
         )
     return selected
@@ -177,7 +187,7 @@ def read_tsv(path: Path) -> Dict[str, str]:
     return result
 
 
-def read_result_metadata(run_root: Path) -> Dict[str, Any]:
+def read_mg4_result_metadata(run_root: Path) -> Dict[str, Any]:
     output_path = run_root / "source/MG-4-yagmur/mapped_reads/all_sorted.sam"
     completed_path = run_root / "RUN_COMPLETED"
     if (
@@ -219,22 +229,144 @@ def read_result_metadata(run_root: Path) -> Dict[str, Any]:
     }
 
 
+def sha256_from_manifest(path: Path, filename_suffix: str) -> str:
+    if not path.is_file():
+        raise RuntimeError(f"Checksum manifest is missing: {path}")
+    for line in path.read_text(encoding="utf-8").splitlines():
+        fields = line.split(maxsplit=1)
+        if len(fields) == 2 and fields[1].lstrip("*").endswith(filename_suffix):
+            digest = fields[0].lower()
+            if re.fullmatch(r"[0-9a-f]{64}", digest):
+                return digest
+    raise RuntimeError(
+        f"Could not identify the SHA-256 for {filename_suffix} in {path}"
+    )
+
+
+def read_optional_text(path: Path) -> str:
+    return path.read_text(encoding="utf-8").strip() if path.is_file() else ""
+
+
+def read_popinsnake_result_metadata(run_root: Path) -> Dict[str, Any]:
+    status_path = run_root / "RUN_STATUS"
+    output_path = run_root / "results/insertions_genotypes.vcf.gz"
+    provenance_dir = run_root / "provenance"
+    if read_optional_text(status_path) != "COMPLETED":
+        raise RuntimeError("The PopinSnake RUN_STATUS marker is not COMPLETED")
+    if not output_path.is_file() or output_path.stat().st_size == 0:
+        raise RuntimeError(
+            "The PopinSnake run has no completed, non-empty final VCF output"
+        )
+
+    variant_count = 0
+    samples: List[str] = []
+    try:
+        with gzip.open(output_path, "rt", encoding="utf-8") as handle:
+            for line in handle:
+                if line.startswith("#CHROM\t"):
+                    samples = line.rstrip("\n").split("\t")[9:]
+                elif not line.startswith("#"):
+                    variant_count += 1
+    except (OSError, UnicodeError) as exc:
+        raise RuntimeError(f"The final PopinSnake VCF is invalid: {exc}") from exc
+    if not samples:
+        raise RuntimeError("The final PopinSnake VCF has no sample header")
+
+    workflow_commit = read_optional_text(
+        provenance_dir / "workflow-commit.txt"
+    )
+    if not re.fullmatch(r"[0-9a-f]{40}", workflow_commit):
+        raise RuntimeError(
+            "PopinSnake provenance has no valid upstream workflow commit"
+        )
+    output_sha = sha256_from_manifest(
+        provenance_dir / "result-SHA256SUMS",
+        "/results/insertions_genotypes.vcf.gz",
+    )
+    result_files = []
+    for path in sorted((run_root / "results").iterdir()):
+        if path.is_file():
+            result_files.append(
+                {"name": path.name, "size_bytes": path.stat().st_size}
+            )
+
+    provenance = {
+        "workflow_commit": workflow_commit,
+        "snakemake": read_optional_text(
+            provenance_dir / "snakemake-version.txt"
+        ),
+        "micromamba": read_optional_text(
+            provenance_dir / "micromamba-version.txt"
+        ),
+        "samtools": read_optional_text(
+            provenance_dir / "samtools-version.txt"
+        ),
+        "submodules": read_optional_text(
+            provenance_dir / "submodule-status.txt"
+        ).splitlines(),
+        "compatibility_patch": read_optional_text(
+            provenance_dir / "compatibility.patch"
+        ),
+    }
+    return {
+        "completed_at": read_optional_text(provenance_dir / "completed-at.txt"),
+        "provenance": provenance,
+        "variant_record_count": variant_count,
+        "samples": samples,
+        "output_path": str(output_path),
+        "output_size_bytes": output_path.stat().st_size,
+        "output_sha256": output_sha,
+        "result_files": result_files,
+    }
+
+
+def read_result_metadata(run_root: Path, profile: str) -> Dict[str, Any]:
+    if profile == "mg4":
+        return read_mg4_result_metadata(run_root)
+    if profile == "popinsnake":
+        return read_popinsnake_result_metadata(run_root)
+    raise RuntimeError(f"Unsupported Snakemake profile: {profile}")
+
+
 def collector_args(
-    namespace: str, result: Dict[str, Any], attempt_count: int
+    namespace: str,
+    result: Dict[str, Any],
+    attempt_count: int,
+    profile: str,
 ) -> SimpleNamespace:
     failed_count = int(os.environ.get("FAILED_ATTEMPT_COUNT", "0"))
-    description = (
-        "Smoke-scale reproduction of the FONDA MG-4 workflow using "
-        "deterministic Raptor-simulated input. The resumable session used "
-        f"{attempt_count} Kubernetes Job attempts"
-        + (
-            f", including {failed_count} compatibility-debugging attempts"
-            if failed_count
-            else ""
-        )
-        + f", and produced {result['mapped_record_count']} SAM records. "
-        f"Final output SHA-256: {result['output_sha256']}."
+    failed_clause = (
+        f", including {failed_count} compatibility-debugging attempts"
+        if failed_count
+        else ""
     )
+    if profile == "mg4":
+        description = (
+            "Smoke-scale reproduction of the FONDA MG-4 workflow using "
+            "deterministic Raptor-simulated input. The resumable session used "
+            f"{attempt_count} Kubernetes Job attempts{failed_clause}, and "
+            f"produced {result['mapped_record_count']} SAM records. Final "
+            f"output SHA-256: {result['output_sha256']}."
+        )
+        resource_scope = (
+            "All Kubernetes workflow Pods in the resumable MG-4 session, "
+            "including earlier attempts that produced retained intermediates."
+        )
+    else:
+        description = (
+            "Reproduction of the FONDA PopinSnake genomic-insertion workflow "
+            "using the three example BAM samples and chromosome 21 reference "
+            "distributed by the upstream repository. The resumable session "
+            f"used {attempt_count} Kubernetes Job attempts{failed_clause}, and "
+            f"produced {result['variant_record_count']} VCF variant records "
+            f"for {len(result['samples'])} samples. Final output SHA-256: "
+            f"{result['output_sha256']}."
+        )
+        resource_scope = (
+            "All Kubernetes workflow Pods in the resumable PopinSnake "
+            "session, including earlier compatibility attempts and the final "
+            "successful attempt that reused retained intermediates."
+        )
     return SimpleNamespace(
         namespace=namespace,
         include_cached_origin_metrics=False,
@@ -259,22 +391,22 @@ def collector_args(
         engine_label="Snakemake",
         trace_types=(
             "Kubernetes Job and Pod status, container termination metadata, "
-            "Snakemake logs, provenance, and output checksums"
+            "Snakemake logs and summary, provenance, and output checksums"
         ),
-        trace_data_format="Kubernetes JSON, TSV, JSON, and plain text",
+        trace_data_format=(
+            "Kubernetes JSON, Snakemake text/TSV, JSON, and plain text"
+        ),
         workflow_description="",
         run_description=description,
         duration_calculation_method=(
             "Wall-clock time from the first container start to the final "
             "container completion across the resumable Kubernetes Job session."
         ),
-        resource_accounting_scope=(
-            "All Kubernetes workflow Pods in the resumable MG-4 session, "
-            "including earlier attempts that produced retained intermediates."
-        ),
+        resource_accounting_scope=resource_scope,
         parallelism_note=(
-            "Each recorded process is one Kubernetes Job attempt. CPU time is "
-            "measured independently of the session wall clock."
+            "Each recorded VIVO process is one Kubernetes Job attempt. The "
+            "scientific Snakemake rules run inside that Job container; CPU "
+            "time is measured independently of the session wall clock."
         ),
         carbon_intensity_source=os.environ.get("CARBON_SOURCE", "fixed"),
         carbon_intensity=float(os.environ.get("CARBON_INTENSITY", "0.4")),
@@ -326,8 +458,9 @@ def build_parser() -> argparse.ArgumentParser:
 def main() -> None:
     cli = build_parser().parse_args()
     namespace = required_env("NAMESPACE")
+    profile = snakemake_profile()
     run_root = Path(required_env("RUN_ROOT"))
-    result = read_result_metadata(run_root)
+    result = read_result_metadata(run_root, profile)
     tasks, pods = build_tasks(select_attempt_pods(namespace, cli.run_id))
     if not any(task.status == "COMPLETED" for task in tasks):
         raise RuntimeError("No successful Kubernetes attempt exists for this run")
@@ -336,7 +469,7 @@ def main() -> None:
     failed_tasks = [task for task in tasks if task.status == "FAILED"]
     os.environ["FAILED_ATTEMPT_COUNT"] = str(len(failed_tasks))
 
-    args = collector_args(namespace, result, len(tasks))
+    args = collector_args(namespace, result, len(tasks), profile)
     core.ensure_prometheus_reachable(args.prom_url)
     metric_names = core.prometheus_metric_names(args.prom_url)
     energy_metric = core.find_energy_metric(metric_names)
@@ -355,7 +488,7 @@ def main() -> None:
     )
     if not any_metrics and os.environ.get("ALLOW_MISSING_METRICS", "0") != "1":
         raise RuntimeError(
-            "Prometheus returned no retained metrics for the MG-4 Pods"
+            "Prometheus returned no retained metrics for the Snakemake Pods"
         )
 
     carbon_info = core.resolve_carbon_intensity(args, run_start, run_end)
@@ -364,16 +497,18 @@ def main() -> None:
     workflow_commit = result["provenance"].get("workflow_commit", "")
     if not re.fullmatch(r"[0-9a-f]{40}", workflow_commit):
         raise RuntimeError(
-            "provenance.tsv has no valid upstream workflow commit"
+            "The run provenance has no valid upstream workflow commit"
         )
 
+    stage_prefix = "MG-4" if profile == "mg4" else "PopinSnake"
     stages = []
     for index, task in enumerate(tasks, start=1):
-        suffix = task.name.rsplit("-v", 1)[-1]
+        suffix_match = re.search(r"(?:-v|-)([0-9]+)$", task.name)
+        suffix = suffix_match.group(1) if suffix_match else str(index)
         stages.append(
             {
                 "slug": f"kubernetes-attempt-{index}",
-                "label": f"MG-4 Kubernetes attempt v{suffix}",
+                "label": f"{stage_prefix} Kubernetes attempt {suffix}",
                 "tasks": [task],
             }
         )
@@ -415,10 +550,15 @@ def main() -> None:
         input_datasets=input_datasets,
     )
     audit["snakemake"] = {
+        "profile": profile,
         "version": result["provenance"].get("snakemake"),
         "workflow_commit": workflow_commit,
         "simulator_commit": result["provenance"].get("simulator_commit"),
         "dream_yara_commit": result["provenance"].get("dream_yara_commit"),
+        "submodules": result["provenance"].get("submodules"),
+        "compatibility_patch": result["provenance"].get(
+            "compatibility_patch"
+        ),
     }
     audit["result"] = result
     audit["kubernetes_attempts"] = [

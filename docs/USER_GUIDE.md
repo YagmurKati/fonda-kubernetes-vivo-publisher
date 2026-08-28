@@ -33,6 +33,9 @@ cp examples/force2nxf/input_datasets.json config/input_datasets.json
 # OR: A2 MG-4 (Snakemake)
 cp examples/a2-mg4/publisher.env.example config/publisher.env
 cp examples/a2-mg4/input_datasets.json config/input_datasets.json
+
+# OR: PopinSnake (Snakemake)
+cp examples/popinsnake/publisher.env.example config/popinsnake.publisher.env
 ```
 
 Edit `config/publisher.env` and replace every `REPLACE_ME` value. Values ending
@@ -72,9 +75,9 @@ Do not decode or paste Secret values into support messages.
 ```
 
 This checks the namespace, PVC, service account, configuration, JSON input
-metadata, and Secrets. It creates namespace-scoped ConfigMaps. The MG-4 profile
-also applies publisher-owned, read-only Pod/Job RBAC. It does not run the
-workflow or publish RDF.
+metadata, and Secrets. It creates namespace-scoped ConfigMaps. The Snakemake
+profiles also apply publisher-owned, read-only Pod/Job RBAC. It does not run
+the workflow or publish RDF.
 
 ## 5. Run and publish
 

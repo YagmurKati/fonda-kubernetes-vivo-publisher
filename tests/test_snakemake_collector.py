@@ -1,6 +1,10 @@
 import argparse
+import gzip
+import hashlib
+import tempfile
 import unittest
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 from unittest import mock
 
 from collector import collect_nextflow_run_metadata as core
@@ -69,6 +73,46 @@ class AdapterTests(unittest.TestCase):
                 RuntimeError, "legacy fallback is restricted"
             ):
                 adapter.select_attempt_pods("test-namespace", "new-run")
+
+    def test_reads_completed_popinsnake_vcf_and_provenance(self):
+        with tempfile.TemporaryDirectory() as directory:
+            run_root = Path(directory)
+            results = run_root / "results"
+            provenance = run_root / "provenance"
+            results.mkdir()
+            provenance.mkdir()
+            (run_root / "RUN_STATUS").write_text(
+                "COMPLETED\n", encoding="utf-8"
+            )
+            vcf = results / "insertions_genotypes.vcf.gz"
+            with gzip.open(vcf, "wt", encoding="utf-8") as handle:
+                handle.write("##fileformat=VCFv4.2\n")
+                handle.write(
+                    "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT"
+                    "\tS0001\tS0002\tS0003\n"
+                )
+                handle.write("chr21\t42\t.\tN\t<INS>\t.\tPASS\t.\tGT\t0/1\t0/0\t1/1\n")
+            digest = hashlib.sha256(vcf.read_bytes()).hexdigest()
+            (provenance / "result-SHA256SUMS").write_text(
+                f"{digest}  {vcf}\n", encoding="utf-8"
+            )
+            (provenance / "workflow-commit.txt").write_text(
+                "359d94165dcd086adf0511598bf21102c7cf0e0c\n",
+                encoding="utf-8",
+            )
+            (provenance / "snakemake-version.txt").write_text(
+                "7.32.4\n", encoding="utf-8"
+            )
+            (provenance / "completed-at.txt").write_text(
+                "2026-08-28T16:34:46+00:00\n", encoding="utf-8"
+            )
+
+            result = adapter.read_popinsnake_result_metadata(run_root)
+
+            self.assertEqual(result["variant_record_count"], 1)
+            self.assertEqual(result["samples"], ["S0001", "S0002", "S0003"])
+            self.assertEqual(result["output_sha256"], digest)
+            self.assertEqual(result["provenance"]["snakemake"], "7.32.4")
 
     def test_snakemake_ttl_has_no_nextflow_identity(self):
         start = datetime(2026, 8, 26, 13, 0, tzinfo=timezone.utc)

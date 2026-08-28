@@ -46,7 +46,7 @@ job_suffix="$(
 job_name="fonda-vivo-${job_suffix}-$(date +%s)"
 run_label="$(printf '%s' "$job_suffix" | cut -c1-63)"
 output_stamp="$(date -u +%Y%m%dT%H%M%SZ)"
-if [[ "$WORKFLOW_ENGINE" == "snakemake-mg4" ]]; then
+if is_snakemake_engine; then
   job_template="$ROOT_DIR/k8s/snakemake-publisher-job.yaml"
 else
   job_template="$ROOT_DIR/k8s/publisher-job.yaml"
@@ -99,7 +99,7 @@ done
 kubectl -n "$NS" logs -l "job-name=$job_name" \
   --all-containers=true --prefix=true
 artifact_base="${RUN_ID}-${output_stamp}"
-if [[ "$WORKFLOW_ENGINE" == "snakemake-mg4" ]]; then
+if is_snakemake_engine; then
   output_dir="$RUN_ROOT/vivo-outbox"
 else
   output_dir="/workspace/vivo-outbox"

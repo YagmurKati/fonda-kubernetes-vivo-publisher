@@ -3,6 +3,7 @@ __pycache__/
 *.py[cod]
 *.bak-*
 config/publisher.env
+config/*.publisher.env
 artifacts/
 wg0.conf
 *.key

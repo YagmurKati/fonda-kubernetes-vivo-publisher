@@ -2,8 +2,8 @@
 
 Publish metadata from supported workflow runs on the FONDA Kubernetes cluster
 directly to [FONDA VIVO](https://vivo-fonda.hu-berlin.de/vivo/runs). Tested
-adapters are included for Nextflow and the Snakemake-based A2 MG-4
-reproduction.
+adapters are included for Nextflow and tested Snakemake/Kubernetes
+reproductions.
 
 The toolkit collects:
 
@@ -39,6 +39,7 @@ source repository, input data, and VIVO links differ.
 | Geoflow annual land-cover mapping | Nextflow | Successful Kubernetes run and VIVO publication | [Geoflow profile](examples/geoflow/README.md) |
 | FORCE2NXF rangeland workflow | Nextflow | Successful resumed run: 3,092 trace rows, 2,796 cached tasks, and 32 retry attempts | [FORCE2NXF profile](examples/force2nxf/README.md) |
 | A2 MG-4 metagenomic read mapping | Snakemake | Successful reproduction: six resumable Kubernetes attempts and HTTP 200 VIVO publication | [A2 MG-4 profile](examples/a2-mg4/README.md) |
+| PopinSnake genomic insertion detection | Snakemake | Successful reproduction: 48/48 rules and a validated 381-record VCF | [PopinSnake profile](examples/popinsnake/README.md) |
 
 For the Nextflow profiles, task tags such as tile or sample identifiers are
 aggregated under the real process name. This keeps large FORCE2NXF RDF files
@@ -65,6 +66,9 @@ cp examples/force2nxf/input_datasets.json config/input_datasets.json
 # OR: A2 MG-4 (Snakemake)
 cp examples/a2-mg4/publisher.env.example config/publisher.env
 cp examples/a2-mg4/input_datasets.json config/input_datasets.json
+
+# OR: PopinSnake (Snakemake)
+cp examples/popinsnake/publisher.env.example config/popinsnake.publisher.env
 ```
 
 Edit `config/publisher.env` and replace every `REPLACE_ME` value. At minimum
@@ -142,12 +146,14 @@ For one `RUN_ID`, the default configuration expects:
 The trace must include `task_id`, `hash`, `native_id`, `name`, `status`, and
 `submit`. See [Adapting a Nextflow workflow](docs/ADAPT_NEXTFLOW.md).
 
-### Snakemake MG-4 profile
+### Snakemake profiles
 
-The MG-4 profile discovers terminal workflow-attempt Pods through the read-only
-Kubernetes API and verifies the run marker, provenance, checksum, and final SAM
-output on the PVC. See the
-[A2 MG-4 profile](examples/a2-mg4/README.md).
+The Snakemake adapter discovers terminal workflow-attempt Pods through the
+read-only Kubernetes API, then uses a profile-specific evidence reader. MG-4
+verifies its run marker, provenance, checksum, and final SAM; PopinSnake
+verifies `RUN_STATUS`, provenance, checksums, and the final compressed VCF. See
+the [A2 MG-4 profile](examples/a2-mg4/README.md) and
+[PopinSnake profile](examples/popinsnake/README.md).
 
 ## Output and verification
 
@@ -159,7 +165,7 @@ For the Nextflow profiles, a successful command prints paths like:
 /workspace/vivo-outbox/my-run-01-20260825T144622Z.published.json
 ```
 
-The MG-4 profile writes the same three artifact types under
+The Snakemake profiles write the same three artifact types under
 `RUN_ROOT/vivo-outbox`.
 
 It also prints `HTTP 200`. Then open the
@@ -180,8 +186,8 @@ not as an exact historical value for the run interval.
 ## Scope
 
 This release supports Nextflow with the Kubernetes executor and the tested A2
-MG-4 Snakemake/Kubernetes layout. Other workflow engines or Snakemake layouts
-need a trace adapter but can reuse the RDF builder and
+MG-4 and PopinSnake Snakemake/Kubernetes layouts. Other workflow engines or
+Snakemake layouts need an evidence adapter but can reuse the RDF builder and
 `publisher/publish_vivo.py`.
 
 ## License

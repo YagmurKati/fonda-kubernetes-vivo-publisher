@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "datasets": [
+    {
+      "uri": "http://example.org/vivo-import/run-metadata/input-dataset/popinsnake-upstream-example-data-359d9416",
+      "label": "PopinSnake upstream three-sample example dataset",
+      "description": "The example input distributed with the pinned PopinSnake source revision: S0001, S0002, and S0003 BAM/BAI pairs plus the chromosome 21 insertion reference. The missing FASTA index was derived inside the private run with Samtools 1.15.1 and all exact inputs were checksummed before execution.",
+      "access_instructions_url": "https://gitlab.informatik.hu-berlin.de/fonda_a6/popinSnake/-/tree/359d94165dcd086adf0511598bf21102c7cf0e0c/example_data",
+      "upstream_source_url": "https://gitlab.informatik.hu-berlin.de/fonda_a6/popinSnake",
+      "format_documentation_url": "https://gitlab.informatik.hu-berlin.de/fonda_a6/popinSnake/-/blob/359d94165dcd086adf0511598bf21102c7cf0e0c/README.md",
+      "storage_location": "User-controlled FONDA PVC in the run operator's Kubernetes namespace; exact paths remain in the private metrics audit.",
+      "access_statement": "The tested copy and checksum manifest remain with the run on the private PVC. The upstream example data are available from the pinned public repository revision.",
+      "link_to_workflow": true,
+      "link_to_run": true
+    }
+  ]
+}

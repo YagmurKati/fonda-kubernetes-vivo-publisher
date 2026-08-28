@@ -8,7 +8,7 @@ need_command python3
 load_config
 require_namespace
 
-if [[ "$WORKFLOW_ENGINE" == "snakemake-mg4" ]]; then
+if is_snakemake_engine; then
   sed \
     -e "s/__NAMESPACE__/$NS/g" \
     -e "s/__SERVICE_ACCOUNT__/$SERVICE_ACCOUNT/g" \
@@ -34,7 +34,7 @@ code_args=(
   --from-file=publisher.py="$ROOT_DIR/publisher/publish_vivo.py"
   --from-file=input_datasets.json="$input_file"
 )
-if [[ "$WORKFLOW_ENGINE" == "snakemake-mg4" ]]; then
+if is_snakemake_engine; then
   code_args+=(
     --from-file=collector.py="$ROOT_DIR/collector/collect_snakemake_kubernetes_metadata.py"
     --from-file=collector_core.py="$ROOT_DIR/collector/collect_nextflow_run_metadata.py"
@@ -49,10 +49,11 @@ kubectl -n "$NS" create configmap fonda-vivo-publisher-code \
   "${code_args[@]}" --dry-run=client -o yaml |
   kubectl -n "$NS" apply -f -
 
-if [[ "$WORKFLOW_ENGINE" == "snakemake-mg4" ]]; then
+if is_snakemake_engine; then
   setting_names=(
-    RUN_ROOT CODE_PATH POD_LABEL_SELECTOR FALLBACK_RUN_ID JOB_NAME_REGEX WORKFLOW_NAME
-    WORKFLOW_URI WORKFLOW_REPO_URL CODE_URI PUBLICATION_URI TRACE_ARCHIVE
+    SNAKEMAKE_PROFILE RUN_ROOT CODE_PATH POD_LABEL_SELECTOR FALLBACK_RUN_ID
+    JOB_NAME_REGEX WORKFLOW_NAME WORKFLOW_URI WORKFLOW_REPO_URL CODE_URI
+    PUBLICATION_URI TRACE_ARCHIVE
     RESPONSIBLE_RESEARCHER_URIS SUBPROJECT_URIS LANGUAGE_URIS
     APPLICATION_DOMAIN_URI RUN_OPERATOR_URI BACKEND_URI CLUSTER_URI
     CLUSTER_LABEL ENGINE_URI PROM_URL CARBON_SOURCE CARBON_INTENSITY

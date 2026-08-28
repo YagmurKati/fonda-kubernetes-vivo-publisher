@@ -34,6 +34,11 @@ optional_http_uri() {
   [[ -z "$value" ]] || require_http_uri "$value" "$label"
 }
 
+is_snakemake_engine() {
+  [[ "${WORKFLOW_ENGINE:-}" == "snakemake-kubernetes" ||
+     "${WORKFLOW_ENGINE:-}" == "snakemake-mg4" ]]
+}
+
 validate_uri_list() {
   local values="$1"
   local label="$2"
@@ -77,13 +82,21 @@ load_config() {
       : "${DEBUG_LOG_PATH:?Set DEBUG_LOG_PATH}"
       ;;
     snakemake-mg4)
+      SNAKEMAKE_PROFILE="${SNAKEMAKE_PROFILE:-mg4}"
+      : "${RUN_ROOT:?Set RUN_ROOT}"
+      : "${POD_LABEL_SELECTOR:?Set POD_LABEL_SELECTOR}"
+      : "${FALLBACK_RUN_ID:?Set FALLBACK_RUN_ID}"
+      : "${JOB_NAME_REGEX:?Set JOB_NAME_REGEX}"
+      ;;
+    snakemake-kubernetes)
+      : "${SNAKEMAKE_PROFILE:?Set SNAKEMAKE_PROFILE}"
       : "${RUN_ROOT:?Set RUN_ROOT}"
       : "${POD_LABEL_SELECTOR:?Set POD_LABEL_SELECTOR}"
       : "${FALLBACK_RUN_ID:?Set FALLBACK_RUN_ID}"
       : "${JOB_NAME_REGEX:?Set JOB_NAME_REGEX}"
       ;;
     *)
-      die "WORKFLOW_ENGINE must be nextflow or snakemake-mg4"
+      die "WORKFLOW_ENGINE must be nextflow or snakemake-kubernetes"
       ;;
   esac
 
@@ -104,6 +117,12 @@ load_config() {
   CARBON_INTENSITY="${CARBON_INTENSITY:-0.4}"
   ELECTRICITY_MAPS_ZONE="${ELECTRICITY_MAPS_ZONE:-DE}"
   ALLOW_MISSING_METRICS="${ALLOW_MISSING_METRICS:-0}"
+
+  if is_snakemake_engine; then
+    [[ "$SNAKEMAKE_PROFILE" == "mg4" ||
+       "$SNAKEMAKE_PROFILE" == "popinsnake" ]] ||
+      die "SNAKEMAKE_PROFILE must be mg4 or popinsnake"
+  fi
 
   validate_dns_name "$NS" "NS"
   validate_dns_name "$PVC_NAME" "PVC_NAME"
