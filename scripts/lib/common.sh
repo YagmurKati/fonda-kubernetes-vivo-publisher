@@ -116,7 +116,11 @@ load_config() {
   CLUSTER_LABEL="${CLUSTER_LABEL:-FONDA Kubernetes Cluster}"
   CARBON_INTENSITY="${CARBON_INTENSITY:-0.4}"
   ELECTRICITY_MAPS_ZONE="${ELECTRICITY_MAPS_ZONE:-DE}"
+  CO2MAP_STATE="${CO2MAP_STATE:-DE}"
+  CO2MAP_COUNTRY="${CO2MAP_COUNTRY:-DE}"
+  CO2MAP_DATA_STATUS="${CO2MAP_DATA_STATUS:-preliminary}"
   ALLOW_MISSING_METRICS="${ALLOW_MISSING_METRICS:-0}"
+  REQUIRE_SUCCEEDED="${REQUIRE_SUCCEEDED:-0}"
 
   if is_snakemake_engine; then
     [[ "$SNAKEMAKE_PROFILE" == "mg4" ||
@@ -160,10 +164,16 @@ load_config() {
     die "Replace every REPLACE_ME value in $CONFIG_FILE"
   fi
   [[ "$CARBON_SOURCE" == "electricity-maps-latest" ||
+     "$CARBON_SOURCE" == "co2map" ||
      "$CARBON_SOURCE" == "fixed" ]] ||
-    die "CARBON_SOURCE must be electricity-maps-latest or fixed"
+    die "CARBON_SOURCE must be electricity-maps-latest, co2map, or fixed"
+  [[ "$CO2MAP_DATA_STATUS" == "preliminary" ||
+     "$CO2MAP_DATA_STATUS" == "historical" ]] ||
+    die "CO2MAP_DATA_STATUS must be preliminary or historical"
   [[ "$ALLOW_MISSING_METRICS" == "0" || "$ALLOW_MISSING_METRICS" == "1" ]] ||
     die "ALLOW_MISSING_METRICS must be 0 or 1"
+  [[ "$REQUIRE_SUCCEEDED" == "0" || "$REQUIRE_SUCCEEDED" == "1" ]] ||
+    die "REQUIRE_SUCCEEDED must be 0 or 1"
   [[ -z "$GIT_COMMIT" || "$GIT_COMMIT" =~ ^[0-9a-fA-F]{40}$ ]] ||
     die "GIT_COMMIT must be empty or a 40-character commit SHA"
 }

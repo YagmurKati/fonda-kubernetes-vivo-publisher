@@ -18,10 +18,16 @@ task_id  hash  native_id  name  status  submit
 ```
 
 `native_id` must contain the Kubernetes pod name so Prometheus and Kepler
-measurements can be matched to each task. `exit`, `duration`, and `realtime`
-are optional but recommended.
+measurements can be matched to each task. `exit`, `duration`, `realtime`,
+`%cpu`, and `peak_rss` are optional but strongly recommended. When `%cpu` and
+`peak_rss` are available, the collector uses the trace for complete CPU and
+memory coverage—including tasks too short-lived for a Prometheus scrape—and
+retains Prometheus CPU in the audit for comparison.
 
-Nextflow also writes `.nextflow.log`; set `DEBUG_LOG_PATH` to its PVC path.
+Nextflow also writes `.nextflow.log`; archive it per run and set
+`DEBUG_LOG_PATH` to its PVC path. `TRACE_PATH_TEMPLATE`,
+`CONSOLE_LOG_PATH_TEMPLATE`, and `DEBUG_LOG_PATH` may contain `{run_id}` more
+than once, including in both a directory and filename.
 
 ## Shared PVC layout
 

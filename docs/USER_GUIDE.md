@@ -30,6 +30,10 @@ cp examples/geoflow/input_datasets.json config/input_datasets.json
 cp examples/force2nxf/publisher.env.example config/publisher.env
 cp examples/force2nxf/input_datasets.json config/input_datasets.json
 
+# OR: RNA-seq Salmon RS1
+cp examples/rnaseq-salmon-rs1/publisher.env.example config/publisher.env
+cp examples/rnaseq-salmon-rs1/input_datasets.json config/input_datasets.json
+
 # OR: A2 MG-4 (Snakemake)
 cp examples/a2-mg4/publisher.env.example config/publisher.env
 cp examples/a2-mg4/input_datasets.json config/input_datasets.json
@@ -47,6 +51,10 @@ If the workflow uses a known input dataset, copy
 `config/input_datasets.json.example` over `config/input_datasets.json`, replace
 all placeholders, and link to a checksum manifest for the exact input version.
 Otherwise leave the provided empty dataset list unchanged.
+
+Use `upstream_source_urls` when one logical input dataset combines several
+source files or accessions. Each URL is validated and emitted separately;
+`upstream_source_url` remains supported for older single-source profiles.
 
 ## 3. Store credentials in your Kubernetes namespace
 

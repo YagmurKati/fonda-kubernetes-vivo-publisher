@@ -7,7 +7,10 @@
       "description": "Replace with a concise description of the exact workflow input.",
       "access_instructions_url": "https://example.org/dataset/access",
       "checksum_manifest_url": "https://example.org/dataset/SHA256SUMS",
-      "upstream_source_url": "https://example.org/dataset/source",
+      "upstream_source_urls": [
+        "https://example.org/dataset/source-part-1",
+        "https://example.org/dataset/source-part-2"
+      ],
       "format_documentation_url": "https://example.org/dataset/format",
       "storage_location": "Replace with the repository or managed storage location",
       "access_statement": "Replace with public access conditions",

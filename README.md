@@ -8,7 +8,9 @@ reproductions.
 The toolkit collects:
 
 - workflow identity, source revision, containers, tasks, status, and duration;
-- CPU time, average/peak memory, and Kepler energy from Prometheus;
+- CPU time and average/peak memory from the complete Nextflow trace when its
+  `%cpu` and `peak_rss` fields are present, with Prometheus retained for an
+  independent comparison, plus Kepler energy from Prometheus;
 - a clearly labelled carbon estimate;
 - workflow, researcher, subproject, input, infrastructure, and provenance links.
 
@@ -38,6 +40,7 @@ source repository, input data, and VIVO links differ.
 | --- | --- | --- | --- |
 | Geoflow annual land-cover mapping | Nextflow | Successful Kubernetes run and VIVO publication | [Geoflow profile](examples/geoflow/README.md) |
 | FORCE2NXF rangeland workflow | Nextflow | Successful resumed run: 3,092 trace rows, 2,796 cached tasks, and 32 retry attempts | [FORCE2NXF profile](examples/force2nxf/README.md) |
+| RNA-seq analysis (Salmon, RS1) | Nextflow | Successful uncached run and VIVO publication: 11/11 tasks, three ENA samples, and complete trace CPU/memory coverage | [RNA-seq Salmon RS1 profile](examples/rnaseq-salmon-rs1/README.md) |
 | A2 MG-4 metagenomic read mapping | Snakemake | Successful reproduction: six resumable Kubernetes attempts and HTTP 200 VIVO publication | [A2 MG-4 profile](examples/a2-mg4/README.md) |
 | PopinSnake genomic insertion detection | Snakemake | Successful reproduction: 48/48 rules and a validated 381-record VCF | [PopinSnake profile](examples/popinsnake/README.md) |
 
@@ -62,6 +65,10 @@ cp examples/geoflow/input_datasets.json config/input_datasets.json
 # OR: FORCE2NXF
 cp examples/force2nxf/publisher.env.example config/publisher.env
 cp examples/force2nxf/input_datasets.json config/input_datasets.json
+
+# OR: RNA-seq Salmon RS1
+cp examples/rnaseq-salmon-rs1/publisher.env.example config/publisher.env
+cp examples/rnaseq-salmon-rs1/input_datasets.json config/input_datasets.json
 
 # OR: A2 MG-4 (Snakemake)
 cp examples/a2-mg4/publisher.env.example config/publisher.env
@@ -175,6 +182,10 @@ for its list to load.
 The carbon factor from `electricity-maps-latest` is the newest value available
 when metadata is collected. It is explicitly stored as a collection-time proxy,
 not as an exact historical value for the run interval.
+
+Profiles using `co2map` instead align a preliminary or finalized historical
+CO2Map factor to the run's resource-accounting interval and record its model
+status, hour, zone, and source URL in the audit and RDF method text.
 
 ## Documentation
 

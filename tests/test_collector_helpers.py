@@ -1,6 +1,8 @@
 import argparse
+import json
 import tempfile
 import unittest
+from dataclasses import replace
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from unittest import mock
@@ -16,8 +18,13 @@ from collector.collect_nextflow_run_metadata import (
     derive_status,
     group_tasks,
     load_input_datasets,
+    parse_cpu_percent,
+    parse_size_bytes,
     resolve_electricity_maps_latest_intensity,
     resolve_output_path,
+    summarize_metrics,
+    trace_memory_bytes,
+    validate_required_success,
 )
 
 
@@ -51,6 +58,15 @@ class WorkflowStatusAndGroupingTests(unittest.TestCase):
     def test_terminal_workflow_failure_remains_failed(self) -> None:
         tasks = [task_record("process (sample)", "FAILED", 1)]
         self.assertEqual(derive_status(tasks, True), "Failed")
+
+    def test_strict_success_rejects_cached_tasks(self) -> None:
+        tasks = [task_record("process (sample)", "CACHED", 1)]
+        with self.assertRaisesRegex(RuntimeError, "clean uncached"):
+            validate_required_success(tasks, "Succeeded", True)
+
+    def test_strict_success_accepts_only_completed_tasks(self) -> None:
+        tasks = [task_record("process (sample)", "COMPLETED", 1)]
+        validate_required_success(tasks, "Succeeded", True)
 
     def test_nextflow_tags_do_not_create_thousands_of_stages(self) -> None:
         tasks = [
@@ -126,11 +142,47 @@ class InputDatasetTests(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError, "unknown fields"):
                 load_input_datasets(str(path))
 
+    def test_multiple_upstream_source_urls_are_loaded(self) -> None:
+        payload = {
+            "schema_version": 1,
+            "datasets": [
+                {
+                    "uri": "https://example.org/input",
+                    "label": "Composite input",
+                    "upstream_source_urls": [
+                        "https://example.org/source/one",
+                        "https://example.org/source/two",
+                    ],
+                }
+            ],
+        }
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "input.json"
+            path.write_text(json.dumps(payload), encoding="utf-8")
+            datasets = load_input_datasets(str(path))
+
+        self.assertEqual(
+            datasets[0].upstream_source_urls,
+            (
+                "https://example.org/source/one",
+                "https://example.org/source/two",
+            ),
+        )
+
     def test_collector_emits_input_and_commit_links(self) -> None:
         repository_root = Path(__file__).resolve().parents[1]
         datasets = load_input_datasets(
             str(repository_root / "config" / "input_datasets.json.example")
         )
+        datasets = [
+            replace(
+                datasets[0],
+                upstream_source_urls=(
+                    "https://example.org/dataset/source/one",
+                    "https://example.org/dataset/source/two",
+                ),
+            )
+        ]
         start = datetime(2026, 7, 19, 19, 48, tzinfo=timezone.utc)
         end = start + timedelta(seconds=2)
         task = TaskRecord(
@@ -207,10 +259,66 @@ class InputDatasetTests(unittest.TestCase):
         self.assertIn("rm:inputDataOfWorkflow", ttl_text)
         self.assertIn("rm:usedByWorkflowRun", ttl_text)
         self.assertIn("rm:codeCommitLink", ttl_text)
+        self.assertIn("https://example.org/dataset/source/one", ttl_text)
+        self.assertIn("https://example.org/dataset/source/two", ttl_text)
         self.assertNotIn("rm:nodeName", ttl_text)
         self.assertNotIn("rm:carbonIntensityKgCO2ePerKWh", ttl_text)
         self.assertNotIn("rm:codeModified", ttl_text)
         self.assertEqual(len(audit["input_datasets"]), 1)
+        # The on-disk audit must remain JSON serializable when TaskRecord gains
+        # datetime fields.
+        json.dumps(audit)
+
+
+class TraceFallbackMetricTests(unittest.TestCase):
+    def test_trace_cpu_and_memory_cover_short_lived_tasks(self) -> None:
+        start = datetime(2026, 8, 28, 18, 0, tzinfo=timezone.utc)
+        first = TaskRecord(
+            task_id="1",
+            hash_value="aa/one",
+            pod_name="nf-one",
+            name="SHORT",
+            status="COMPLETED",
+            exit_code=0,
+            submit=start,
+            duration_seconds=0.5,
+            realtime_seconds=0.5,
+            cpu_percent=200.0,
+            peak_rss_bytes=1_000_000_000.0,
+            end=start + timedelta(seconds=0.5),
+        )
+        second = TaskRecord(
+            task_id="2",
+            hash_value="aa/two",
+            pod_name="nf-two",
+            name="LONG",
+            status="COMPLETED",
+            exit_code=0,
+            submit=start + timedelta(seconds=0.25),
+            duration_seconds=1.0,
+            realtime_seconds=1.0,
+            cpu_percent=100.0,
+            peak_rss_bytes=2_000_000_000.0,
+            end=start + timedelta(seconds=1.25),
+        )
+
+        memory_avg, memory_peak = trace_memory_bytes([first, second])
+        summary = summarize_metrics(
+            ["nf-one", "nf-two"],
+            {},
+            start,
+            start + timedelta(seconds=1.25),
+            0.3,
+            [first, second],
+        )
+
+        self.assertEqual(parse_cpu_percent("2440%"), 2440.0)
+        self.assertEqual(parse_size_bytes("2 GB"), 2_000_000_000.0)
+        self.assertEqual(memory_peak, 3_000_000_000.0)
+        self.assertAlmostEqual(memory_avg or 0, 2_000_000_000.0)
+        self.assertEqual(summary["cpu_source"], "trace")
+        self.assertEqual(summary["cpu_seconds"], 2.0)
+        self.assertEqual(summary["memory_source"], "trace")
 
 
 class ElectricityMapsLatestTests(unittest.TestCase):

@@ -26,8 +26,9 @@ spec:
           args:
             - |
               set -euo pipefail
-              trace_file="${TRACE_PATH_TEMPLATE/\{run_id\}/${RUN_ID}}"
-              console_log="${CONSOLE_LOG_PATH_TEMPLATE/\{run_id\}/${RUN_ID}}"
+              trace_file="${TRACE_PATH_TEMPLATE//\{run_id\}/${RUN_ID}}"
+              console_log="${CONSOLE_LOG_PATH_TEMPLATE//\{run_id\}/${RUN_ID}}"
+              debug_log="${DEBUG_LOG_PATH//\{run_id\}/${RUN_ID}}"
               output_dir=/workspace/vivo-outbox
               artifact_base="${RUN_ID}-${OUTPUT_STAMP}"
               ttl_file="$output_dir/${artifact_base}.ttl"
@@ -48,7 +49,7 @@ spec:
 
               test -r "$trace_file"
               test -r "$console_log"
-              test -r "$DEBUG_LOG_PATH"
+              test -r "$debug_log"
               test -d "$CODE_PATH"
 
               collector_args=(
@@ -56,7 +57,7 @@ spec:
                 --namespace "$NAMESPACE"
                 --trace-file "$trace_file"
                 --console-log-file "$console_log"
-                --debug-log-file "$DEBUG_LOG_PATH"
+                --debug-log-file "$debug_log"
                 --trace-timezone "$TRACE_TIMEZONE"
                 --code-path "$CODE_PATH"
                 --workflow-name "$WORKFLOW_NAME"
@@ -75,6 +76,9 @@ spec:
                 --carbon-intensity-source "$CARBON_SOURCE"
                 --carbon-intensity "$CARBON_INTENSITY"
                 --electricity-maps-zone "$ELECTRICITY_MAPS_ZONE"
+                --co2map-state "$CO2MAP_STATE"
+                --co2map-country "$CO2MAP_COUNTRY"
+                --co2map-data-status "$CO2MAP_DATA_STATUS"
                 --input-metadata-file /opt/fonda-vivo/input_datasets.json
                 --base-uri "$BASE_URI"
                 --ontology-uri "$ONTOLOGY_URI"
@@ -86,6 +90,12 @@ spec:
               fi
               if [[ "$INCLUDE_CACHED_ORIGIN_METRICS" == "1" ]]; then
                 collector_args+=(--include-cached-origin-metrics)
+              fi
+              if [[ "$ALLOW_MISSING_METRICS" == "1" ]]; then
+                collector_args+=(--allow-missing-metrics)
+              fi
+              if [[ "$REQUIRE_SUCCEEDED" == "1" ]]; then
+                collector_args+=(--require-succeeded)
               fi
               IFS=',' read -r -a researcher_uris <<< "$RESPONSIBLE_RESEARCHER_URIS"
               for uri in "${researcher_uris[@]}"; do

@@ -1,0 +1,10 @@
+{
+  "attempts": 1,
+  "endpoint": "https://vivo-fonda.hu-berlin.de/vivo/api/sparqlUpdate",
+  "graph": "http://vitro.mannlib.cornell.edu/default/vitro-kb-2",
+  "http_status": 200,
+  "published_at": "2026-08-29T07:59:30.990926+00:00",
+  "response_excerpt": "<H1>200 SPARQL update accepted.</H1>",
+  "ttl_file": "/workspace/vivo-outbox/RUN02-20260829T075926Z.ttl",
+  "ttl_sha256": "3da0500d814ee2270afe7a471371ba36a651879d79f9a7f0ecd5ddadb98420d3"
+}

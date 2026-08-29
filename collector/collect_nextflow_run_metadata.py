@@ -100,7 +100,17 @@ class TaskRecord:
     submit: datetime
     duration_seconds: Optional[float]
     realtime_seconds: Optional[float]
+    cpu_percent: Optional[float] = None
+    peak_rss_bytes: Optional[float] = None
+    start: Optional[datetime] = None
     end: Optional[datetime] = None
+
+    @property
+    def trace_cpu_seconds(self) -> Optional[float]:
+        """Return executor CPU seconds from realtime multiplied by %cpu."""
+        if self.realtime_seconds is None or self.cpu_percent is None:
+            return None
+        return self.realtime_seconds * self.cpu_percent / 100.0
 
 
 @dataclass
@@ -142,6 +152,7 @@ class InputDatasetMetadata:
     access_instructions_url: Optional[str] = None
     checksum_manifest_url: Optional[str] = None
     upstream_source_url: Optional[str] = None
+    upstream_source_urls: Tuple[str, ...] = ()
     format_documentation_url: Optional[str] = None
     storage_location: Optional[str] = None
     access_statement: Optional[str] = None
@@ -278,6 +289,83 @@ def parse_optional_int(value: Optional[str]) -> Optional[int]:
         return None
 
 
+SIZE_UNITS = {
+    "B": 1.0,
+    "KB": 1_000.0,
+    "MB": 1_000_000.0,
+    "GB": 1_000_000_000.0,
+    "TB": 1_000_000_000_000.0,
+    "KIB": 1024.0,
+    "MIB": 1024.0 ** 2,
+    "GIB": 1024.0 ** 3,
+    "TIB": 1024.0 ** 4,
+}
+
+
+def parse_size_bytes(value: Optional[str]) -> Optional[float]:
+    """Parse a Nextflow trace size such as ``422.3 MB`` into bytes."""
+    text = (value or "").strip()
+    if not text or text == "-":
+        return None
+    match = re.match(r"^([0-9]*\.?[0-9]+)\s*([A-Za-z]*)$", text)
+    if not match:
+        return None
+    factor = SIZE_UNITS.get((match.group(2) or "B").upper())
+    if factor is None:
+        return None
+    return float(match.group(1)) * factor
+
+
+def parse_cpu_percent(value: Optional[str]) -> Optional[float]:
+    """Parse the Nextflow trace ``%cpu`` column."""
+    text = (value or "").strip().rstrip("%").strip()
+    if not text or text == "-":
+        return None
+    try:
+        return float(text)
+    except ValueError:
+        return None
+
+
+def trace_memory_bytes(
+    tasks: Sequence[TaskRecord],
+) -> Tuple[Optional[float], Optional[float]]:
+    """Return time-weighted mean and peak concurrent trace peak RSS.
+
+    Nextflow records peak RSS even for tasks whose pods finish between
+    Prometheus scrapes. Each task contributes its peak RSS over its execution
+    interval; this is deliberately an approximation and the emitted method
+    text says so.
+    """
+    events: List[Tuple[float, float]] = []
+    for task in tasks:
+        if task.peak_rss_bytes is None or task.end is None:
+            continue
+        start_ts = (task.start or task.submit).timestamp()
+        end_ts = max(task.end.timestamp(), start_ts + 0.001)
+        events.append((start_ts, task.peak_rss_bytes))
+        events.append((end_ts, -task.peak_rss_bytes))
+    if not events:
+        return None, None
+
+    # Process end events before start events at identical timestamps so tasks
+    # that merely touch at a boundary are not counted as concurrent.
+    events.sort(key=lambda item: (item[0], item[1] > 0))
+    current = 0.0
+    peak = 0.0
+    weighted = 0.0
+    previous_ts = events[0][0]
+    for timestamp, delta in events:
+        if timestamp > previous_ts:
+            weighted += current * (timestamp - previous_ts)
+            previous_ts = timestamp
+        current += delta
+        peak = max(peak, current)
+    span = events[-1][0] - events[0][0]
+    average = weighted / span if span > 0 else peak
+    return average, peak
+
+
 def parse_trace_datetime(value: str, trace_tz: ZoneInfo) -> datetime:
     parsed = datetime.strptime(value.strip(), "%Y-%m-%d %H:%M:%S.%f")
     return parsed.replace(tzinfo=trace_tz)
@@ -312,9 +400,23 @@ def parse_trace(text: str, trace_tz: ZoneInfo) -> List[TaskRecord]:
             submit=submit,
             duration_seconds=duration,
             realtime_seconds=parse_duration(row.get("realtime")),
+            cpu_percent=parse_cpu_percent(row.get("%cpu")),
+            peak_rss_bytes=parse_size_bytes(row.get("peak_rss")),
         )
-        if duration is not None:
+        start_text = (row.get("start") or "").strip()
+        if start_text and start_text != "-":
+            task.start = parse_trace_datetime(start_text, trace_tz)
+        complete_text = (row.get("complete") or "").strip()
+        if complete_text and complete_text != "-":
+            task.end = parse_trace_datetime(complete_text, trace_tz)
+        elif duration is not None:
             task.end = submit + timedelta(seconds=duration)
+        if (
+            task.start is None
+            and task.end is not None
+            and task.realtime_seconds is not None
+        ):
+            task.start = task.end - timedelta(seconds=task.realtime_seconds)
         tasks.append(task)
 
     if not tasks:
@@ -419,6 +521,25 @@ def derive_status(
     if "ABORTED" in statuses:
         return "Aborted"
     return "Unknown"
+
+
+def validate_required_success(
+    tasks: Sequence[TaskRecord],
+    run_status: str,
+    required: bool,
+) -> None:
+    """Enforce a clean, uncached run for strict publication profiles."""
+    if not required:
+        return
+    non_completed_tasks = [
+        task for task in tasks if task.status != "COMPLETED"
+    ]
+    if run_status != "Succeeded" or non_completed_tasks:
+        raise RuntimeError(
+            "Strict collection requires a clean uncached Succeeded run, but "
+            f"the selected trace/logs resolve to {run_status} with "
+            f"{len(non_completed_tasks)} non-COMPLETED task row(s)."
+        )
 
 
 def task_status_label(status: str) -> str:
@@ -1217,6 +1338,7 @@ def summarize_metrics(
     start: datetime,
     end: datetime,
     carbon_intensity: float,
+    tasks: Optional[Sequence[TaskRecord]] = None,
 ) -> Dict[str, Any]:
     selected = [
         pod_metrics[pod_name]
@@ -1243,13 +1365,40 @@ def summarize_metrics(
         for metrics in selected
         if metrics.cpu_method and "fallback" in metrics.cpu_method
     )
+    trace_tasks = list(tasks or [])
+    trace_cpu_values = [
+        task.trace_cpu_seconds
+        for task in trace_tasks
+        if task.trace_cpu_seconds is not None
+    ]
+    trace_cpu_total = sum(trace_cpu_values) if trace_cpu_values else None
+    cpu_source = "trace" if trace_cpu_total is not None else "prometheus"
+
+    trace_memory_avg, trace_memory_peak = trace_memory_bytes(trace_tasks)
+    memory_source = (
+        "trace" if trace_memory_peak is not None else "prometheus"
+    )
+    if trace_memory_peak is not None:
+        memory_avg = trace_memory_avg
+        memory_peak = trace_memory_peak
     return {
-        "cpu_seconds": cpu_total,
+        "cpu_seconds": (
+            trace_cpu_total if trace_cpu_total is not None else cpu_total
+        ),
+        "cpu_source": cpu_source,
+        "cpu_trace_seconds": trace_cpu_total,
+        "cpu_trace_task_count": len(trace_cpu_values),
+        "cpu_task_count": len(trace_tasks),
+        "cpu_prometheus_seconds": cpu_total,
         "cpu_pod_count": len(cpu_values),
         "cpu_fallback_count": cpu_fallbacks,
         "memory_avg_gb": bytes_to_gb(memory_avg),
         "memory_peak_gb": bytes_to_gb(memory_peak),
         "memory_pod_count": sum(bool(metrics.memory_series) for metrics in selected),
+        "memory_source": memory_source,
+        "memory_task_count": sum(
+            task.peak_rss_bytes is not None for task in trace_tasks
+        ),
         "energy_kwh": energy_kwh,
         "energy_pod_count": len(energy_values),
         "energy_estimated": energy_estimated,
@@ -1267,22 +1416,46 @@ def metric_methods(
     carbon_info: CarbonIntensityInfo,
     cached_origin_metrics: bool = False,
 ) -> Dict[str, str]:
-    cpu_method = (
-        "CPU time is the sum of Prometheus "
-        "container_cpu_usage_seconds_total counter increases"
-        f" for {summary['cpu_pod_count']} of {pod_count} pod(s)."
-    )
-    if summary["cpu_fallback_count"]:
-        cpu_method += (
-            f" A counter-maximum fallback was used for "
-            f"{summary['cpu_fallback_count']} short-lived pod(s)."
+    if summary.get("cpu_source") == "trace":
+        cpu_method = (
+            "CPU time is the sum of realtime multiplied by %cpu from the "
+            f"Nextflow trace for {summary['cpu_trace_task_count']} of "
+            f"{summary['cpu_task_count']} task(s). This covers short-lived "
+            "pods that may finish between Prometheus scrapes."
         )
-    memory_method = (
-        "Memory is derived from Prometheus "
-        "container_memory_working_set_bytes. Values are summed across "
-        "concurrent workflow pods at each sample; the reported average and "
-        "peak are calculated from that aggregate time series."
-    )
+        prometheus_seconds = summary.get("cpu_prometheus_seconds")
+        if prometheus_seconds is not None:
+            cpu_method += (
+                " For comparison, Prometheus "
+                "container_cpu_usage_seconds_total measured "
+                f"{prometheus_seconds:.6g} seconds across "
+                f"{summary['cpu_pod_count']} of {pod_count} pod(s)."
+            )
+    else:
+        cpu_method = (
+            "CPU time is the sum of Prometheus "
+            "container_cpu_usage_seconds_total counter increases"
+            f" for {summary['cpu_pod_count']} of {pod_count} pod(s)."
+        )
+        if summary["cpu_fallback_count"]:
+            cpu_method += (
+                f" A counter-maximum fallback was used for "
+                f"{summary['cpu_fallback_count']} short-lived pod(s)."
+            )
+    if summary.get("memory_source") == "trace":
+        memory_method = (
+            "Memory is approximated from peak_rss in the Nextflow trace for "
+            f"{summary['memory_task_count']} task(s). Each task contributes "
+            "its peak resident memory over its execution interval; the peak "
+            "is the maximum concurrent sum and the average is time-weighted."
+        )
+    else:
+        memory_method = (
+            "Memory is derived from Prometheus "
+            "container_memory_working_set_bytes. Values are summed across "
+            "concurrent workflow pods at each sample; the reported average "
+            "and peak are calculated from that aggregate time series."
+        )
     energy_method = (
         f"Energy is the sum of per-pod Kepler measurements for "
         f"{summary['energy_pod_count']} of {pod_count} pod(s)."
@@ -1481,6 +1654,7 @@ def load_input_datasets(path_value: Optional[str]) -> List[InputDatasetMetadata]
         "upstream_source_url",
         "format_documentation_url",
     }
+    url_list_fields = {"upstream_source_urls"}
     datasets: List[InputDatasetMetadata] = []
     seen_uris: Set[str] = set()
     for index, record in enumerate(records, start=1):
@@ -1512,13 +1686,31 @@ def load_input_datasets(path_value: Optional[str]) -> List[InputDatasetMetadata]
                         f"Input dataset {index} {field_name} must be a URL string"
                     )
                 require_http_url(value, field_name)
+        normalized_record = dict(record)
+        for field_name in url_list_fields:
+            values = record.get(field_name, [])
+            if not isinstance(values, list):
+                raise RuntimeError(
+                    f"Input dataset {index} {field_name} must be a list"
+                )
+            normalized_values: List[str] = []
+            for value in values:
+                if not isinstance(value, str) or not value.strip():
+                    raise RuntimeError(
+                        f"Input dataset {index} {field_name} must contain "
+                        "only non-empty URL strings"
+                    )
+                require_http_url(value, field_name)
+                if value not in normalized_values:
+                    normalized_values.append(value)
+            normalized_record[field_name] = tuple(normalized_values)
         for field_name in ("link_to_workflow", "link_to_run"):
             value = record.get(field_name, True)
             if not isinstance(value, bool):
                 raise RuntimeError(
                     f"Input dataset {index} {field_name} must be true or false"
                 )
-        datasets.append(InputDatasetMetadata(**record))
+        datasets.append(InputDatasetMetadata(**normalized_record))
         seen_uris.add(uri)
     return datasets
 
@@ -1802,6 +1994,12 @@ def build_ttl(
         accounting_start,
         accounting_end,
         carbon_info.kg_per_kwh,
+        [
+            task
+            for task in tasks
+            if task.status != "CACHED"
+            or args.include_cached_origin_metrics
+        ],
     )
     overall_methods = metric_methods(
         overall,
@@ -1853,6 +2051,12 @@ def build_ttl(
             stage_start,
             stage_end,
             carbon_info.kg_per_kwh,
+            [
+                task
+                for task in stage_tasks
+                if task.status != "CACHED"
+                or args.include_cached_origin_metrics
+            ],
         )
         stage_methods = metric_methods(
             stage_summary,
@@ -2276,6 +2480,14 @@ def build_ttl(
                 dataset_predicates.append(
                     (predicate, ttl_literal(value, "xsd:anyURI"))
                 )
+        for value in dataset.upstream_source_urls:
+            if value != dataset.upstream_source_url:
+                dataset_predicates.append(
+                    (
+                        "rm:upstreamSourceURL",
+                        ttl_literal(value, "xsd:anyURI"),
+                    )
+                )
         if dataset.storage_location:
             dataset_predicates.append(
                 ("rm:storageLocation", ttl_literal(dataset.storage_location))
@@ -2501,6 +2713,7 @@ def build_ttl(
             {
                 **asdict(task),
                 "submit": task.submit.isoformat(),
+                "start": task.start.isoformat() if task.start else None,
                 "end": task.end.isoformat() if task.end else None,
             }
             for task in tasks
@@ -2728,6 +2941,15 @@ def build_args() -> argparse.Namespace:
         help="Allow collection while the trace still describes an active run.",
     )
     parser.add_argument(
+        "--require-succeeded",
+        action="store_true",
+        help=(
+            "Refuse to emit metadata unless the selected run has status "
+            "Succeeded. This also rejects cached/retry warnings when a "
+            "strict clean execution is required."
+        ),
+    )
+    parser.add_argument(
         "--allow-missing-metrics",
         action="store_true",
         help="Write structural TTL even when Prometheus has no pod metrics.",
@@ -2755,6 +2977,14 @@ def resolve_output_path(
 
 def main() -> None:
     args = build_args()
+    if (
+        args.workflow_name == DEFAULT_WORKFLOW_NAME
+        or args.workflow_uri == DEFAULT_WORKFLOW_URI
+    ):
+        raise RuntimeError(
+            "Pass explicit --workflow-name and --workflow-uri values; the "
+            "generic example identity must never be written to VIVO metadata."
+        )
     trace_tz = ZoneInfo(args.trace_timezone)
     input_datasets = load_input_datasets(args.input_metadata_file)
 
@@ -2817,6 +3047,7 @@ def main() -> None:
             "The selected trace still describes an active run. Wait for "
             "Nextflow to finish, or pass --allow-active-run explicitly."
         )
+    validate_required_success(tasks, run_status, args.require_succeeded)
 
     ensure_prometheus_reachable(args.prom_url)
     metric_names = prometheus_metric_names(args.prom_url)
