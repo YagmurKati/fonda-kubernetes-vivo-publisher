@@ -52,6 +52,12 @@ Set `GIT_COMMIT` to the exact 40-character source commit when the code copied to
 the PVC has no `.git` directory. `WORKFLOW_REPO_URL` plus this commit produces a
 clickable source link in VIVO.
 
+When successful task pods may be deleted before collection, set a comma-separated
+`DECLARED_CONTAINER_IMAGES` list in the profile. Prefer immutable digest-pinned
+references. The collector merges these declarations with Kubernetes-discovered
+image names and runtime IDs, preventing a short-lived or deleted task from
+silently disappearing from container provenance.
+
 ## Automatic invocation
 
 Call the publisher only after the workflow command succeeds:

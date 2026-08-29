@@ -1198,6 +1198,23 @@ def unique(values: Iterable[Optional[str]]) -> List[str]:
     return result
 
 
+def select_container_images(
+    declared: Sequence[str],
+    observed: Sequence[str],
+    code_fallback: Sequence[str],
+) -> List[str]:
+    """Merge declared and observed images; use source scanning only as fallback.
+
+    Completed Nextflow task pods are commonly deleted before collection, so
+    Kubernetes/Prometheus discovery alone can omit scientifically important
+    containers. Explicit digest-pinned declarations are therefore retained
+    alongside observed image identities. Source scanning remains a last resort
+    because a repository can contain inactive or historical profiles.
+    """
+    merged = unique([*declared, *observed])
+    return merged if merged else unique(code_fallback)
+
+
 def collect_pod_metrics(
     args: argparse.Namespace,
     tasks: Sequence[TaskRecord],
@@ -2793,6 +2810,16 @@ def build_args() -> argparse.Namespace:
     parser.add_argument("--code-path", default=str(default_code_path))
     parser.add_argument("--code-uri", default=DEFAULT_CODE_URI)
     parser.add_argument(
+        "--container-image",
+        action="append",
+        default=None,
+        help=(
+            "Repeat for each declared workflow-task container image. These "
+            "values are merged with Kubernetes-discovered image identities "
+            "so deleted task pods do not cause provenance gaps."
+        ),
+    )
+    parser.add_argument(
         "--git-commit",
         default=None,
         help=(
@@ -3094,13 +3121,16 @@ def main() -> None:
         if not re.fullmatch(r"[0-9a-f]{40}", explicit_commit):
             raise RuntimeError("--git-commit must be a 40-character SHA-1")
         git_commit = explicit_commit
-    images = unique(
+    observed_images = unique(
         image
         for metrics in pod_metrics.values()
         for image in metrics.images
     )
-    if not images:
-        images = images_from_code(code_path)
+    images = select_container_images(
+        args.container_image or [],
+        observed_images,
+        images_from_code(code_path),
+    )
     node_names = unique(
         metrics.node_name for metrics in pod_metrics.values()
     )

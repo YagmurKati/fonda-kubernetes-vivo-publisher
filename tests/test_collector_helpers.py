@@ -22,6 +22,7 @@ from collector.collect_nextflow_run_metadata import (
     parse_size_bytes,
     resolve_electricity_maps_latest_intensity,
     resolve_output_path,
+    select_container_images,
     summarize_metrics,
     trace_memory_bytes,
     validate_required_success,
@@ -109,6 +110,27 @@ class CommitUrlTests(unittest.TestCase):
         self.assertIsNone(commit_url(None, "abc123"))
         self.assertIsNone(commit_url(DEFAULT_WORKFLOW_REPO_URL, None))
         self.assertIsNone(commit_url("https://example.org/project", "abc123"))
+
+
+class ContainerImageSelectionTests(unittest.TestCase):
+    def test_declared_images_are_merged_with_observed_images(self) -> None:
+        self.assertEqual(
+            select_container_images(
+                ["example/cufflinks@sha256:declared"],
+                ["example/hisat2@sha256:observed"],
+                ["example/inactive:historical"],
+            ),
+            [
+                "example/cufflinks@sha256:declared",
+                "example/hisat2@sha256:observed",
+            ],
+        )
+
+    def test_code_scan_is_used_only_when_no_other_evidence_exists(self) -> None:
+        self.assertEqual(
+            select_container_images([], [], ["example/fallback:1"]),
+            ["example/fallback:1"],
+        )
 
 
 class InputDatasetTests(unittest.TestCase):

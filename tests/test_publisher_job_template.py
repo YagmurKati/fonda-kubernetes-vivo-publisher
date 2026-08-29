@@ -20,6 +20,16 @@ class PublisherJobTemplateTests(unittest.TestCase):
                 template,
             )
 
+    def test_declared_container_images_reach_the_collector(self) -> None:
+        template = (
+            Path(__file__).resolve().parents[1]
+            / "k8s"
+            / "publisher-job.yaml"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn('<<< "$DECLARED_CONTAINER_IMAGES"', template)
+        self.assertIn('--container-image "$image"', template)
+
 
 if __name__ == "__main__":
     unittest.main()

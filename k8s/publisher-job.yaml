@@ -88,6 +88,10 @@ spec:
               if [[ -n "$GIT_COMMIT" ]]; then
                 collector_args+=(--git-commit "$GIT_COMMIT")
               fi
+              IFS=',' read -r -a declared_images <<< "$DECLARED_CONTAINER_IMAGES"
+              for image in "${declared_images[@]}"; do
+                [[ -n "$image" ]] && collector_args+=(--container-image "$image")
+              done
               if [[ "$INCLUDE_CACHED_ORIGIN_METRICS" == "1" ]]; then
                 collector_args+=(--include-cached-origin-metrics)
               fi
