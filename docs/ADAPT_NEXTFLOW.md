@@ -74,3 +74,9 @@ origin pods are included when retained by Prometheus:
 ```bash
 INCLUDE_CACHED_ORIGIN_METRICS=1 ./scripts/publish-run.sh "$RUN_ID"
 ```
+
+For a tested end-to-end example that launches the upstream scientific code on
+Kubernetes, archives all three evidence files, waits for Job completion, and
+then invokes this publisher, see the
+[RNA-seq STAR RS1 profile](../examples/rnaseq-star-rs1/README.md) and its
+[FONDA Kubernetes companion runner](https://github.com/YagmurKati/fonda-nextflow-rs1-star-runner).
