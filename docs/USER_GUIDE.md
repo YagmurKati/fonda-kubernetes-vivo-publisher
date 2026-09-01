@@ -34,6 +34,14 @@ cp examples/force2nxf/input_datasets.json config/input_datasets.json
 cp examples/rnaseq-salmon-rs1/publisher.env.example config/publisher.env
 cp examples/rnaseq-salmon-rs1/input_datasets.json config/input_datasets.json
 
+# OR: RNA-seq STAR RS1
+cp examples/rnaseq-star-rs1/publisher.env.example config/publisher.env
+cp examples/rnaseq-star-rs1/input_datasets.json config/input_datasets.json
+
+# OR: RNA-seq HISAT2 RS2
+cp examples/rnaseq-hisat2-rs2/publisher.env.example config/publisher.env
+cp examples/rnaseq-hisat2-rs2/input_datasets.json config/input_datasets.json
+
 # OR: A2 MG-4 (Snakemake)
 cp examples/a2-mg4/publisher.env.example config/publisher.env
 cp examples/a2-mg4/input_datasets.json config/input_datasets.json
