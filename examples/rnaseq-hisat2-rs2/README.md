@@ -1,66 +1,68 @@
 # RNA-seq HISAT2 RS2
 
-| Item | Value |
-| --- | --- |
-| Workflow | [`Nine-s/nextflow_RS2_hisat2`](https://github.com/Nine-s/nextflow_RS2_hisat2) |
-| Source commit | [`68b9e62cd614cb901a45e9df8898203384e043ac`](https://github.com/Nine-s/nextflow_RS2_hisat2/commit/68b9e62cd614cb901a45e9df8898203384e043ac) |
-| Run ID | `HISAT2-RS2-RUN06` |
-| Date | 2026-08-29 |
-| Result | 302/302 tasks succeeded; 301 cached and 1 completed |
-| Duration | 37,207 s |
-| CPU | 94,439.6727 CPU-s |
-| Memory | 3.27696 GB average; 17.9244 GB peak |
-| Energy | 1.000163 kWh; direct Kepler coverage for 245 pods |
-| Carbon estimate | 0.098016 kg direct CO2 using 0.098 kg/kWh |
+Publisher profile for
+[`Nine-s/nextflow_RS2_hisat2`](https://github.com/Nine-s/nextflow_RS2_hisat2).
+See the [published example in FONDA VIVO](https://vivo-fonda.hu-berlin.de/vivo/individual?uri=http%3A%2F%2Fexample.org%2Fvivo-import%2Frun-metadata%2Frun%2Fyagmur-rna-seq-analysis-workflow-hisat2-rs2-c1dacdb1-7d0f-4c61-9fac-941acded044b-2026-08-29t10-07-47-138000-00-00).
 
-Tasks: 3 strandness checks, 3 FASTP tasks, 2 annotation helpers, 1 HISAT2
-index, 3 FASTQ splits, 143 HISAT2 alignments, 143 Samtools conversions, 1
-merged BAM, and 3 Cufflinks tasks. The merged BAM is 23,777,553,300 bytes.
-
-The carbon factor is preliminary CO2Map DE data, not a finalized historical
-value. Energy without direct Kepler coverage is marked as estimated.
-
-## Required files
-
-```text
-/workspace/results/HISAT2-RS2-RUN06/trace-HISAT2-RS2-RUN06.txt
-/workspace/results/HISAT2-RS2-RUN06/nextflow-HISAT2-RS2-RUN06.log
-/workspace/results/HISAT2-RS2-RUN06/nextflow-debug-HISAT2-RS2-RUN06-combined.log
-/workspace/rnaseq-hisat2-rs2/source/
-```
-
-- Keep the Kubernetes pod name in the trace `native_id` field.
-- Combine the origin and resume debug logs without changing either original.
-- `INCLUDE_CACHED_ORIGIN_METRICS=1` includes retained metrics from origin pods.
-- `REQUIRE_SUCCEEDED=0` accepts a terminal mix of `COMPLETED` and `CACHED` rows.
-
-## Configure
+## 1. Configure
 
 ```bash
 cp examples/rnaseq-hisat2-rs2/publisher.env.example config/publisher.env
 cp examples/rnaseq-hisat2-rs2/input_datasets.json config/input_datasets.json
 ```
 
-Edit `config/publisher.env` for the workflow namespace, PVC, evidence paths,
-and VIVO links. Store the VIVO credentials once:
+Edit `config/publisher.env`:
+
+- set the namespace, PVC, service account, code path, and run operator URI;
+- confirm the trace and log paths;
+- set `GIT_COMMIT` to the workflow revision used for the run;
+- update the input metadata if different datasets were used.
+
+Store the VIVO credentials and deploy:
 
 ```bash
 ./scripts/configure-secrets.sh
+./scripts/deploy.sh
 ```
 
-## Validate
+## 2. Keep the run evidence
+
+The default paths are:
+
+```text
+/workspace/results/RUN_ID/trace-RUN_ID.txt
+/workspace/results/RUN_ID/nextflow-RUN_ID.log
+/workspace/results/RUN_ID/nextflow-debug-RUN_ID.log
+/workspace/rnaseq-hisat2-rs2/source/
+```
+
+The trace must keep the Kubernetes pod name in `native_id`. Collect metadata
+soon after the run, before Prometheus and Kepler data expire.
+
+For a fresh run, keep `INCLUDE_CACHED_ORIGIN_METRICS=0`. Set it to `1` only
+after a Nextflow resume, while metrics from the original pods are still
+available.
+
+## 3. Validate
 
 ```bash
 ./scripts/publish-run.sh RUN_ID --dry-run
 ```
 
-## Publish
+Open the generated `*.metrics.json` and confirm:
+
+- `summary.energy_pod_count` equals `pod_count`;
+- `summary.energy_estimated` is `false`.
+
+If either check fails, the energy value is incomplete or estimated and should
+not be reported as the measured energy of the whole workflow.
+
+## 4. Publish
 
 ```bash
 ./scripts/publish-run.sh RUN_ID
 ```
 
 The Turtle, metrics audit, and publication receipt are written to
-`/workspace/vivo-outbox`. `input-SHA256SUMS` contains the checksums for the
-three paired-end ENA datasets and the Ensembl BDGP6.32 release-106 reference
-files.
+`/workspace/vivo-outbox`. Open the [FONDA VIVO Runs page](https://vivo-fonda.hu-berlin.de/vivo/runs)
+to verify the new record.
