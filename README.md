@@ -37,16 +37,16 @@ The collector and publisher code is shared. Each workflow has a separate
 configuration profile because its workflow engine, execution-evidence paths,
 source repository, input data, and VIVO links differ.
 
-| Workflow | Workflow engine | Tested result | Profile |
+| Workflow | Workflow engine | Published example | Profile |
 | --- | --- | --- | --- |
-| Geoflow annual land-cover mapping | Nextflow | Successful Kubernetes run and VIVO publication | [Geoflow profile](examples/geoflow/README.md) |
-| FORCE2NXF rangeland workflow | Nextflow | Successful resumed run: 3,092 trace rows, 2,796 cached tasks, and 32 retry attempts | [FORCE2NXF profile](examples/force2nxf/README.md) |
-| RNA-seq analysis (Salmon, RS1) | Nextflow | Successful uncached run and VIVO publication: 11/11 tasks, three ENA samples, and complete trace CPU/memory coverage | [RNA-seq Salmon RS1 profile](examples/rnaseq-salmon-rs1/README.md) |
-| RNA-seq analysis (STAR, RS1) | Nextflow | Successful uncached run and VIVO publication: 16/16 tasks and complete trace/Kepler coverage | [RNA-seq STAR RS1 profile](examples/rnaseq-star-rs1/README.md) |
-| RNA-seq analysis (HISAT2, RS1) | Nextflow | 18/18 tasks; 34,078 s; 0.804 kWh; published to VIVO | [RNA-seq HISAT2 RS1 profile](examples/rnaseq-hisat2-rs1/README.md) |
-| RNA-seq analysis (HISAT2, RS2) | Nextflow | [Published VIVO run](https://vivo-fonda.hu-berlin.de/vivo/individual?uri=http%3A%2F%2Fexample.org%2Fvivo-import%2Frun-metadata%2Frun%2Fyagmur-rna-seq-analysis-workflow-hisat2-rs2-c1dacdb1-7d0f-4c61-9fac-941acded044b-2026-08-29t10-07-47-138000-00-00) | [RNA-seq HISAT2 RS2 profile](examples/rnaseq-hisat2-rs2/README.md) |
-| A2 MG-4 metagenomic read mapping | Snakemake | Successful reproduction: six resumable Kubernetes attempts and HTTP 200 VIVO publication | [A2 MG-4 profile](examples/a2-mg4/README.md) |
-| PopinSnake genomic insertion detection | Snakemake | Successful reproduction: 48/48 rules and a validated 381-record VCF | [PopinSnake profile](examples/popinsnake/README.md) |
+| Geoflow annual land-cover mapping | Nextflow | [Open in VIVO](https://vivo-fonda.hu-berlin.de/vivo/individual?uri=http%3A%2F%2Fexample.org%2Fvivo-import%2Frun-metadata%2Frun%2Fyagmur-geoflow-annual-land-cover-mapping-across-germany-b65ef87a-3b53-4ea0-9d31-fcd67c75a7e3-2026-08-25t14-11-24-351000-00-00) | [Geoflow profile](examples/geoflow/README.md) |
+| FORCE2NXF rangeland workflow | Nextflow | [Open in VIVO](https://vivo-fonda.hu-berlin.de/vivo/individual?uri=http%3A%2F%2Fexample.org%2Fvivo-import%2Frun-metadata%2Frun%2Fdefault-long-term-vegetation-dynamics-in-the-mediterranean-force2nxf-e5295c77-62e8-4773-afc5-706750fb1a33-2026-08-25t18-25-43-637000-00-00) | [FORCE2NXF profile](examples/force2nxf/README.md) |
+| RNA-seq analysis (Salmon, RS1) | Nextflow | [Open in VIVO](https://vivo-fonda.hu-berlin.de/vivo/individual?uri=http%3A%2F%2Fexample.org%2Fvivo-import%2Frun-metadata%2Frun%2Fyagmur-rna-seq-analysis-workflow-salmon-rs1-9347febf-9033-4c8f-8eb2-f699de6b3479-2026-08-28t18-35-04-684000-00-00) | [RNA-seq Salmon RS1 profile](examples/rnaseq-salmon-rs1/README.md) |
+| RNA-seq analysis (STAR, RS1) | Nextflow | [Open in VIVO](https://vivo-fonda.hu-berlin.de/vivo/individual?uri=http%3A%2F%2Fexample.org%2Fvivo-import%2Frun-metadata%2Frun%2Fyagmur-rna-seq-analysis-workflow-star-rs1-3afdb2f4-9abc-4fbc-86f2-c66e81b672ed-2026-08-31t07-25-43-891000-00-00) | [RNA-seq STAR RS1 profile](examples/rnaseq-star-rs1/README.md) |
+| RNA-seq analysis (HISAT2, RS1) | Nextflow | [Open in VIVO](https://vivo-fonda.hu-berlin.de/vivo/individual?uri=http%3A%2F%2Fexample.org%2Fvivo-import%2Frun-metadata%2Frun%2Fyagmur-rna-seq-analysis-workflow-hisat2-rs1-c0ece5b9-63ab-41ac-a0f5-1980d02b79dc-2026-09-01t11-38-23-240000-00-00) | [RNA-seq HISAT2 RS1 profile](examples/rnaseq-hisat2-rs1/README.md) |
+| RNA-seq analysis (HISAT2, RS2) | Nextflow | [Open in VIVO](https://vivo-fonda.hu-berlin.de/vivo/individual?uri=http%3A%2F%2Fexample.org%2Fvivo-import%2Frun-metadata%2Frun%2Fyagmur-rna-seq-analysis-workflow-hisat2-rs2-c1dacdb1-7d0f-4c61-9fac-941acded044b-2026-08-29t10-07-47-138000-00-00) | [RNA-seq HISAT2 RS2 profile](examples/rnaseq-hisat2-rs2/README.md) |
+| A2 MG-4 metagenomic read mapping | Snakemake | [Open in VIVO](https://vivo-fonda.hu-berlin.de/vivo/individual?uri=http%3A%2F%2Fexample.org%2Fvivo-import%2Frun-metadata%2Frun%2Fyagmur-metagenomic-read-mapping-with-customizable-job-granularity-a2-mg4-smoke-20260826-2026-08-26t11-10-52-00-00) | [A2 MG-4 profile](examples/a2-mg4/README.md) |
+| PopinSnake genomic insertion detection | Snakemake | [Open in VIVO](https://vivo-fonda.hu-berlin.de/vivo/individual?uri=http%3A%2F%2Fexample.org%2Fvivo-import%2Frun-metadata%2Frun%2Fyagmur-popinsnake-exploratory-workflow-for-genomic-insertion-detection-popinsnake-example-20260828-02-2026-08-28t08-03-05-00-00) | [PopinSnake profile](examples/popinsnake/README.md) |
 
 For the Nextflow profiles, task tags such as tile or sample identifiers are
 aggregated under the real process name. This keeps large FORCE2NXF RDF files
@@ -92,6 +92,7 @@ cp examples/a2-mg4/input_datasets.json config/input_datasets.json
 
 # OR: PopinSnake (Snakemake)
 cp examples/popinsnake/publisher.env.example config/popinsnake.publisher.env
+cp examples/popinsnake/input_datasets.json config/input_datasets.json
 ```
 
 Edit `config/publisher.env` and replace every `REPLACE_ME` value. At minimum
@@ -205,14 +206,6 @@ To remove a published run, use the publication ID from the receipt filename:
 The second command asks for confirmation and uses the same non-admin VIVO
 account. It removes only that run's metadata and keeps the local workflow and
 audit files. See [Remove a published run](docs/USER_GUIDE.md#7-remove-a-published-run).
-
-The carbon factor from `electricity-maps-latest` is the newest value available
-when metadata is collected. It is explicitly stored as a collection-time proxy,
-not as an exact historical value for the run interval.
-
-Profiles using `co2map` instead align a preliminary or finalized historical
-CO2Map factor to the run's resource-accounting interval and record its model
-status, hour, zone, and source URL in the audit and RDF method text.
 
 ## Documentation
 

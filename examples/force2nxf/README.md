@@ -1,57 +1,63 @@
-# FORCE2NXF tested profile
+# FORCE2NXF rangeland workflow
 
-This profile targets
-[CRC-FONDA/FORCE2NXF-Rangeland](https://github.com/CRC-FONDA/FORCE2NXF-Rangeland)
-and the companion Kubernetes setup in
-[YagmurKati/force2nxf-rangeland-vivo-metadata](https://github.com/YagmurKati/force2nxf-rangeland-vivo-metadata).
+Profile for
+[`CRC-FONDA/FORCE2NXF-Rangeland`](https://github.com/CRC-FONDA/FORCE2NXF-Rangeland)
+on Kubernetes. See a [published example in FONDA VIVO](https://vivo-fonda.hu-berlin.de/vivo/individual?uri=http%3A%2F%2Fexample.org%2Fvivo-import%2Frun-metadata%2Frun%2Fdefault-long-term-vegetation-dynamics-in-the-mediterranean-force2nxf-e5295c77-62e8-4773-afc5-706750fb1a33-2026-08-25t18-25-43-637000-00-00).
 
-## Verified publication
-
-Run `force2nxf-vivo-20260825-01-resume` completed on the FONDA cluster and was
-published to VIVO with HTTP 200 on 2026-08-26. The published metadata reports:
-
-- `Succeeded with warnings`: all workflow outputs completed, with 32 failed
-  attempts recovered by Nextflow retries;
-- 3,092 trace rows: 2,796 cached and 264 completed executions, plus the 32
-  historical failed attempts;
-- 2,302 seconds wall-clock duration;
-- 0.917701 kWh measured/estimated Kepler energy;
-- 0.247779 kg CO2e using the latest available Electricity Maps value as a
-  collection-time proxy, not a historical whole-run measurement.
-
-The exact published files are included for audit:
-
-- [timestamped TTL](force2nxf-vivo-20260825-01-resume-20260826T085029Z.ttl)
-- [HTTP 200 publication receipt](force2nxf-vivo-20260825-01-resume-20260826T085029Z.published.json)
-
-The full task-level metrics audit is retained with the workflow artifacts but
-is not committed because it contains detailed Kubernetes pod and query data.
-
-## Configure
-
-From the generic publisher repository:
+## 1. Configure
 
 ```bash
 cp examples/force2nxf/publisher.env.example config/publisher.env
 cp examples/force2nxf/input_datasets.json config/input_datasets.json
 ```
 
-Edit `config/publisher.env`. Replace every `REPLACE_ME` value and check its PVC
-paths against your FORCE2NXF deployment. Then store the approved non-admin VIVO
-account and optional Electricity Maps token:
+Replace every `REPLACE_ME` value and confirm the trace, log, and code paths.
+Store the VIVO credentials:
 
 ```bash
 ./scripts/configure-secrets.sh
 ```
 
-## Publish a completed FORCE2NXF run
+## 2. Keep the run evidence
 
-```bash
-INCLUDE_CACHED_ORIGIN_METRICS=1 \
-  ./scripts/publish-run.sh YOUR_COMPLETED_RUN_ID
+The profile expects:
+
+```text
+/workspace/rangeland/results/trace-RUN_ID.txt
+/workspace/rangeland/results/nextflow-RUN_ID.log
+/workspace/rangeland/FORCE2NXF-Rangeland/nextflowWF/.nextflow.log
+/workspace/rangeland/FORCE2NXF-Rangeland/
 ```
 
-The cached-origin option is recommended for a resumed FORCE2NXF run. It can
-recover CPU and energy measurements from the original pods only while those
-measurements remain within Prometheus retention. The command does not run or
-rerun FORCE2NXF.
+Keep the Kubernetes Pod name in the trace `native_id` field.
+
+## 3. Validate
+
+```bash
+./scripts/publish-run.sh RUN_ID --dry-run
+```
+
+For a reviewed resumed run, set `INCLUDE_CACHED_ORIGIN_METRICS=1` and
+`REQUIRE_SUCCEEDED=0` in `config/publisher.env` before validation.
+
+## 4. Publish
+
+```bash
+./scripts/publish-run.sh RUN_ID
+```
+
+Open the [FONDA VIVO Runs page](https://vivo-fonda.hu-berlin.de/vivo/runs) and
+check the new record. The TTL, metrics audit, and receipt are written to
+`/workspace/vivo-outbox`.
+
+## 5. Remove a publication
+
+Use the publication ID from the `.published.json` filename:
+
+```bash
+./scripts/remove-run.sh PUBLICATION_ID --dry-run
+./scripts/remove-run.sh PUBLICATION_ID
+```
+
+The second command asks for confirmation and removes only that published run's
+metadata from VIVO.

@@ -21,7 +21,7 @@ class RnaSeqStarProfileTests(unittest.TestCase):
         )
         self.assertEqual(env.count("@sha256:"), 5)
         self.assertIn('REQUIRE_SUCCEEDED="1"', env)
-        self.assertIn('CARBON_SOURCE="fixed"', env)
+        self.assertIn('CARBON_SOURCE="co2map"', env)
 
     def test_profile_uses_per_run_archived_evidence(self) -> None:
         env = (PROFILE / "publisher.env.example").read_text(encoding="utf-8")

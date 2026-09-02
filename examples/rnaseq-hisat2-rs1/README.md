@@ -1,71 +1,69 @@
 # RNA-seq HISAT2 RS1
 
-| Item | Value |
-| --- | --- |
-| Workflow | [`Nine-s/nextflow_RS1_hisat2_new`](https://github.com/Nine-s/nextflow_RS1_hisat2_new) |
-| Source commit | [`6b7688c7cab3c0bdb39e0e228ceab2bac31e2caa`](https://github.com/Nine-s/nextflow_RS1_hisat2_new/commit/6b7688c7cab3c0bdb39e0e228ceab2bac31e2caa) |
-| Kubernetes reproduction | [`YagmurKati/rnaseq-hisat2-rs1-reproduction`](https://github.com/YagmurKati/rnaseq-hisat2-rs1-reproduction) |
-| Run ID | `HISAT2-RS1-RUN01` |
-| Date | 2026-09-01 |
-| Mode | `exon_splice_site` |
-| Result | 18/18 tasks succeeded |
-| Duration | 34,078 s |
-| CPU | 72,348.757 CPU-s; Prometheus coverage 16/18 pods |
-| Memory | 2.0284489 GB average; 14.8994 GB peak; trace coverage 18/18 tasks |
-| Energy | 0.80436839 kWh; Kepler coverage 16/18 pods |
-| Carbon estimate | 0.3410522 kg CO2e using 0.424 kg CO2e/kWh |
-| VIVO record | [Open run](https://vivo-fonda.hu-berlin.de/vivo/individual?uri=http%3A%2F%2Fexample.org%2Fvivo-import%2Frun-metadata%2Frun%2Fyagmur-rna-seq-analysis-workflow-hisat2-rs1-c0ece5b9-63ab-41ac-a0f5-1980d02b79dc-2026-09-01t11-38-23-240000-00-00) |
+Profile for
+[`Nine-s/nextflow_RS1_hisat2_new`](https://github.com/Nine-s/nextflow_RS1_hisat2_new)
+on Kubernetes. See a [published example in FONDA VIVO](https://vivo-fonda.hu-berlin.de/vivo/individual?uri=http%3A%2F%2Fexample.org%2Fvivo-import%2Frun-metadata%2Frun%2Fyagmur-rna-seq-analysis-workflow-hisat2-rs1-c0ece5b9-63ab-41ac-a0f5-1980d02b79dc-2026-09-01t11-38-23-240000-00-00).
 
-Processes: CHECK_STRANDNESS, FASTP, EXTRACT_EXONS, EXTRACT_SPLICE_SITES,
-HISAT2_INDEX_REFERENCE, HISAT2_ALIGN, SAMTOOLS, and CUFFLINKS.
-
-The carbon factor is the latest Electricity Maps value available when the
-metadata was collected, not a historical value for the run interval.
-
-## Required files
-
-```text
-/workspace/results/HISAT2-RS1-RUN01/trace-HISAT2-RS1-RUN01.txt
-/workspace/results/HISAT2-RS1-RUN01/nextflow-HISAT2-RS1-RUN01.log
-/workspace/results/HISAT2-RS1-RUN01/nextflow-debug-HISAT2-RS1-RUN01.log
-/workspace/rnaseq-hisat2-rs1/source/
-```
-
-- Keep the Kubernetes pod name in the trace `native_id` field.
-- Archive `.nextflow.log` before the workflow driver exits.
-- `INCLUDE_CACHED_ORIGIN_METRICS=1` includes retained metrics from origin pods
-  after a resumed run.
-- `REQUIRE_SUCCEEDED=0` accepts a terminal mix of `COMPLETED` and `CACHED` rows.
-
-## Configure
-
-Copy the profile and input metadata:
+## 1. Configure
 
 ```bash
 cp examples/rnaseq-hisat2-rs1/publisher.env.example config/publisher.env
 cp examples/rnaseq-hisat2-rs1/input_datasets.json config/input_datasets.json
 ```
 
-Edit `config/publisher.env` for the workflow namespace, PVC, evidence paths,
-and VIVO links. Store the VIVO credentials once:
+Replace every `REPLACE_ME` value and confirm the trace, log, code, and input
+paths. Store the VIVO credentials:
 
 ```bash
 ./scripts/configure-secrets.sh
 ```
 
-## Validate
+## 2. Keep the run evidence
+
+The profile expects:
+
+```text
+/workspace/results/RUN_ID/trace-RUN_ID.txt
+/workspace/results/RUN_ID/nextflow-RUN_ID.log
+/workspace/results/RUN_ID/nextflow-debug-RUN_ID.log
+CODE_PATH
+```
+
+Keep the Kubernetes Pod name in the trace `native_id` field. Archive
+`.nextflow.log` under the run-specific debug-log name before the workflow
+driver exits.
+
+For a fresh run, keep `INCLUDE_CACHED_ORIGIN_METRICS=0` and
+`REQUIRE_SUCCEEDED=1`. Change them only when publishing a reviewed resumed run.
+
+## 3. Validate
 
 ```bash
 ./scripts/publish-run.sh RUN_ID --dry-run
 ```
 
-## Publish
+If whole-run measured energy is required, check that
+`summary.energy_pod_count` equals `pod_count` and
+`summary.energy_estimated` is `false` in the generated metrics audit.
+
+## 4. Publish
 
 ```bash
 ./scripts/publish-run.sh RUN_ID
 ```
 
-The Turtle, metrics audit, and publication receipt are written to
-`/workspace/vivo-outbox`. `input-SHA256SUMS` contains the checksums for the
-three paired-end ENA datasets and the Ensembl BDGP6.32 release-106 reference
-files.
+Open the [FONDA VIVO Runs page](https://vivo-fonda.hu-berlin.de/vivo/runs) and
+check the new record. The TTL, metrics audit, and receipt are written to
+`/workspace/vivo-outbox`.
+
+## 5. Remove a publication
+
+Use the publication ID from the `.published.json` filename:
+
+```bash
+./scripts/remove-run.sh PUBLICATION_ID --dry-run
+./scripts/remove-run.sh PUBLICATION_ID
+```
+
+The second command asks for confirmation and removes only that published run's
+metadata from VIVO.

@@ -8,7 +8,7 @@ PROFILE = ROOT / "examples" / "rnaseq-hisat2-rs1"
 
 
 class RnaSeqHisat2Rs1ProfileTests(unittest.TestCase):
-    def test_profile_pins_source_images_and_resume_policy(self) -> None:
+    def test_profile_pins_source_images_and_defaults_to_a_fresh_run(self) -> None:
         env = (PROFILE / "publisher.env.example").read_text(encoding="utf-8")
 
         self.assertIn(
@@ -23,8 +23,14 @@ class RnaSeqHisat2Rs1ProfileTests(unittest.TestCase):
             env,
         )
         self.assertEqual(env.count("@sha256:"), 5)
-        self.assertIn('INCLUDE_CACHED_ORIGIN_METRICS="1"', env)
-        self.assertIn('REQUIRE_SUCCEEDED="0"', env)
+        self.assertIn('NS="REPLACE_ME"', env)
+        self.assertIn('PVC_NAME="REPLACE_ME"', env)
+        self.assertIn('SERVICE_ACCOUNT="REPLACE_ME"', env)
+        self.assertIn('CODE_PATH="REPLACE_ME"', env)
+        self.assertIn('RUN_OPERATOR_URI="REPLACE_ME"', env)
+        self.assertIn('INCLUDE_CACHED_ORIGIN_METRICS="0"', env)
+        self.assertIn('REQUIRE_SUCCEEDED="1"', env)
+        self.assertIn('INPUT_METADATA_FILE="config/input_datasets.json"', env)
         self.assertIn('CARBON_SOURCE="electricity-maps-latest"', env)
 
     def test_profile_uses_reproduction_evidence_layout(self) -> None:
@@ -41,9 +47,6 @@ class RnaSeqHisat2Rs1ProfileTests(unittest.TestCase):
         self.assertIn(
             'DEBUG_LOG_PATH="/workspace/results/{run_id}/nextflow-debug-{run_id}.log"',
             env,
-        )
-        self.assertIn(
-            'CODE_PATH="/workspace/rnaseq-hisat2-rs1/source"', env
         )
 
     def test_input_metadata_names_the_tested_ena_accessions(self) -> None:
