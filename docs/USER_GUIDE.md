@@ -137,6 +137,34 @@ Open <https://vivo-fonda.hu-berlin.de/vivo/runs>, wait several seconds, and
 search for the workflow title and run time. Keep the three timestamped files on
 the PVC together.
 
+## 7. Remove a published run
+
+Copy the publication ID from the receipt filename. For
+`my-run-01-20260825T144622Z.published.json`, the publication ID is
+`my-run-01-20260825T144622Z`.
+
+Check the removal without changing VIVO:
+
+```bash
+./scripts/remove-run.sh my-run-01-20260825T144622Z --dry-run
+```
+
+Remove the run:
+
+```bash
+./scripts/remove-run.sh my-run-01-20260825T144622Z
+```
+
+Type `REMOVE` when prompted. The command uses the same VIVO account and
+Kubernetes Secret used for publication. It removes the selected run, its
+process and date records, and links to those records. It does not remove shared
+workflow, dataset, researcher, or cluster records.
+
+The workflow results, TTL, metrics audit, and receipt stay on the PVC. The
+receipt records the removal. Open <https://vivo-fonda.hu-berlin.de/vivo/runs>
+and confirm that the run is gone. Correct the configuration or evidence before
+publishing the run again.
+
 ## Retry rules
 
 - Missing trace/log: correct the paths in `config/publisher.env`, then rerun
@@ -145,8 +173,5 @@ the PVC together.
 - A run ID with an existing successful receipt is not sent twice unless
   `FORCE_REPUBLISH=1` is deliberately set after reviewing the VIVO record.
 - A dry run gets a new timestamped TTL and audit but no receipt or VIVO write.
-
-VIVO stores RDF triples, not the source filename. Removal must be performed by
-the VIVO administrator using the exact preserved TTL/audit and a run-scoped RDF
-deletion; do not use the entire TTL as a removal file because it also describes
-shared workflow and infrastructure resources.
+- A removed publication can be replaced after its receipt has been marked with
+  the successful removal.

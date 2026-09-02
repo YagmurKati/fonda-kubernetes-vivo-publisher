@@ -13,7 +13,7 @@ import urllib.parse
 import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Dict, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 
 DEFAULT_ENDPOINT = "https://vivo-fonda.hu-berlin.de/vivo/api/sparqlUpdate"
@@ -26,6 +26,9 @@ PREFIX_RE = re.compile(
 )
 BLANK_NODE_LABEL_RE = re.compile(r"(^|[\s;,])_:[A-Za-z0-9_]", re.MULTILINE)
 ANONYMOUS_NODE_RE = re.compile(r"(^|[\s;,])\[(?=\s|\])", re.MULTILINE)
+RESOURCE_SUBJECT_RE = re.compile(
+    r'^\s*<([^<>"{}|^`\\\x00-\x20]+)>', re.MULTILINE
+)
 
 
 class PublishError(RuntimeError):
@@ -88,6 +91,85 @@ def turtle_to_insert_update(turtle: str, graph: str) -> str:
     )
 
 
+def run_owned_resource_iris(turtle: str) -> List[str]:
+    """Return the run, date, and process IRIs owned by one collected run."""
+    blocks = re.split(r"\r?\n\s*\r?\n", turtle.strip())
+    run_blocks = [
+        block
+        for block in blocks
+        if re.search(r"(?m)^\s*rdf:type\s+rm:RunMetadata\s*[;.]", block)
+    ]
+    if len(run_blocks) != 1:
+        raise PublishError(
+            "the Turtle file must describe exactly one rm:RunMetadata resource"
+        )
+
+    run_match = RESOURCE_SUBJECT_RE.match(run_blocks[0])
+    if run_match is None:
+        raise PublishError("the run metadata resource must have an absolute IRI")
+    run_iri = run_match.group(1)
+    validate_absolute_iri(run_iri, "run IRI")
+
+    owned_iris = [run_iri]
+    date_matches = re.findall(
+        r"(?m)^\s*vivo:dateTimeValue\s+"
+        r'<([^<>"{}|^`\\\x00-\x20]+)>\s*[;.]',
+        run_blocks[0],
+    )
+    if len(date_matches) != 1:
+        raise PublishError(
+            "the run metadata resource must have exactly one vivo:dateTimeValue"
+        )
+    owned_iris.append(date_matches[0])
+
+    run_link = re.compile(
+        r"(?m)^\s*rm:isWorkflowProcessOf\s+<"
+        + re.escape(run_iri)
+        + r">\s*[;.]"
+    )
+    for block in blocks:
+        if not re.search(
+            r"(?m)^\s*rdf:type\s+rm:WorkflowProcessRun\s*[;.]", block
+        ):
+            continue
+        if not run_link.search(block):
+            raise PublishError(
+                "a workflow process in the Turtle file belongs to another run"
+            )
+        process_match = RESOURCE_SUBJECT_RE.match(block)
+        if process_match is None:
+            raise PublishError("workflow process resources must have absolute IRIs")
+        owned_iris.append(process_match.group(1))
+
+    for resource_iri in owned_iris:
+        validate_absolute_iri(resource_iri, "run-owned resource IRI")
+    if len(set(owned_iris)) != len(owned_iris):
+        raise PublishError("the Turtle file contains duplicate run-owned resource IRIs")
+    return owned_iris
+
+
+def turtle_to_run_delete_update(turtle: str, graph: str) -> Tuple[str, str, int]:
+    """Build a deletion limited to one run and its owned resources."""
+    validate_absolute_iri(graph, "graph")
+    owned_iris = run_owned_resource_iris(turtle)
+    values = "\n".join(f"      <{iri}>" for iri in owned_iris)
+    update = (
+        "DELETE {\n"
+        f"  GRAPH <{graph}> {{ ?subject ?predicate ?object }}\n"
+        "}\n"
+        "WHERE {\n"
+        f"  GRAPH <{graph}> {{\n"
+        "    VALUES ?target {\n"
+        f"{values}\n"
+        "    }\n"
+        "    ?subject ?predicate ?object .\n"
+        "    FILTER (?subject = ?target || ?object = ?target)\n"
+        "  }\n"
+        "}\n"
+    )
+    return update, owned_iris[0], len(owned_iris)
+
+
 def read_secret_file(path: Path, label: str) -> str:
     try:
         value = path.read_text(encoding="utf-8").rstrip("\r\n")
@@ -108,6 +190,10 @@ def load_receipt(path: Path) -> Optional[Dict[str, object]]:
     return value if isinstance(value, dict) else None
 
 
+def is_success_status(value: object) -> bool:
+    return type(value) is int and 200 <= value < 300
+
+
 def receipt_matches(
     path: Path, ttl_sha256: str, endpoint: str, graph: str
 ) -> bool:
@@ -117,8 +203,26 @@ def receipt_matches(
         and receipt.get("ttl_sha256") == ttl_sha256
         and receipt.get("endpoint") == endpoint
         and receipt.get("graph") == graph
-        and receipt.get("http_status") in range(200, 300)
+        and is_success_status(receipt.get("http_status"))
+        and not receipt.get("removed_at")
     )
+
+
+def require_publication_receipt(
+    path: Path, ttl_sha256: str, endpoint: str, graph: str
+) -> Dict[str, object]:
+    receipt = load_receipt(path)
+    if receipt is None:
+        raise PublishError(f"publication receipt not found or invalid: {path}")
+    if receipt.get("ttl_sha256") != ttl_sha256:
+        raise PublishError("the publication receipt does not match the TTL file")
+    if receipt.get("endpoint") != endpoint or receipt.get("graph") != graph:
+        raise PublishError(
+            "the publication receipt does not match the VIVO endpoint and graph"
+        )
+    if not is_success_status(receipt.get("http_status")):
+        raise PublishError("the receipt does not record a successful publication")
+    return receipt
 
 
 def write_receipt_atomic(path: Path, receipt: Dict[str, object]) -> None:
@@ -193,14 +297,14 @@ def publish_with_retries(
         if attempt < max_attempts:
             delay = retry_delay_seconds * attempt
             print(
-                f"VIVO publication attempt {attempt} failed; retrying in "
+                f"VIVO update attempt {attempt} failed; retrying in "
                 f"{delay:g} seconds.",
                 file=sys.stderr,
             )
             time.sleep(delay)
 
     raise PublishError(
-        f"VIVO publication failed after {max_attempts} attempts: "
+        f"VIVO update failed after {max_attempts} attempts: "
         f"{last_error[:500]}"
     )
 
@@ -221,6 +325,16 @@ def build_args() -> argparse.Namespace:
     parser.add_argument("--retry-delay-seconds", type=float, default=10.0)
     parser.add_argument("--timeout-seconds", type=int, default=120)
     parser.add_argument("--force", action="store_true")
+    parser.add_argument(
+        "--remove",
+        action="store_true",
+        help="Remove the run represented by the TTL instead of publishing it.",
+    )
+    parser.add_argument(
+        "--confirm-removal",
+        action="store_true",
+        help="Confirm a non-dry-run removal.",
+    )
     parser.add_argument(
         "--dry-run",
         action="store_true",
@@ -247,11 +361,65 @@ def main() -> None:
         turtle = args.ttl_file.read_text(encoding="utf-8")
     except OSError as exc:
         raise PublishError(f"could not read TTL file {args.ttl_file}: {exc}") from exc
-    update = turtle_to_insert_update(turtle, args.graph)
     ttl_sha256 = sha256_text(turtle)
     receipt_path = args.receipt_file or args.ttl_file.with_suffix(
         ".published.json"
     )
+
+    if args.remove:
+        update, run_iri, owned_resource_count = turtle_to_run_delete_update(
+            turtle, args.graph
+        )
+        receipt = require_publication_receipt(
+            receipt_path, ttl_sha256, args.endpoint, args.graph
+        )
+        if receipt.get("removed_at"):
+            print(f"Already removed from VIVO: {run_iri}")
+            print(f"Receipt: {receipt_path}")
+            return
+        if args.dry_run:
+            print(f"Removal validated: {args.ttl_file}")
+            print(f"Run: {run_iri}")
+            print(f"Run-owned resources: {owned_resource_count}")
+            print(f"Target graph: {args.graph}")
+            return
+        if not args.confirm_removal:
+            raise PublishError(
+                "--confirm-removal is required to remove a published run"
+            )
+        if args.email_file is None or args.password_file is None:
+            raise PublishError(
+                "--email-file and --password-file are required for removal"
+            )
+        email = read_secret_file(args.email_file, "email")
+        password = read_secret_file(args.password_file, "password")
+        if "@" not in email:
+            raise PublishError("the VIVO email credential is not a valid email address")
+        status, response_text, attempts = publish_with_retries(
+            endpoint=args.endpoint,
+            email=email,
+            password=password,
+            update=update,
+            max_attempts=args.max_attempts,
+            retry_delay_seconds=args.retry_delay_seconds,
+            timeout_seconds=args.timeout_seconds,
+        )
+        receipt.update(
+            {
+                "removal_attempts": attempts,
+                "removal_http_status": status,
+                "removal_response_excerpt": response_text.strip()[:500],
+                "removed_at": datetime.now(timezone.utc).isoformat(),
+                "removed_run_uri": run_iri,
+            }
+        )
+        write_receipt_atomic(receipt_path, receipt)
+        print(f"Removed VIVO run: {run_iri}")
+        print(f"HTTP {status}")
+        print(f"Receipt updated: {receipt_path}")
+        return
+
+    update = turtle_to_insert_update(turtle, args.graph)
 
     if args.dry_run:
         print(f"TTL validated: {args.ttl_file}")

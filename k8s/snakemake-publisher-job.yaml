@@ -37,13 +37,15 @@ spec:
               if [[ "$DRY_RUN" != "1" && "$FORCE_REPUBLISH" != "1" ]]; then
                 shopt -s nullglob
                 receipts=("$output_dir/${RUN_ID}-"*.published.json)
-                if (( ${#receipts[@]} > 0 )); then
-                  printf 'A publication receipt already exists for %s: %s\n' \
-                    "$RUN_ID" "${receipts[0]}" >&2
-                  printf '%s\n' \
-                    'Set FORCE_REPUBLISH=1 only after reviewing the existing VIVO record.' >&2
-                  exit 4
-                fi
+                for receipt in "${receipts[@]}"; do
+                  if ! grep -Eq '"removed_at"[[:space:]]*:' "$receipt"; then
+                    printf 'A publication receipt already exists for %s: %s\n' \
+                      "$RUN_ID" "$receipt" >&2
+                    printf '%s\n' \
+                      'Set FORCE_REPUBLISH=1 only after reviewing the existing VIVO record.' >&2
+                    exit 4
+                  fi
+                done
               fi
 
               python3 /opt/fonda-vivo/collector.py \

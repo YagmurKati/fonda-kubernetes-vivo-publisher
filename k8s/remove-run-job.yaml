@@ -1,0 +1,93 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: __JOB_NAME__
+  namespace: __NAMESPACE__
+  labels:
+    app.kubernetes.io/name: fonda-vivo-run-remover
+    app.kubernetes.io/managed-by: fonda-kubernetes-vivo-publisher
+spec:
+  backoffLimit: 0
+  activeDeadlineSeconds: 600
+  ttlSecondsAfterFinished: 86400
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: fonda-vivo-run-remover
+        app.kubernetes.io/managed-by: fonda-kubernetes-vivo-publisher
+    spec:
+      serviceAccountName: __SERVICE_ACCOUNT__
+      restartPolicy: Never
+      containers:
+        - name: remove-run
+          image: nextflow/nextflow@sha256:b035b9fa7243ed09b9896c2b752d9e399f337827932bd45495efb0aed8e1dca1
+          imagePullPolicy: IfNotPresent
+          command: ["/bin/bash", "-lc"]
+          args:
+            - |
+              set -euo pipefail
+              ttl_file="${OUTPUT_DIR}/${PUBLICATION_ID}.ttl"
+              receipt_file="${OUTPUT_DIR}/${PUBLICATION_ID}.published.json"
+              test -r "$ttl_file"
+              test -r "$receipt_file"
+
+              removal_args=(
+                python3 /opt/fonda-vivo/publisher.py
+                "$ttl_file"
+                --remove
+                --endpoint "$VIVO_ENDPOINT"
+                --graph "$VIVO_GRAPH"
+                --receipt-file "$receipt_file"
+              )
+              if [[ "$DRY_RUN" == "1" ]]; then
+                removal_args+=(--dry-run)
+              else
+                removal_args+=(
+                  --confirm-removal
+                  --email-file /var/run/secrets/fonda-vivo/email
+                  --password-file /var/run/secrets/fonda-vivo/password
+                )
+              fi
+              "${removal_args[@]}"
+          envFrom:
+            - configMapRef:
+                name: fonda-vivo-publisher-settings
+          env:
+            - name: PUBLICATION_ID
+              value: "__PUBLICATION_ID__"
+            - name: OUTPUT_DIR
+              value: "__OUTPUT_DIR__"
+            - name: DRY_RUN
+              value: "__DRY_RUN__"
+            - name: PYTHONDONTWRITEBYTECODE
+              value: "1"
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsUser: 0
+          volumeMounts:
+            - name: workspace
+              mountPath: /workspace
+            - name: publisher-code
+              mountPath: /opt/fonda-vivo
+              readOnly: true
+            - name: vivo-credentials
+              mountPath: /var/run/secrets/fonda-vivo
+              readOnly: true
+      volumes:
+        - name: workspace
+          persistentVolumeClaim:
+            claimName: __PVC_NAME__
+        - name: publisher-code
+          configMap:
+            name: fonda-vivo-publisher-code
+        - name: vivo-credentials
+          secret:
+            secretName: __VIVO_SECRET__
+            defaultMode: 0400

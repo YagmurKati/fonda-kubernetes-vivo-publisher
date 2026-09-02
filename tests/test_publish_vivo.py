@@ -1,5 +1,7 @@
 import importlib.util
+import json
 import sys
+import tempfile
 import unittest
 import urllib.parse
 from pathlib import Path
@@ -22,6 +24,27 @@ SAMPLE_TTL = """\
 
 <urn:fonda:test> rdfs:label "temporary test"@en ;
   ex:value "1" .
+"""
+
+RUN_TTL = """\
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix vivo: <http://vivoweb.org/ontology/core#> .
+@prefix rm: <http://example.org/ontology/run-metadata#> .
+
+<urn:fonda:shared-workflow>
+  rm:hasRun <urn:fonda:run-1> .
+
+<urn:fonda:run-1>
+  rdf:type rm:RunMetadata ;
+  vivo:dateTimeValue <urn:fonda:date-1> ;
+  rm:hasWorkflowProcess <urn:fonda:process-1> .
+
+<urn:fonda:date-1>
+  rdf:type vivo:DateTimeValue .
+
+<urn:fonda:process-1>
+  rdf:type rm:WorkflowProcessRun ;
+  rm:isWorkflowProcessOf <urn:fonda:run-1> .
 """
 
 
@@ -48,6 +71,57 @@ class TurtleUpdateTests(unittest.TestCase):
         with self.assertRaisesRegex(publish_vivo.PublishError, "no @prefix"):
             publish_vivo.turtle_to_insert_update(
                 "# no data\n", publish_vivo.DEFAULT_GRAPH
+            )
+
+    def test_builds_run_scoped_delete_without_shared_resource(self):
+        update, run_iri, resource_count = (
+            publish_vivo.turtle_to_run_delete_update(
+                RUN_TTL, publish_vivo.DEFAULT_GRAPH
+            )
+        )
+
+        self.assertEqual(run_iri, "urn:fonda:run-1")
+        self.assertEqual(resource_count, 3)
+        self.assertIn("DELETE", update)
+        self.assertIn("<urn:fonda:run-1>", update)
+        self.assertIn("<urn:fonda:date-1>", update)
+        self.assertIn("<urn:fonda:process-1>", update)
+        self.assertNotIn("<urn:fonda:shared-workflow>", update)
+        self.assertIn("?object = ?target", update)
+
+    def test_rejects_removal_turtle_without_one_run(self):
+        with self.assertRaisesRegex(
+            publish_vivo.PublishError, "exactly one rm:RunMetadata"
+        ):
+            publish_vivo.turtle_to_run_delete_update(
+                SAMPLE_TTL, publish_vivo.DEFAULT_GRAPH
+            )
+
+
+class ReceiptTests(unittest.TestCase):
+    def test_removed_receipt_does_not_block_republication(self):
+        with tempfile.TemporaryDirectory() as directory:
+            receipt_path = Path(directory) / "run.published.json"
+            receipt_path.write_text(
+                json.dumps(
+                    {
+                        "ttl_sha256": "abc",
+                        "endpoint": publish_vivo.DEFAULT_ENDPOINT,
+                        "graph": publish_vivo.DEFAULT_GRAPH,
+                        "http_status": 200,
+                        "removed_at": "2026-09-02T12:00:00+00:00",
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            self.assertFalse(
+                publish_vivo.receipt_matches(
+                    receipt_path,
+                    "abc",
+                    publish_vivo.DEFAULT_ENDPOINT,
+                    publish_vivo.DEFAULT_GRAPH,
+                )
             )
 
 

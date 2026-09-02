@@ -79,5 +79,6 @@ and FORCE2NXF TTL files remain well below these limits.
 
 1. Disable the user's VIVO API permission/account.
 2. Ask the namespace owner to delete `fonda-vivo-credentials`.
-3. Preserve published run records unless a documented RDF deletion has been
-   reviewed.
+3. Preserve published run records unless the user removed a selected
+   publication with `scripts/remove-run.sh` or an administrator reviewed a
+   run-scoped RDF deletion.

@@ -195,6 +195,17 @@ It also prints `HTTP 200`. Then open the
 [VIVO Runs page](https://vivo-fonda.hu-berlin.de/vivo/runs); allow a few seconds
 for its list to load.
 
+To remove a published run, use the publication ID from the receipt filename:
+
+```bash
+./scripts/remove-run.sh my-run-01-20260825T144622Z --dry-run
+./scripts/remove-run.sh my-run-01-20260825T144622Z
+```
+
+The second command asks for confirmation and uses the same non-admin VIVO
+account. It removes only that run's metadata and keeps the local workflow and
+audit files. See [Remove a published run](docs/USER_GUIDE.md#7-remove-a-published-run).
+
 The carbon factor from `electricity-maps-latest` is the newest value available
 when metadata is collected. It is explicitly stored as a collection-time proxy,
 not as an exact historical value for the run interval.
