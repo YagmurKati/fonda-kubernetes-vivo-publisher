@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "datasets": [
+    {
+      "uri": "http://example.org/vivo-import/run-metadata/input-dataset/rnaseq-a2-drosophila-sra-reads",
+      "label": "Drosophila melanogaster RNA-seq read set (SRR1509507, SRR14197369, SRR14404397)",
+      "description": "Three paired-end Drosophila melanogaster RNA-seq read sets consumed through params.reads by the HISAT2 RS1 workflow.",
+      "access_instructions_url": "https://ena-docs.readthedocs.io/en/latest/retrieval/file-download.html",
+      "upstream_source_urls": [
+        "https://www.ebi.ac.uk/ena/browser/view/SRR1509507",
+        "https://www.ebi.ac.uk/ena/browser/view/SRR14197369",
+        "https://www.ebi.ac.uk/ena/browser/view/SRR14404397"
+      ],
+      "storage_location": "FONDA Kubernetes persistent storage: /workspace/data/reads (one _1.fastq.gz and one _2.fastq.gz file per accession)",
+      "access_statement": "The public FASTQ files were resolved through the ENA Portal API and downloaded resumably from ENA. The exact bytes staged on the shared PVC are the same read set used by the sibling A2 RNA-seq RS1 profiles.",
+      "link_to_workflow": true,
+      "link_to_run": true
+    },
+    {
+      "uri": "http://example.org/vivo-import/run-metadata/input-dataset/rnaseq-a2-drosophila-ensembl-reference",
+      "label": "Drosophila melanogaster reference genome, annotation and cDNA (Ensembl BDGP6.32, release 106)",
+      "description": "The genome FASTA, cDNA FASTA and GTF inputs used for HISAT2 splice-aware indexing and alignment, strandedness checking, and Cufflinks quantification.",
+      "access_instructions_url": "https://www.ensembl.org/info/data/ftp/index.html",
+      "upstream_source_urls": [
+        "https://ftp.ensembl.org/pub/release-106/fasta/drosophila_melanogaster/dna/Drosophila_melanogaster.BDGP6.32.dna.toplevel.fa.gz",
+        "https://ftp.ensembl.org/pub/release-106/fasta/drosophila_melanogaster/cdna/Drosophila_melanogaster.BDGP6.32.cdna.all.fa.gz",
+        "https://ftp.ensembl.org/pub/release-106/gtf/drosophila_melanogaster/Drosophila_melanogaster.BDGP6.32.106.gtf.gz"
+      ],
+      "format_documentation_url": "https://www.ensembl.org/info/website/upload/gff.html",
+      "storage_location": "FONDA Kubernetes persistent storage: /workspace/data/reference (genome FASTA, cDNA FASTA and GTF stored uncompressed)",
+      "access_statement": "Assembly BDGP6.32 and Ensembl release 106 are pinned from the RS1 HISAT2 workflow configuration.",
+      "link_to_workflow": true,
+      "link_to_run": true
+    }
+  ]
+}
