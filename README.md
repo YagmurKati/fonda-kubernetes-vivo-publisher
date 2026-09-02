@@ -44,7 +44,7 @@ source repository, input data, and VIVO links differ.
 | RNA-seq analysis (Salmon, RS1) | Nextflow | Successful uncached run and VIVO publication: 11/11 tasks, three ENA samples, and complete trace CPU/memory coverage | [RNA-seq Salmon RS1 profile](examples/rnaseq-salmon-rs1/README.md) |
 | RNA-seq analysis (STAR, RS1) | Nextflow | Successful uncached run and VIVO publication: 16/16 tasks and complete trace/Kepler coverage | [RNA-seq STAR RS1 profile](examples/rnaseq-star-rs1/README.md) |
 | RNA-seq analysis (HISAT2, RS1) | Nextflow | 18/18 tasks; 34,078 s; 0.804 kWh; published to VIVO | [RNA-seq HISAT2 RS1 profile](examples/rnaseq-hisat2-rs1/README.md) |
-| RNA-seq analysis (HISAT2, RS2) | Nextflow | Successful resumed run: 302/302 tasks, 143 alignments, 23.8 GB merged BAM, and preserved Cufflinks outputs | [RNA-seq HISAT2 RS2 profile](examples/rnaseq-hisat2-rs2/README.md) |
+| RNA-seq analysis (HISAT2, RS2) | Nextflow | 302/302 tasks; 143 alignments; 23.8 GB merged BAM | [RNA-seq HISAT2 RS2 profile](examples/rnaseq-hisat2-rs2/README.md) |
 | A2 MG-4 metagenomic read mapping | Snakemake | Successful reproduction: six resumable Kubernetes attempts and HTTP 200 VIVO publication | [A2 MG-4 profile](examples/a2-mg4/README.md) |
 | PopinSnake genomic insertion detection | Snakemake | Successful reproduction: 48/48 rules and a validated 381-record VCF | [PopinSnake profile](examples/popinsnake/README.md) |
 
