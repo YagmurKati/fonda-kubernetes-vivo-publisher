@@ -41,6 +41,7 @@ source repository, input data, and VIVO links differ.
 | --- | --- | --- | --- |
 | Geoflow annual land-cover mapping | Nextflow | [Open in VIVO](https://vivo-fonda.hu-berlin.de/vivo/individual?uri=http%3A%2F%2Fexample.org%2Fvivo-import%2Frun-metadata%2Frun%2Fyagmur-geoflow-annual-land-cover-mapping-across-germany-b65ef87a-3b53-4ea0-9d31-fcd67c75a7e3-2026-08-25t14-11-24-351000-00-00) | [Geoflow profile](examples/geoflow/README.md) |
 | FORCE2NXF rangeland workflow | Nextflow | [Open in VIVO](https://vivo-fonda.hu-berlin.de/vivo/individual?uri=http%3A%2F%2Fexample.org%2Fvivo-import%2Frun-metadata%2Frun%2Fdefault-long-term-vegetation-dynamics-in-the-mediterranean-force2nxf-e5295c77-62e8-4773-afc5-706750fb1a33-2026-08-25t18-25-43-637000-00-00) | [FORCE2NXF profile](examples/force2nxf/README.md) |
+| Trends in European Grasslands (test-site study, FORCE stage) | Nextflow | [Open in VIVO](https://vivo-fonda.hu-berlin.de/vivo/individual?uri=http%3A%2F%2Fexample.org%2Fvivo-import%2Frun-metadata%2Frun%2Fyagmur-trends-in-european-grasslands-test-site-study-a2c234fa-6afc-47d0-abe3-15564ba58b2a-2026-09-02t15-28-30-259000-00-00) | [FONDA_trends profile](examples/fonda-trends/README.md) |
 | RNA-seq analysis (Salmon, RS1) | Nextflow | [Open in VIVO](https://vivo-fonda.hu-berlin.de/vivo/individual?uri=http%3A%2F%2Fexample.org%2Fvivo-import%2Frun-metadata%2Frun%2Fyagmur-rna-seq-analysis-workflow-salmon-rs1-9347febf-9033-4c8f-8eb2-f699de6b3479-2026-08-28t18-35-04-684000-00-00) | [RNA-seq Salmon RS1 profile](examples/rnaseq-salmon-rs1/README.md) |
 | RNA-seq analysis (STAR, RS1) | Nextflow | [Open in VIVO](https://vivo-fonda.hu-berlin.de/vivo/individual?uri=http%3A%2F%2Fexample.org%2Fvivo-import%2Frun-metadata%2Frun%2Fyagmur-rna-seq-analysis-workflow-star-rs1-3afdb2f4-9abc-4fbc-86f2-c66e81b672ed-2026-08-31t07-25-43-891000-00-00) | [RNA-seq STAR RS1 profile](examples/rnaseq-star-rs1/README.md) |
 | RNA-seq analysis (HISAT2, RS1) | Nextflow | [Open in VIVO](https://vivo-fonda.hu-berlin.de/vivo/individual?uri=http%3A%2F%2Fexample.org%2Fvivo-import%2Frun-metadata%2Frun%2Fyagmur-rna-seq-analysis-workflow-hisat2-rs1-c0ece5b9-63ab-41ac-a0f5-1980d02b79dc-2026-09-01t11-38-23-240000-00-00) | [RNA-seq HISAT2 RS1 profile](examples/rnaseq-hisat2-rs1/README.md) |
@@ -69,6 +70,10 @@ cp examples/geoflow/input_datasets.json config/input_datasets.json
 # OR: FORCE2NXF
 cp examples/force2nxf/publisher.env.example config/publisher.env
 cp examples/force2nxf/input_datasets.json config/input_datasets.json
+
+# OR: FONDA_trends European grasslands (FORCE stage)
+cp examples/fonda-trends/publisher.env.example config/publisher.env
+cp examples/fonda-trends/input_datasets.json config/input_datasets.json
 
 # OR: RNA-seq Salmon RS1
 cp examples/rnaseq-salmon-rs1/publisher.env.example config/publisher.env

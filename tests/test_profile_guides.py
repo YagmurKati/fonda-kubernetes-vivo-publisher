@@ -7,6 +7,7 @@ ROOT = Path(__file__).resolve().parents[1]
 EXAMPLES = ROOT / "examples"
 PROFILE_NAMES = (
     "a2-mg4",
+    "fonda-trends",
     "force2nxf",
     "geoflow",
     "popinsnake",
