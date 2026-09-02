@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "datasets": [
+    {
+      "uri": "http://example.org/vivo-import/run-metadata/input-dataset/trends-force-level2-norm-x0067-y0042",
+      "label": "FORCE Level-2 normalized BOA datacube tile X0067_Y0042 (European grasslands test site)",
+      "description": "Cross-normalized FORCE Level-2 Bottom-of-Atmosphere (BOA) analysis-ready datacube for a single test-site tile (X0067_Y0042), derived from Landsat time series and consumed by the FORCE force-higher-level Time Series Analysis / Spectral Mixture Analysis step of the FONDA_trends workflow.",
+      "access_instructions_url": "https://force-eo.readthedocs.io/en/latest/components/lower-level/level2/index.html",
+      "upstream_source_urls": [
+        "https://earthexplorer.usgs.gov/",
+        "https://dataspace.copernicus.eu/"
+      ],
+      "format_documentation_url": "https://force-eo.readthedocs.io/en/latest/howto/datacube.html",
+      "storage_location": "FONDA Kubernetes cephfs, mounted read-only at /data/level2_norm (tile directory X0067_Y0042 plus datacube-definition.prj)",
+      "access_statement": "Level-1 Landsat scenes were obtained from USGS and ESA-Copernicus repositories and processed to Level-2 BOA with FORCE, then cross-normalized between sensors. Only the single test-site tile X0067_Y0042 was consumed by this run, over the FORCE DATE_RANGE 2020-01-01 to 2023-12-31 (sensors LND04 LND05 LND07 LND08 LND09).",
+      "link_to_workflow": true,
+      "link_to_run": true
+    },
+    {
+      "uri": "http://example.org/vivo-import/run-metadata/input-dataset/trends-de-endmembers",
+      "label": "Spectral mixture analysis endmembers (DE_endmembers.txt)",
+      "description": "Endmember spectra (gv, npv, soil, shade) supplied to FORCE Spectral Mixture Analysis via FILE_ENDMEM for the grassland trends test run.",
+      "storage_location": "FONDA Kubernetes cephfs, read-only at /data/wf/endm/DE_endmembers.txt",
+      "access_statement": "Endmember definition file distributed with the FONDA_trends workflow, used to unmix the BOA time series into ground-cover fractions.",
+      "link_to_workflow": true,
+      "link_to_run": true
+    }
+  ]
+}
