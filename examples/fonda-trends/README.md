@@ -2,20 +2,33 @@
 
 Profile for
 [`erfea/FONDA_trends-nf`](https://github.com/erfea/FONDA_trends-nf)
-on Kubernetes. See a [published example in FONDA VIVO](https://vivo-fonda.hu-berlin.de/vivo/individual?uri=http%3A%2F%2Fexample.org%2Fvivo-import%2Frun-metadata%2Frun%2Fyagmur-trends-in-european-grasslands-test-site-study-a2c234fa-6afc-47d0-abe3-15564ba58b2a-2026-09-02t15-28-30-259000-00-00).
+on Kubernetes. See a [published example in FONDA VIVO](https://vivo-fonda.hu-berlin.de/vivo/individual?uri=http%3A%2F%2Fexample.org%2Fvivo-import%2Frun-metadata%2Frun%2Fyagmur-trends-in-european-grasslands-test-site-study-2e7a5fcb-44d1-44ea-b3ad-79d2bdab52d8-2026-09-02t20-24-23-057000-00-00).
 
-The tested run covers the FORCE `force-higher-level` Time Series Analysis /
-Spectral Mixture Analysis stage on a single test-site tile (`X0067_Y0042`,
-`davidfrantz/force:3.10.04`), executed with the Nextflow Kubernetes executor.
+The run covers the full pipeline on a single test-site tile (`X0067_Y0042`),
+executed with the Nextflow Kubernetes executor:
+`FORCE_HIGHER_LEVEL` (per endmember gv, npv, soil, shade) →
+`PHENOLOGY_SOS_EOS` → `FOLD_AND_FILL` → `CEF` → `AR` → `GLS`.
+FORCE runs in `davidfrantz/force:3.10.04`, the Python steps in
+`pangeo/pangeo-notebook`, and the R trend analyses (`AR`, `GLS`) in
+`friedricht/nf-trends:v5`.
 
-> **Scope: FORCE stage only — this is not a full pipeline run.**
-> The published metadata describes the FORCE stage only. The downstream stages
-> (phenology SOS/EOS, fold-and-fill, cumulative endmember fractions, and the AR
-> and GLS trend analyses) are **not** included: in the Kubernetes port the
-> FORCE output (`./trend` in the task work directory) is not yet wired to the
-> `/data/level3/<endmember>` location the downstream steps read from, so the
-> pipeline stops after FORCE. Completing that FORCE → `/data/level3` hand-off is
-> a prerequisite before this profile can publish a full end-to-end run.
+## Wiring the FORCE hand-off
+
+The Kubernetes port needed two adjustments to run end to end, applied to the
+workflow copy before launch:
+
+- FORCE must write into the shared results tree the downstream steps read.
+  Point its `DIR_HIGHER` at `/data/level3/<endmember>` instead of the task
+  work directory, and create that directory in the task script.
+- The mask input is optional for this tile. Pass a placeholder file named
+  `null` for `maskDir` so the FORCE module resolves it as `DIR_MASK = NULL`.
+
+Provide `/data/level3` as a **writable** volume shared by every task Pod (for
+example a subpath of the run's work PVC). The FORCE input datacube stays mounted
+read-only at `/data`, so the shared inputs are never modified. FORCE writes
+`level3/<endmember>/<tile>/`, phenology adds the SoS/EoS day-of-year layers,
+fold-and-fill writes `*_FnF.tif`, and CEF writes `level3/cef/<tile>/`, which
+`AR` and `GLS` consume.
 
 ## 1. Configure
 
@@ -36,16 +49,16 @@ paths. Store the VIVO credentials:
 The profile expects:
 
 ```text
-/workspace/out/trace-force.txt
-/workspace/out/console-force.log
-/workspace/out/nextflow-force.log
+/workspace/out/trace-full.txt
+/workspace/out/console-full.log
+/workspace/out/nextflow-full.log
 /workspace/wf
 ```
 
 Keep the Kubernetes Pod name in the trace `native_id` field. Archive
-`.nextflow.log` under the `nextflow-force.log` name before the workflow driver
-exits. The FORCE input datacube is mounted read-only at `/data`, so run outputs
-and the Nextflow work directory must live on a separate writable PVC.
+`.nextflow.log` under the `nextflow-full.log` name before the workflow driver
+exits. Because `/data` is mounted read-only, the run outputs and the Nextflow
+work directory must live on a separate writable PVC.
 
 ## 3. Validate
 
