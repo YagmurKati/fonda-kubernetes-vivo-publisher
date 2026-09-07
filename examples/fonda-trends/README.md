@@ -12,6 +12,12 @@ FORCE runs in `davidfrantz/force:3.10.04`, the Python steps in
 `pangeo/pangeo-notebook`, and the R trend analyses (`AR`, `GLS`) in
 `friedricht/nf-trends:v5`.
 
+To run the workflow end to end on Kubernetes yourself, use the companion
+reproduction repository, which fetches the pinned upstream scripts and applies
+the wiring below:
+[`YagmurKati/fonda-trends-kubernetes-reproduction`](https://github.com/YagmurKati/fonda-trends-kubernetes-reproduction).
+This profile then publishes that run's metadata to VIVO.
+
 ## Wiring the FORCE hand-off
 
 The Kubernetes port needed two adjustments to run end to end, applied to the
