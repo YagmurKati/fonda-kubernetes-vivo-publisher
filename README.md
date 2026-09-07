@@ -43,6 +43,7 @@ source repository, input data, and VIVO links differ.
 | FORCE2NXF rangeland workflow | Nextflow | [Open in VIVO](https://vivo-fonda.hu-berlin.de/vivo/individual?uri=http%3A%2F%2Fexample.org%2Fvivo-import%2Frun-metadata%2Frun%2Fdefault-long-term-vegetation-dynamics-in-the-mediterranean-force2nxf-e5295c77-62e8-4773-afc5-706750fb1a33-2026-08-25t18-25-43-637000-00-00) | [FORCE2NXF profile](examples/force2nxf/README.md) |
 | Trends in European Grasslands (test-site study) | Nextflow | [Open in VIVO](https://vivo-fonda.hu-berlin.de/vivo/individual?uri=http%3A%2F%2Fexample.org%2Fvivo-import%2Frun-metadata%2Frun%2Fyagmur-trends-in-european-grasslands-test-site-study-2e7a5fcb-44d1-44ea-b3ad-79d2bdab52d8-2026-09-02t20-24-23-057000-00-00) | [FONDA_trends profile](examples/fonda-trends/README.md) |
 | RNA-seq analysis (Salmon, RS1) | Nextflow | [Open in VIVO](https://vivo-fonda.hu-berlin.de/vivo/individual?uri=http%3A%2F%2Fexample.org%2Fvivo-import%2Frun-metadata%2Frun%2Fyagmur-rna-seq-analysis-workflow-salmon-rs1-9347febf-9033-4c8f-8eb2-f699de6b3479-2026-08-28t18-35-04-684000-00-00) | [RNA-seq Salmon RS1 profile](examples/rnaseq-salmon-rs1/README.md) |
+| RNA-seq analysis (Salmon, RS2) | Nextflow | [Open in VIVO](https://vivo-fonda.hu-berlin.de/vivo/individual?uri=http%3A%2F%2Fexample.org%2Fvivo-import%2Frun-metadata%2Frun%2Fyagmur-rna-seq-analysis-workflow-salmon-rs2-e007ad6a-80b7-4133-ac2d-f9c3e4e625e8-2026-09-07t20-29-52-808000-00-00) | [RNA-seq Salmon RS2 profile](examples/rnaseq-salmon-rs2/README.md) |
 | RNA-seq analysis (STAR, RS1) | Nextflow | [Open in VIVO](https://vivo-fonda.hu-berlin.de/vivo/individual?uri=http%3A%2F%2Fexample.org%2Fvivo-import%2Frun-metadata%2Frun%2Fyagmur-rna-seq-analysis-workflow-star-rs1-3afdb2f4-9abc-4fbc-86f2-c66e81b672ed-2026-08-31t07-25-43-891000-00-00) | [RNA-seq STAR RS1 profile](examples/rnaseq-star-rs1/README.md) |
 | RNA-seq analysis (HISAT2, RS1) | Nextflow | [Open in VIVO](https://vivo-fonda.hu-berlin.de/vivo/individual?uri=http%3A%2F%2Fexample.org%2Fvivo-import%2Frun-metadata%2Frun%2Fyagmur-rna-seq-analysis-workflow-hisat2-rs1-c0ece5b9-63ab-41ac-a0f5-1980d02b79dc-2026-09-01t11-38-23-240000-00-00) | [RNA-seq HISAT2 RS1 profile](examples/rnaseq-hisat2-rs1/README.md) |
 | RNA-seq analysis (HISAT2, RS2) | Nextflow | [Open in VIVO](https://vivo-fonda.hu-berlin.de/vivo/individual?uri=http%3A%2F%2Fexample.org%2Fvivo-import%2Frun-metadata%2Frun%2Fyagmur-rna-seq-analysis-workflow-hisat2-rs2-c1dacdb1-7d0f-4c61-9fac-941acded044b-2026-08-29t10-07-47-138000-00-00) | [RNA-seq HISAT2 RS2 profile](examples/rnaseq-hisat2-rs2/README.md) |
@@ -78,6 +79,10 @@ cp examples/fonda-trends/input_datasets.json config/input_datasets.json
 # OR: RNA-seq Salmon RS1
 cp examples/rnaseq-salmon-rs1/publisher.env.example config/publisher.env
 cp examples/rnaseq-salmon-rs1/input_datasets.json config/input_datasets.json
+
+# OR: RNA-seq Salmon RS2
+cp examples/rnaseq-salmon-rs2/publisher.env.example config/publisher.env
+cp examples/rnaseq-salmon-rs2/input_datasets.json config/input_datasets.json
 
 # OR: RNA-seq STAR RS1
 cp examples/rnaseq-star-rs1/publisher.env.example config/publisher.env

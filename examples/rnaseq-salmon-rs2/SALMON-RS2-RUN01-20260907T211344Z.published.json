@@ -1,0 +1,10 @@
+{
+  "attempts": 1,
+  "endpoint": "https://vivo-fonda.hu-berlin.de/vivo/api/sparqlUpdate",
+  "graph": "http://vitro.mannlib.cornell.edu/default/vitro-kb-2",
+  "http_status": 200,
+  "published_at": "2026-09-07T21:13:44.603255+00:00",
+  "response_excerpt": "<H1>200 SPARQL update accepted.</H1>",
+  "ttl_file": "/workspace/results/SALMON-RS2-RUN01/vivo-metadata/rnaseq-salmon-rs2-run01.ttl",
+  "ttl_sha256": "12905212ac156a814a5987d20a4cae19e3aeb3a109b0804fc75899ef19c9e6c8"
+}
