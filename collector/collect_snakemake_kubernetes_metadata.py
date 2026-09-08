@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import gzip
+import hashlib
 import json
 import os
 import re
@@ -41,9 +42,9 @@ def csv_env(name: str) -> List[str]:
 
 def snakemake_profile() -> str:
     profile = required_env("SNAKEMAKE_PROFILE").lower()
-    if profile not in {"mg4", "popinsnake"}:
+    if profile not in {"mg3", "mg4", "popinsnake"}:
         raise RuntimeError(
-            "SNAKEMAKE_PROFILE must be either 'mg4' or 'popinsnake'"
+            "SNAKEMAKE_PROFILE must be 'mg3', 'mg4', or 'popinsnake'"
         )
     return profile
 
@@ -320,7 +321,57 @@ def read_popinsnake_result_metadata(run_root: Path) -> Dict[str, Any]:
     }
 
 
+def read_mg3_result_metadata(run_root: Path) -> Dict[str, Any]:
+    output = run_root / "data/MG3/mapped_reads/all_sorted.sam"
+    completed = run_root / "results/COMPLETED"
+    if not completed.is_file() or not output.is_file() or not output.stat().st_size:
+        raise RuntimeError("MG-3 has no completed non-empty final SAM")
+    expected = sha256_from_manifest(run_root / "results/output.sha256", "/mapped_reads/all_sorted.sam")
+    digest = hashlib.sha256()
+    count = 0
+    with output.open("rb") as handle:
+        for line in handle:
+            digest.update(line)
+            if not line.startswith(b"@"):
+                count += 1
+    if digest.hexdigest() != expected:
+        raise RuntimeError("MG-3 final SAM checksum does not match")
+    recorded = int((run_root / "results/record-count.txt").read_text().strip())
+    if recorded != count:
+        raise RuntimeError("MG-3 final SAM record count does not match")
+    commit = (run_root / "source/.git/HEAD").read_text().strip()
+    if not re.fullmatch(r"[0-9a-f]{40}", commit):
+        raise RuntimeError("MG-3 requires the detached upstream revision evidence")
+    if commit != "d235f908a4a4336cfce297bf2f302c5e33ee4e6d":
+        raise RuntimeError("MG-3 small-data profile requires the documented upstream revision")
+    log = (run_root / "results/run.log").read_text()
+    if "snakemake-7.32.4" not in log:
+        raise RuntimeError("MG-3 Snakemake version is not supported by the installation log")
+    return {
+        "completed_at": completed.read_text().strip(),
+        "provenance": {
+            "workflow_commit": commit,
+            "snakemake": "7.32.4",
+            "snakemake_version_evidence": "Pinned install command and successful installation in results/run.log",
+            "simulator_commit": "d8cdc4663ccc7664ec17a4264e98ceef5c1c9108",
+            "dream_yara_commit": "e1bf6b5bbbeb74659379d54b9d3623660f316751",
+            "dependency_provenance_scope": "Previously compiled tools reused read-only from yagmur-a2-mg4-work; historical build energy excluded",
+            "compatibility_patch": (run_root / "results/compatibility.patch").read_text(),
+        },
+        "mapped_record_count": count,
+        "output_path": str(output),
+        "output_size_bytes": output.stat().st_size,
+        "output_sha256": expected,
+        "flagstat": (run_root / "results/flagstat.txt").read_text(),
+        "simulation_config": (run_root / "source/simulation_config.yaml").read_text(),
+        "search_config": (run_root / "source/search_config.yaml").read_text(),
+        "snakemake_stats": json.loads((run_root / "results/snakemake-stats.json").read_text()),
+    }
+
+
 def read_result_metadata(run_root: Path, profile: str) -> Dict[str, Any]:
+    if profile == "mg3":
+        return read_mg3_result_metadata(run_root)
     if profile == "mg4":
         return read_mg4_result_metadata(run_root)
     if profile == "popinsnake":
@@ -340,7 +391,24 @@ def collector_args(
         if failed_count
         else ""
     )
-    if profile == "mg4":
+    if profile == "mg3":
+        description = (
+            "Small simulated-data execution of MG-3 from CRC-FONDA/A2-metagenome-snakemake: "
+            "64 bins, 262144000-base seed reference, four haplotypes, 128000 single-end reads "
+            "of 150 bases with three errors; 1 GB IBF and integer 2% mapping error threshold. "
+            f"Final output contains {result['mapped_record_count']} SAM records; "
+            f"The session used {attempt_count} Kubernetes attempts{failed_clause}. "
+            "Snakemake used eight cores within one pod, not a multi-pod executor. "
+            "Compatibility fixes and cached DREAM-Yara fork are recorded in the audit. "
+            "The upstream simulation script did not apply mix_bins. "
+            f"Final SAM SHA-256: {result['output_sha256']}."
+        )
+        resource_scope = (
+            "All selected workflow-attempt pods in this resumed MG-3 session, including setup, "
+            "simulation, retained indices, failed attempts, mapping and validation. "
+            "Excludes inspection/metadata pods and historical compilation of reused tools."
+        )
+    elif profile == "mg4":
         description = (
             "Smoke-scale reproduction of the FONDA MG-4 workflow using "
             "deterministic Raptor-simulated input. The resumable session used "
@@ -500,7 +568,7 @@ def main() -> None:
             "The run provenance has no valid upstream workflow commit"
         )
 
-    stage_prefix = "MG-4" if profile == "mg4" else "PopinSnake"
+    stage_prefix = {"mg3": "MG-3", "mg4": "MG-4", "popinsnake": "PopinSnake"}[profile]
     stages = []
     for index, task in enumerate(tasks, start=1):
         suffix_match = re.search(r"(?:-v|-)([0-9]+)$", task.name)

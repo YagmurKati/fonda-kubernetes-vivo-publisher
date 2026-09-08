@@ -49,6 +49,7 @@ source repository, input data, and VIVO links differ.
 | RNA-seq analysis (STAR, RS1) | Nextflow | [Open in VIVO](https://vivo-fonda.hu-berlin.de/vivo/individual?uri=http%3A%2F%2Fexample.org%2Fvivo-import%2Frun-metadata%2Frun%2Fyagmur-rna-seq-analysis-workflow-star-rs1-3afdb2f4-9abc-4fbc-86f2-c66e81b672ed-2026-08-31t07-25-43-891000-00-00) | [RNA-seq STAR RS1 profile](examples/rnaseq-star-rs1/README.md) |
 | RNA-seq analysis (HISAT2, RS1) | Nextflow | [Open in VIVO](https://vivo-fonda.hu-berlin.de/vivo/individual?uri=http%3A%2F%2Fexample.org%2Fvivo-import%2Frun-metadata%2Frun%2Fyagmur-rna-seq-analysis-workflow-hisat2-rs1-c0ece5b9-63ab-41ac-a0f5-1980d02b79dc-2026-09-01t11-38-23-240000-00-00) | [RNA-seq HISAT2 RS1 profile](examples/rnaseq-hisat2-rs1/README.md) |
 | RNA-seq analysis (HISAT2, RS2) | Nextflow | [Open in VIVO](https://vivo-fonda.hu-berlin.de/vivo/individual?uri=http%3A%2F%2Fexample.org%2Fvivo-import%2Frun-metadata%2Frun%2Fyagmur-rna-seq-analysis-workflow-hisat2-rs2-c1dacdb1-7d0f-4c61-9fac-941acded044b-2026-08-29t10-07-47-138000-00-00) | [RNA-seq HISAT2 RS2 profile](examples/rnaseq-hisat2-rs2/README.md) |
+| A2 MG-3 metagenomic read mapping | Snakemake | [Open in VIVO](https://vivo-fonda.hu-berlin.de/vivo/individual?uri=http%3A%2F%2Fexample.org%2Fvivo-import%2Frun-metadata%2Frun%2Fyagmur-metagenomic-read-mapping-across-computational-architectures-a2-mg3-20260908-2026-09-08t06-34-48-00-00) | [A2 MG-3 profile](examples/a2-mg3/README.md) |
 | A2 MG-4 metagenomic read mapping | Snakemake | [Open in VIVO](https://vivo-fonda.hu-berlin.de/vivo/individual?uri=http%3A%2F%2Fexample.org%2Fvivo-import%2Frun-metadata%2Frun%2Fyagmur-metagenomic-read-mapping-with-customizable-job-granularity-a2-mg4-smoke-20260826-2026-08-26t11-10-52-00-00) | [A2 MG-4 profile](examples/a2-mg4/README.md) |
 | PopinSnake genomic insertion detection | Snakemake | [Open in VIVO](https://vivo-fonda.hu-berlin.de/vivo/individual?uri=http%3A%2F%2Fexample.org%2Fvivo-import%2Frun-metadata%2Frun%2Fyagmur-popinsnake-exploratory-workflow-for-genomic-insertion-detection-popinsnake-example-20260828-02-2026-08-28t08-03-05-00-00) | [PopinSnake profile](examples/popinsnake/README.md) |
 
@@ -185,7 +186,7 @@ The trace must include `task_id`, `hash`, `native_id`, `name`, `status`, and
 ### Snakemake profiles
 
 The Snakemake adapter discovers terminal workflow-attempt Pods through the
-read-only Kubernetes API, then uses a profile-specific evidence reader. MG-4
+read-only Kubernetes API, then uses a profile-specific evidence reader. MG-3 validates its final SAM checksum and count against the small-data run evidence; MG-4
 verifies its run marker, provenance, checksum, and final SAM; PopinSnake
 verifies `RUN_STATUS`, provenance, checksums, and the final compressed VCF. See
 the [A2 MG-4 profile](examples/a2-mg4/README.md) and
@@ -229,7 +230,7 @@ audit files. See [Remove a published run](docs/USER_GUIDE.md#7-remove-a-publishe
 ## Scope
 
 This release supports Nextflow with the Kubernetes executor and the tested A2
-MG-4 and PopinSnake Snakemake/Kubernetes layouts. Other workflow engines or
+MG-3, MG-4 and PopinSnake Snakemake/Kubernetes layouts. Other workflow engines or
 Snakemake layouts need an evidence adapter but can reuse the RDF builder and
 `publisher/publish_vivo.py`.
 
