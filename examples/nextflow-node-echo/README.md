@@ -3,13 +3,17 @@
 Profile for the `test.nf` echo workflow from
 [`rafaelmoczalla/docker-nextflow-node`](https://github.com/rafaelmoczalla/docker-nextflow-node),
 executed on Kubernetes. See a
-[published example in FONDA VIVO](https://vivo-fonda.hu-berlin.de/vivo/individual?uri=http%3A%2F%2Fexample.org%2Fvivo-import%2Frun-metadata%2Frun%2Fyagmur-nextflow-echo-test-workflow-docker-nextflow-node-kubernetes-executor-34a93e41-cd57-4edc-ad3e-d2b47cb78f71-2026-09-08t06-31-54-892000-00-00).
+[published example in FONDA VIVO](https://vivo-fonda.hu-berlin.de/vivo/individual?uri=http%3A%2F%2Fexample.org%2Fvivo-import%2Frun-metadata%2Frun%2Fyagmur-synthetic-echo-workflow-for-cluster-execution-testing-34a93e41-cd57-4edc-ad3e-d2b47cb78f71-2026-09-08t06-31-54-892000-00-00).
 
 The upstream project runs this workflow on a local Apache Ignite cluster built
 from Docker containers. The Ignite executor was removed from Nextflow after the
-22.x line, so this profile covers the workflow run on the Kubernetes executor.
-That is an operationally distinct setup, so it uses its own `WORKFLOW_URI`; an
-Ignite run should be published under a separate one.
+22.x line, so the tested path here is the Kubernetes executor.
+
+The workflow identity is deliberately executor-neutral. Engine, repository and
+executor are already recorded as `rm:workflowEngine`, `rm:workflowCodeLink` and
+`rm:backend`, and the executor is a property of a run rather than of the
+workflow, so an Ignite run of the same `test.nf` belongs under this same
+`WORKFLOW_URI` and is told apart by its backend.
 
 ## 1. Configure
 
