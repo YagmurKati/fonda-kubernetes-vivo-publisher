@@ -31,7 +31,7 @@ The tested PVC is `a2-mg3-run-20260908` in namespace `yagmur`.
 ## Evidence and scope
 
 The [reproduction runner](https://github.com/YagmurKati/a2-mg3-reproduction-example)
-now separates reusable launch scripts from the immutable September 8 example.
+now separates reusable launch scripts from the verified run from 8 September 2026.
 For a new run, its dedicated PVC is mounted at `/workspace` by this publisher;
 use the same run ID that was supplied to the runner. The default selector is
 `app.kubernetes.io/name=a2-mg3`, and its pod run-id label selects the correct run.
