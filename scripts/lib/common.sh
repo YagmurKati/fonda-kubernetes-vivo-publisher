@@ -125,9 +125,10 @@ load_config() {
   REQUIRE_SUCCEEDED="${REQUIRE_SUCCEEDED:-0}"
 
   if is_snakemake_engine; then
-    [[ "$SNAKEMAKE_PROFILE" == "mg4" ||
+    [[ "$SNAKEMAKE_PROFILE" == "mg3" ||
+       "$SNAKEMAKE_PROFILE" == "mg4" ||
        "$SNAKEMAKE_PROFILE" == "popinsnake" ]] ||
-      die "SNAKEMAKE_PROFILE must be mg4 or popinsnake"
+      die "SNAKEMAKE_PROFILE must be mg3, mg4 or popinsnake"
   fi
 
   validate_dns_name "$NS" "NS"

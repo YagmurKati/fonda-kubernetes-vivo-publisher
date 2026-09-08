@@ -1,0 +1,466 @@
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix vivo: <http://vivoweb.org/ontology/core#> .
+@prefix bibo: <http://purl.org/ontology/bibo/> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix rm: <http://example.org/ontology/run-metadata#> .
+@prefix ex: <http://example.org/vivo-import/run-metadata/> .
+
+<http://example.org/vivo-import/run-metadata/engine/snakemake>
+  rdf:type rm:WorkflowEngine ;
+  rdf:type vivo:InformationResource ;
+  rdfs:label "Snakemake"@en ;
+  dcterms:title "Snakemake"@en ;
+  rm:hasWorkflow <http://example.org/vivo-import/run-metadata/workflow/metagenomic-read-mapping-computational-architectures> .
+
+<http://example.org/vivo-import/run-metadata/language/python>
+  rdf:type rm:Language ;
+  rdf:type vivo:InformationResource ;
+  rdfs:label "Python"@en ;
+  dcterms:title "Python"@en ;
+  rm:hasWorkflow <http://example.org/vivo-import/run-metadata/workflow/metagenomic-read-mapping-computational-architectures> .
+
+<http://example.org/vivo-import/run-metadata/language/shell>
+  rdf:type rm:Language ;
+  rdf:type vivo:InformationResource ;
+  rdfs:label "Shell"@en ;
+  dcterms:title "Shell"@en ;
+  rm:hasWorkflow <http://example.org/vivo-import/run-metadata/workflow/metagenomic-read-mapping-computational-architectures> .
+
+<http://172.28.33.178:8080/vivo/individual/n5703>
+  rm:hasWorkflow <http://example.org/vivo-import/run-metadata/workflow/metagenomic-read-mapping-computational-architectures> .
+
+<http://example.org/vivo-import/run-metadata/cluster/fonda-cluster>
+  rdf:type rm:ComputeCluster ;
+  rdf:type vivo:InformationResource ;
+  rdfs:label "FONDA Kubernetes Cluster"@en ;
+  dcterms:title "FONDA Kubernetes Cluster"@en ;
+  rm:hasRun <http://example.org/vivo-import/run-metadata/run/yagmur-metagenomic-read-mapping-across-computational-architectures-a2-mg3-20260908-2026-09-08t06-34-48-00-00> ;
+  rm:hasWorkflow <http://example.org/vivo-import/run-metadata/workflow/metagenomic-read-mapping-computational-architectures> .
+
+<http://example.org/vivo-import/run-metadata/workflow/metagenomic-read-mapping-computational-architectures>
+  rdf:type rm:Workflow ;
+  rdf:type vivo:InformationResource ;
+  rdf:type prov:Entity ;
+  rdfs:label "Metagenomic read mapping across computational architectures"@en ;
+  dcterms:title "Metagenomic read mapping across computational architectures"@en ;
+  rm:workflowName "Metagenomic read mapping across computational architectures" ;
+  rm:traceTypes "Kubernetes Job and Pod status, container termination metadata, Snakemake logs and summary, provenance, and output checksums" ;
+  rm:traceDataFormat "Kubernetes JSON, Snakemake text/TSV, JSON, and plain text" ;
+  rm:workflowEngine <http://example.org/vivo-import/run-metadata/engine/snakemake> ;
+  rm:computeCluster <http://example.org/vivo-import/run-metadata/cluster/fonda-cluster> ;
+  rm:workflowCodeLink "https://github.com/CRC-FONDA/A2-metagenome-snakemake"^^xsd:anyURI ;
+  rm:applicationDomain <http://example.org/vivo-import/run-metadata/domain/metagenomics> ;
+  rm:backend <http://172.28.33.178:8080/vivo/individual/n5703> ;
+  rm:subproject <http://141.20.184.157:8080/vivo/individual/fonda-group-a2-energy-aware-optimization-of-workflows-in-bioinformatics> ;
+  rm:language <http://example.org/vivo-import/run-metadata/language/c-cpp> ;
+  rm:language <http://example.org/vivo-import/run-metadata/language/python> ;
+  rm:language <http://example.org/vivo-import/run-metadata/language/shell> ;
+  rm:hasUsedInputData <http://example.org/vivo-import/run-metadata/input-dataset/mg3-raptor-simulated-64-bin-small-20260908> ;
+  rm:hasRun <http://example.org/vivo-import/run-metadata/run/yagmur-metagenomic-read-mapping-across-computational-architectures-a2-mg3-20260908-2026-09-08t06-34-48-00-00> ;
+  rm:hasWorkflowRun <http://example.org/vivo-import/run-metadata/run/yagmur-metagenomic-read-mapping-across-computational-architectures-a2-mg3-20260908-2026-09-08t06-34-48-00-00> .
+
+<http://141.20.184.157:8080/vivo/individual/fonda-group-a2-energy-aware-optimization-of-workflows-in-bioinformatics>
+  rm:hasWorkflow <http://example.org/vivo-import/run-metadata/workflow/metagenomic-read-mapping-computational-architectures> .
+
+<http://example.org/vivo-import/run-metadata/run/yagmur-metagenomic-read-mapping-across-computational-architectures-a2-mg3-20260908-2026-09-08t06-34-48-00-00>
+  rdf:type rm:RunMetadata ;
+  rdf:type vivo:InformationResource ;
+  rdf:type prov:Entity ;
+  rdfs:label "Metagenomic read mapping across computational architectures · run 2026-09-08 08:34–09:27 CEST"@en ;
+  dcterms:title "Metagenomic read mapping across computational architectures · run 2026-09-08 08:34–09:27 CEST"@en ;
+  rm:workflow <http://example.org/vivo-import/run-metadata/workflow/metagenomic-read-mapping-computational-architectures> ;
+  rm:computeCluster <http://example.org/vivo-import/run-metadata/cluster/fonda-cluster> ;
+  rm:codeVersion "sha256:0b87f7f4c38d04e9259fe80c678681be14f97e37227dcf058f7025c3cb5fa318" ;
+  rm:runStatus "Succeeded with warnings" ;
+  rm:workflowEngine <http://example.org/vivo-import/run-metadata/engine/snakemake> ;
+  prov:startedAtTime "2026-09-08T08:34:48"^^xsd:dateTime ;
+  prov:endedAtTime "2026-09-08T09:27:16"^^xsd:dateTime ;
+  rm:startTime "2026-09-08T08:34:48"^^xsd:dateTime ;
+  rm:endTime "2026-09-08T09:27:16"^^xsd:dateTime ;
+  rm:durationSeconds "3148"^^xsd:integer ;
+  rm:durationCalculationMethod "Wall-clock time from the first container start to the final container completion across the resumable Kubernetes Job session." ;
+  dcterms:created "2026-09-08T09:40:55+02:00"^^xsd:dateTime ;
+  vivo:dateTimeValue <http://example.org/vivo-import/run-metadata/datetime/yagmur-metagenomic-read-mapping-across-computational-architectures-a2-mg3-20260908-2026-09-08t06-34-48-00-00> ;
+  rm:jobName "a2-mg3-20260908" ;
+  rm:taskCount "7"^^xsd:integer ;
+  rm:podCount "7"^^xsd:integer ;
+  rm:succeededTaskCount "1"^^xsd:integer ;
+  rm:cachedTaskCount "0"^^xsd:integer ;
+  rm:failedTaskCount "6"^^xsd:integer ;
+  rm:abortedTaskCount "0"^^xsd:integer ;
+  rm:resourceAccountingScope "All seven workflow-attempt pods in this resumed MG-3 session, including setup, simulation, retained indices, failed attempts, mapping and validation. Excludes inspection/metadata pods and historical compilation of reused tools." ;
+  rm:resourceAccountingStartTime "2026-09-08T08:34:48"^^xsd:dateTime ;
+  rm:resourceAccountingEndTime "2026-09-08T09:27:16"^^xsd:dateTime ;
+  rm:traceTypes "Kubernetes Job and Pod status, container termination metadata, Snakemake logs and summary, provenance, and output checksums" ;
+  rm:traceDataFormat "Kubernetes JSON, Snakemake text/TSV, JSON, and plain text" ;
+  dcterms:description "Small simulated-data execution of MG-3 from CRC-FONDA/A2-metagenome-snakemake: 64 bins, 262144000-base seed reference, four haplotypes, 128000 single-end reads of 150 bases with three errors; 1 GB IBF and integer 2% mapping error threshold. All 128000 reads mapped and samtools quickcheck passed. The session used 7 Kubernetes attempts, including 6 compatibility-debugging attempts. Snakemake used eight cores within one pod, not a multi-pod executor. Compatibility fixes and cached DREAM-Yara fork are recorded in the audit. The upstream simulation script did not apply mix_bins. Final SAM SHA-256: 5e1bf7cc3cfe762cfd31b23e15d26675836ab24ed3d4b3c09b3a7099e0a91d51."@en ;
+  rm:backend <http://172.28.33.178:8080/vivo/individual/n5703> ;
+  rm:inputData <http://example.org/vivo-import/run-metadata/input-dataset/mg3-raptor-simulated-64-bin-small-20260908> ;
+  rm:runOperator <https://fonda.hu-berlin.de/?page_id=2066#YagmurKati> ;
+  rm:failureReason "6 earlier attempts ended non-zero before the final resumable attempt completed successfully." ;
+  rm:gitCommit "d235f908a4a4336cfce297bf2f302c5e33ee4e6d" ;
+  rm:codeCommitLink "https://github.com/CRC-FONDA/A2-metagenome-snakemake/commit/d235f908a4a4336cfce297bf2f302c5e33ee4e6d"^^xsd:anyURI ;
+  rm:cpuTimeSeconds "983.1395287230158"^^xsd:double ;
+  rm:cpuTimeCalculationMethod "CPU time is the sum of Prometheus container_cpu_usage_seconds_total counter increases for 7 of 7 pod(s)." ;
+  rm:memoryPeakGB "3.16309504"^^xsd:double ;
+  rm:memoryAvgGB "1.2684087668363635"^^xsd:double ;
+  rm:memoryCalculationMethod "Memory is derived from Prometheus container_memory_working_set_bytes. Values are summed across concurrent workflow pods at each sample; the reported average and peak are calculated from that aggregate time series." ;
+  rm:energyKWh "0.012594138095552154"^^xsd:double ;
+  rm:carbonEmissionKgCO2e "0.0036271117715190202"^^xsd:double ;
+  rm:carbonIntensityAssumptionKgCO2ePerKWh "0.288"^^xsd:double ;
+  rm:carbonIntensitySource "Electricity Maps latest available flow-traced carbon intensity (collection-time proxy)" ;
+  rm:energyMetricSource "kepler_container_joules_total" ;
+  rm:energyCalculationMethod "Energy is the sum of per-pod Kepler measurements for 7 of 7 pod(s)." ;
+  rm:energyCalculationUsesFallbackEstimate "false"^^xsd:boolean ;
+  rm:carbonCalculationMethod "Carbon emissions are calculated using the emissions factor method: energy consumption (kWh) multiplied by 0.288 kg/kWh (lifecycle CO2e) from Electricity Maps latest available flow-traced carbon intensity (collection-time proxy). The value is the latest value available from the free-tier endpoint when metadata was collected. It is used as a proxy and is not guaranteed to represent the exact workflow execution interval." ;
+  rm:carbonIntensitySourceLink "https://api.electricitymaps.com/v4/carbon-intensity/latest"^^xsd:anyURI ;
+  rm:carbonIntensityZone "DE" ;
+  rm:carbonIntensityDataPointCount "1"^^xsd:integer ;
+  rm:carbonIntensityWindowStart "2026-09-08T07:00:00Z"^^xsd:dateTime ;
+  rm:carbonIntensityWindowEnd "2026-09-08T08:00:00Z"^^xsd:dateTime ;
+  rm:carbonIntensityIncludesEstimatedData "true"^^xsd:boolean ;
+  rm:carbonIntensityEmissionsBasis "lifecycle CO2e" ;
+  rm:carbonIntensityTemporalGranularity "hourly" ;
+  rm:containerImage "docker.io/library/ubuntu:22.04" ;
+  rm:containerImage "docker.io/library/ubuntu@sha256:2edbbc5dc405e9612ba3584ce95480277e3eb374407b5505fe26f17df77c7dbc" ;
+  rm:containerImage "docker.io/library/ubuntu@sha256:1ec65b2719518e27d4d25f104d93f9fac60dc437f81452302406825c46fcc9cb" ;
+  rm:containerImage "docker.io/library/ubuntu@sha256:09506232a8004baa32c47d68f1e5c307d648fdd59f5e7eaa42aaf87914100db3" ;
+  rm:executionHost "hu-worker-c40" ;
+  rm:executionHost "hu-worker-c39" ;
+  rm:executionHost "hu-worker-c41" ;
+  rm:executionHost "hu-worker-c45" ;
+  rm:gpuRequested "false"^^xsd:boolean ;
+  rm:gpuMetricsAvailable "false"^^xsd:boolean ;
+  rm:gpuCapableNodeUsed "false"^^xsd:boolean ;
+  rm:gpuUsageStatus "CPU-only workflow run" ;
+  rm:hasWorkflowProcess <http://example.org/vivo-import/run-metadata/process/metagenomic-read-mapping-across-computational-architectures-kubernetes-attempt-1-a2-mg3-20260908> ;
+  rm:hasWorkflowProcess <http://example.org/vivo-import/run-metadata/process/metagenomic-read-mapping-across-computational-architectures-kubernetes-attempt-2-a2-mg3-20260908> ;
+  rm:hasWorkflowProcess <http://example.org/vivo-import/run-metadata/process/metagenomic-read-mapping-across-computational-architectures-kubernetes-attempt-3-a2-mg3-20260908> ;
+  rm:hasWorkflowProcess <http://example.org/vivo-import/run-metadata/process/metagenomic-read-mapping-across-computational-architectures-kubernetes-attempt-4-a2-mg3-20260908> ;
+  rm:hasWorkflowProcess <http://example.org/vivo-import/run-metadata/process/metagenomic-read-mapping-across-computational-architectures-kubernetes-attempt-5-a2-mg3-20260908> ;
+  rm:hasWorkflowProcess <http://example.org/vivo-import/run-metadata/process/metagenomic-read-mapping-across-computational-architectures-kubernetes-attempt-6-a2-mg3-20260908> ;
+  rm:hasWorkflowProcess <http://example.org/vivo-import/run-metadata/process/metagenomic-read-mapping-across-computational-architectures-kubernetes-attempt-7-a2-mg3-20260908> .
+
+<http://example.org/vivo-import/run-metadata/input-dataset/mg3-raptor-simulated-64-bin-small-20260908>
+  rdf:type rm:InputDataset ;
+  rdf:type vivo:InformationResource ;
+  rdf:type prov:Entity ;
+  rdfs:label "Raptor-simulated MG-3 64-bin small dataset (2026-09-08)"@en ;
+  dcterms:title "Raptor-simulated MG-3 64-bin small dataset (2026-09-08)"@en ;
+  dcterms:description "262144000-base seed reference; 64 bins; four haplotypes per bin; 128000 single-end 150-base reads; three errors per read; SNP rate 0.01; small indel rate 0.001. Upstream simulate.sh did not apply mix_bins."@en ;
+  rm:accessInstructionsURL "https://github.com/CRC-FONDA/A2-metagenome-snakemake"^^xsd:anyURI ;
+  rm:upstreamSourceURL "https://github.com/eseiler/raptor_data_simulation"^^xsd:anyURI ;
+  rm:formatDocumentationURL "https://github.com/CRC-FONDA/A2-metagenome-snakemake/blob/d235f908a4a4336cfce297bf2f302c5e33ee4e6d/simulation_config.yaml"^^xsd:anyURI ;
+  rm:storageLocation "FONDA Kubernetes namespace yagmur, PVC a2-mg3-run-20260908, data/64" ;
+  rm:accessStatement "Generated input retained on the user-controlled cluster PVC; not publicly hosted. Parameters, pinned revisions and compatibility patch are retained in the run audit."@en ;
+  rm:inputDataOfWorkflow <http://example.org/vivo-import/run-metadata/workflow/metagenomic-read-mapping-computational-architectures> ;
+  rm:usedByWorkflowRun <http://example.org/vivo-import/run-metadata/run/yagmur-metagenomic-read-mapping-across-computational-architectures-a2-mg3-20260908-2026-09-08t06-34-48-00-00> .
+
+<http://example.org/vivo-import/run-metadata/datetime/yagmur-metagenomic-read-mapping-across-computational-architectures-a2-mg3-20260908-2026-09-08t06-34-48-00-00>
+  rdf:type vivo:DateTimeValue ;
+  vivo:dateTime "2026-09-08T08:34:48"^^xsd:dateTime ;
+  vivo:dateTimePrecision vivo:yearMonthDayTimePrecision .
+
+<http://example.org/vivo-import/run-metadata/process/metagenomic-read-mapping-across-computational-architectures-kubernetes-attempt-1-a2-mg3-20260908>
+  rdf:type rm:WorkflowProcessRun ;
+  rdf:type vivo:InformationResource ;
+  rdf:type prov:Entity ;
+  rdfs:label "MG-3 Kubernetes attempt 20260908"@en ;
+  dcterms:title "MG-3 Kubernetes attempt 20260908"@en ;
+  rm:jobName "MG-3 Kubernetes attempt 20260908" ;
+  rm:runStatus "Failed" ;
+  rm:taskCount "1"^^xsd:integer ;
+  rm:podCount "1"^^xsd:integer ;
+  rm:succeededTaskCount "0"^^xsd:integer ;
+  rm:cachedTaskCount "0"^^xsd:integer ;
+  rm:failedTaskCount "1"^^xsd:integer ;
+  rm:abortedTaskCount "0"^^xsd:integer ;
+  prov:startedAtTime "2026-09-08T08:34:48"^^xsd:dateTime ;
+  prov:endedAtTime "2026-09-08T08:36:03"^^xsd:dateTime ;
+  rm:durationSeconds "75"^^xsd:integer ;
+  rm:durationCalculationMethod "Wall-clock time from the earliest task submission to the latest task completion or workflow termination in this stage." ;
+  rm:isWorkflowProcessOf <http://example.org/vivo-import/run-metadata/run/yagmur-metagenomic-read-mapping-across-computational-architectures-a2-mg3-20260908-2026-09-08t06-34-48-00-00> ;
+  rm:taskName "a2-mg3-run-20260908" ;
+  rm:cpuTimeSeconds "61.49342025"^^xsd:double ;
+  rm:cpuTimeCalculationMethod "CPU time is the sum of Prometheus container_cpu_usage_seconds_total counter increases for 1 of 1 pod(s)." ;
+  rm:memoryPeakGB "0.520290304"^^xsd:double ;
+  rm:memoryAvgGB "0.2673475584"^^xsd:double ;
+  rm:memoryCalculationMethod "Memory is derived from Prometheus container_memory_working_set_bytes. Values are summed across concurrent workflow pods at each sample; the reported average and peak are calculated from that aggregate time series." ;
+  rm:energyKWh "0.0005014063711546475"^^xsd:double ;
+  rm:carbonEmissionKgCO2e "0.00014440503489253847"^^xsd:double ;
+  rm:carbonIntensityAssumptionKgCO2ePerKWh "0.288"^^xsd:double ;
+  rm:carbonIntensitySource "Electricity Maps latest available flow-traced carbon intensity (collection-time proxy)" ;
+  rm:energyMetricSource "kepler_container_joules_total" ;
+  rm:energyCalculationMethod "Energy is the sum of per-pod Kepler measurements for 1 of 1 pod(s)." ;
+  rm:energyCalculationUsesFallbackEstimate "false"^^xsd:boolean ;
+  rm:carbonCalculationMethod "Carbon emissions are calculated using the emissions factor method: energy consumption (kWh) multiplied by 0.288 kg/kWh (lifecycle CO2e) from Electricity Maps latest available flow-traced carbon intensity (collection-time proxy). The value is the latest value available from the free-tier endpoint when metadata was collected. It is used as a proxy and is not guaranteed to represent the exact workflow execution interval." ;
+  rm:carbonIntensitySourceLink "https://api.electricitymaps.com/v4/carbon-intensity/latest"^^xsd:anyURI ;
+  rm:carbonIntensityZone "DE" ;
+  rm:carbonIntensityDataPointCount "1"^^xsd:integer ;
+  rm:carbonIntensityWindowStart "2026-09-08T07:00:00Z"^^xsd:dateTime ;
+  rm:carbonIntensityWindowEnd "2026-09-08T08:00:00Z"^^xsd:dateTime ;
+  rm:carbonIntensityIncludesEstimatedData "true"^^xsd:boolean ;
+  rm:carbonIntensityEmissionsBasis "lifecycle CO2e" ;
+  rm:carbonIntensityTemporalGranularity "hourly" ;
+  rm:parallelismNote "Each recorded VIVO process is one Kubernetes Job attempt. The scientific Snakemake rules run inside that Job container; CPU time is measured independently of the session wall clock." .
+
+<http://example.org/vivo-import/run-metadata/process/metagenomic-read-mapping-across-computational-architectures-kubernetes-attempt-2-a2-mg3-20260908>
+  rdf:type rm:WorkflowProcessRun ;
+  rdf:type vivo:InformationResource ;
+  rdf:type prov:Entity ;
+  rdfs:label "MG-3 Kubernetes attempt 2"@en ;
+  dcterms:title "MG-3 Kubernetes attempt 2"@en ;
+  rm:jobName "MG-3 Kubernetes attempt 2" ;
+  rm:runStatus "Failed" ;
+  rm:taskCount "1"^^xsd:integer ;
+  rm:podCount "1"^^xsd:integer ;
+  rm:succeededTaskCount "0"^^xsd:integer ;
+  rm:cachedTaskCount "0"^^xsd:integer ;
+  rm:failedTaskCount "1"^^xsd:integer ;
+  rm:abortedTaskCount "0"^^xsd:integer ;
+  prov:startedAtTime "2026-09-08T08:36:57"^^xsd:dateTime ;
+  prov:endedAtTime "2026-09-08T08:38:05"^^xsd:dateTime ;
+  rm:durationSeconds "68"^^xsd:integer ;
+  rm:durationCalculationMethod "Wall-clock time from the earliest task submission to the latest task completion or workflow termination in this stage." ;
+  rm:isWorkflowProcessOf <http://example.org/vivo-import/run-metadata/run/yagmur-metagenomic-read-mapping-across-computational-architectures-a2-mg3-20260908-2026-09-08t06-34-48-00-00> ;
+  rm:taskName "a2-mg3-run-20260908-v2" ;
+  rm:cpuTimeSeconds "50.93602883333334"^^xsd:double ;
+  rm:cpuTimeCalculationMethod "CPU time is the sum of Prometheus container_cpu_usage_seconds_total counter increases for 1 of 1 pod(s)." ;
+  rm:memoryPeakGB "0.357343232"^^xsd:double ;
+  rm:memoryAvgGB "0.243847168"^^xsd:double ;
+  rm:memoryCalculationMethod "Memory is derived from Prometheus container_memory_working_set_bytes. Values are summed across concurrent workflow pods at each sample; the reported average and peak are calculated from that aggregate time series." ;
+  rm:energyKWh "0.0008427830975434545"^^xsd:double ;
+  rm:carbonEmissionKgCO2e "0.00024272153209251487"^^xsd:double ;
+  rm:carbonIntensityAssumptionKgCO2ePerKWh "0.288"^^xsd:double ;
+  rm:carbonIntensitySource "Electricity Maps latest available flow-traced carbon intensity (collection-time proxy)" ;
+  rm:energyMetricSource "kepler_container_joules_total" ;
+  rm:energyCalculationMethod "Energy is the sum of per-pod Kepler measurements for 1 of 1 pod(s)." ;
+  rm:energyCalculationUsesFallbackEstimate "false"^^xsd:boolean ;
+  rm:carbonCalculationMethod "Carbon emissions are calculated using the emissions factor method: energy consumption (kWh) multiplied by 0.288 kg/kWh (lifecycle CO2e) from Electricity Maps latest available flow-traced carbon intensity (collection-time proxy). The value is the latest value available from the free-tier endpoint when metadata was collected. It is used as a proxy and is not guaranteed to represent the exact workflow execution interval." ;
+  rm:carbonIntensitySourceLink "https://api.electricitymaps.com/v4/carbon-intensity/latest"^^xsd:anyURI ;
+  rm:carbonIntensityZone "DE" ;
+  rm:carbonIntensityDataPointCount "1"^^xsd:integer ;
+  rm:carbonIntensityWindowStart "2026-09-08T07:00:00Z"^^xsd:dateTime ;
+  rm:carbonIntensityWindowEnd "2026-09-08T08:00:00Z"^^xsd:dateTime ;
+  rm:carbonIntensityIncludesEstimatedData "true"^^xsd:boolean ;
+  rm:carbonIntensityEmissionsBasis "lifecycle CO2e" ;
+  rm:carbonIntensityTemporalGranularity "hourly" ;
+  rm:parallelismNote "Each recorded VIVO process is one Kubernetes Job attempt. The scientific Snakemake rules run inside that Job container; CPU time is measured independently of the session wall clock." .
+
+<http://example.org/vivo-import/run-metadata/process/metagenomic-read-mapping-across-computational-architectures-kubernetes-attempt-3-a2-mg3-20260908>
+  rdf:type rm:WorkflowProcessRun ;
+  rdf:type vivo:InformationResource ;
+  rdf:type prov:Entity ;
+  rdfs:label "MG-3 Kubernetes attempt 3"@en ;
+  dcterms:title "MG-3 Kubernetes attempt 3"@en ;
+  rm:jobName "MG-3 Kubernetes attempt 3" ;
+  rm:runStatus "Failed" ;
+  rm:taskCount "1"^^xsd:integer ;
+  rm:podCount "1"^^xsd:integer ;
+  rm:succeededTaskCount "0"^^xsd:integer ;
+  rm:cachedTaskCount "0"^^xsd:integer ;
+  rm:failedTaskCount "1"^^xsd:integer ;
+  rm:abortedTaskCount "0"^^xsd:integer ;
+  prov:startedAtTime "2026-09-08T08:40:19"^^xsd:dateTime ;
+  prov:endedAtTime "2026-09-08T08:42:28"^^xsd:dateTime ;
+  rm:durationSeconds "129"^^xsd:integer ;
+  rm:durationCalculationMethod "Wall-clock time from the earliest task submission to the latest task completion or workflow termination in this stage." ;
+  rm:isWorkflowProcessOf <http://example.org/vivo-import/run-metadata/run/yagmur-metagenomic-read-mapping-across-computational-architectures-a2-mg3-20260908-2026-09-08t06-34-48-00-00> ;
+  rm:taskName "a2-mg3-run-20260908-v3" ;
+  rm:cpuTimeSeconds "116.14582742857144"^^xsd:double ;
+  rm:cpuTimeCalculationMethod "CPU time is the sum of Prometheus container_cpu_usage_seconds_total counter increases for 1 of 1 pod(s)." ;
+  rm:memoryPeakGB "0.391675904"^^xsd:double ;
+  rm:memoryAvgGB "0.277685248"^^xsd:double ;
+  rm:memoryCalculationMethod "Memory is derived from Prometheus container_memory_working_set_bytes. Values are summed across concurrent workflow pods at each sample; the reported average and peak are calculated from that aggregate time series." ;
+  rm:energyKWh "0.0012454616233702714"^^xsd:double ;
+  rm:carbonEmissionKgCO2e "0.0003586929475306381"^^xsd:double ;
+  rm:carbonIntensityAssumptionKgCO2ePerKWh "0.288"^^xsd:double ;
+  rm:carbonIntensitySource "Electricity Maps latest available flow-traced carbon intensity (collection-time proxy)" ;
+  rm:energyMetricSource "kepler_container_joules_total" ;
+  rm:energyCalculationMethod "Energy is the sum of per-pod Kepler measurements for 1 of 1 pod(s)." ;
+  rm:energyCalculationUsesFallbackEstimate "false"^^xsd:boolean ;
+  rm:carbonCalculationMethod "Carbon emissions are calculated using the emissions factor method: energy consumption (kWh) multiplied by 0.288 kg/kWh (lifecycle CO2e) from Electricity Maps latest available flow-traced carbon intensity (collection-time proxy). The value is the latest value available from the free-tier endpoint when metadata was collected. It is used as a proxy and is not guaranteed to represent the exact workflow execution interval." ;
+  rm:carbonIntensitySourceLink "https://api.electricitymaps.com/v4/carbon-intensity/latest"^^xsd:anyURI ;
+  rm:carbonIntensityZone "DE" ;
+  rm:carbonIntensityDataPointCount "1"^^xsd:integer ;
+  rm:carbonIntensityWindowStart "2026-09-08T07:00:00Z"^^xsd:dateTime ;
+  rm:carbonIntensityWindowEnd "2026-09-08T08:00:00Z"^^xsd:dateTime ;
+  rm:carbonIntensityIncludesEstimatedData "true"^^xsd:boolean ;
+  rm:carbonIntensityEmissionsBasis "lifecycle CO2e" ;
+  rm:carbonIntensityTemporalGranularity "hourly" ;
+  rm:parallelismNote "Each recorded VIVO process is one Kubernetes Job attempt. The scientific Snakemake rules run inside that Job container; CPU time is measured independently of the session wall clock." .
+
+<http://example.org/vivo-import/run-metadata/process/metagenomic-read-mapping-across-computational-architectures-kubernetes-attempt-4-a2-mg3-20260908>
+  rdf:type rm:WorkflowProcessRun ;
+  rdf:type vivo:InformationResource ;
+  rdf:type prov:Entity ;
+  rdfs:label "MG-3 Kubernetes attempt 4"@en ;
+  dcterms:title "MG-3 Kubernetes attempt 4"@en ;
+  rm:jobName "MG-3 Kubernetes attempt 4" ;
+  rm:runStatus "Failed" ;
+  rm:taskCount "1"^^xsd:integer ;
+  rm:podCount "1"^^xsd:integer ;
+  rm:succeededTaskCount "0"^^xsd:integer ;
+  rm:cachedTaskCount "0"^^xsd:integer ;
+  rm:failedTaskCount "1"^^xsd:integer ;
+  rm:abortedTaskCount "0"^^xsd:integer ;
+  prov:startedAtTime "2026-09-08T08:43:32"^^xsd:dateTime ;
+  prov:endedAtTime "2026-09-08T08:44:45"^^xsd:dateTime ;
+  rm:durationSeconds "73"^^xsd:integer ;
+  rm:durationCalculationMethod "Wall-clock time from the earliest task submission to the latest task completion or workflow termination in this stage." ;
+  rm:isWorkflowProcessOf <http://example.org/vivo-import/run-metadata/run/yagmur-metagenomic-read-mapping-across-computational-architectures-a2-mg3-20260908-2026-09-08t06-34-48-00-00> ;
+  rm:taskName "a2-mg3-run-20260908-v4" ;
+  rm:cpuTimeSeconds "52.32353737500001"^^xsd:double ;
+  rm:cpuTimeCalculationMethod "CPU time is the sum of Prometheus container_cpu_usage_seconds_total counter increases for 1 of 1 pod(s)." ;
+  rm:memoryPeakGB "0.399609856"^^xsd:double ;
+  rm:memoryAvgGB "0.23562567680000002"^^xsd:double ;
+  rm:memoryCalculationMethod "Memory is derived from Prometheus container_memory_working_set_bytes. Values are summed across concurrent workflow pods at each sample; the reported average and peak are calculated from that aggregate time series." ;
+  rm:energyKWh "0.0006777735449100379"^^xsd:double ;
+  rm:carbonEmissionKgCO2e "0.0001951987809340909"^^xsd:double ;
+  rm:carbonIntensityAssumptionKgCO2ePerKWh "0.288"^^xsd:double ;
+  rm:carbonIntensitySource "Electricity Maps latest available flow-traced carbon intensity (collection-time proxy)" ;
+  rm:energyMetricSource "kepler_container_joules_total" ;
+  rm:energyCalculationMethod "Energy is the sum of per-pod Kepler measurements for 1 of 1 pod(s)." ;
+  rm:energyCalculationUsesFallbackEstimate "false"^^xsd:boolean ;
+  rm:carbonCalculationMethod "Carbon emissions are calculated using the emissions factor method: energy consumption (kWh) multiplied by 0.288 kg/kWh (lifecycle CO2e) from Electricity Maps latest available flow-traced carbon intensity (collection-time proxy). The value is the latest value available from the free-tier endpoint when metadata was collected. It is used as a proxy and is not guaranteed to represent the exact workflow execution interval." ;
+  rm:carbonIntensitySourceLink "https://api.electricitymaps.com/v4/carbon-intensity/latest"^^xsd:anyURI ;
+  rm:carbonIntensityZone "DE" ;
+  rm:carbonIntensityDataPointCount "1"^^xsd:integer ;
+  rm:carbonIntensityWindowStart "2026-09-08T07:00:00Z"^^xsd:dateTime ;
+  rm:carbonIntensityWindowEnd "2026-09-08T08:00:00Z"^^xsd:dateTime ;
+  rm:carbonIntensityIncludesEstimatedData "true"^^xsd:boolean ;
+  rm:carbonIntensityEmissionsBasis "lifecycle CO2e" ;
+  rm:carbonIntensityTemporalGranularity "hourly" ;
+  rm:parallelismNote "Each recorded VIVO process is one Kubernetes Job attempt. The scientific Snakemake rules run inside that Job container; CPU time is measured independently of the session wall clock." .
+
+<http://example.org/vivo-import/run-metadata/process/metagenomic-read-mapping-across-computational-architectures-kubernetes-attempt-5-a2-mg3-20260908>
+  rdf:type rm:WorkflowProcessRun ;
+  rdf:type vivo:InformationResource ;
+  rdf:type prov:Entity ;
+  rdfs:label "MG-3 Kubernetes attempt 5"@en ;
+  dcterms:title "MG-3 Kubernetes attempt 5"@en ;
+  rm:jobName "MG-3 Kubernetes attempt 5" ;
+  rm:runStatus "Failed" ;
+  rm:taskCount "1"^^xsd:integer ;
+  rm:podCount "1"^^xsd:integer ;
+  rm:succeededTaskCount "0"^^xsd:integer ;
+  rm:cachedTaskCount "0"^^xsd:integer ;
+  rm:failedTaskCount "1"^^xsd:integer ;
+  rm:abortedTaskCount "0"^^xsd:integer ;
+  prov:startedAtTime "2026-09-08T08:45:20"^^xsd:dateTime ;
+  prov:endedAtTime "2026-09-08T08:46:36"^^xsd:dateTime ;
+  rm:durationSeconds "76"^^xsd:integer ;
+  rm:durationCalculationMethod "Wall-clock time from the earliest task submission to the latest task completion or workflow termination in this stage." ;
+  rm:isWorkflowProcessOf <http://example.org/vivo-import/run-metadata/run/yagmur-metagenomic-read-mapping-across-computational-architectures-a2-mg3-20260908-2026-09-08t06-34-48-00-00> ;
+  rm:taskName "a2-mg3-run-20260908-v5" ;
+  rm:cpuTimeSeconds "60.34508937500001"^^xsd:double ;
+  rm:cpuTimeCalculationMethod "CPU time is the sum of Prometheus container_cpu_usage_seconds_total counter increases for 1 of 1 pod(s)." ;
+  rm:memoryPeakGB "0.338878464"^^xsd:double ;
+  rm:memoryAvgGB "0.2554175488"^^xsd:double ;
+  rm:memoryCalculationMethod "Memory is derived from Prometheus container_memory_working_set_bytes. Values are summed across concurrent workflow pods at each sample; the reported average and peak are calculated from that aggregate time series." ;
+  rm:energyKWh "0.0008288014696362434"^^xsd:double ;
+  rm:carbonEmissionKgCO2e "0.00023869482325523808"^^xsd:double ;
+  rm:carbonIntensityAssumptionKgCO2ePerKWh "0.288"^^xsd:double ;
+  rm:carbonIntensitySource "Electricity Maps latest available flow-traced carbon intensity (collection-time proxy)" ;
+  rm:energyMetricSource "kepler_container_joules_total" ;
+  rm:energyCalculationMethod "Energy is the sum of per-pod Kepler measurements for 1 of 1 pod(s)." ;
+  rm:energyCalculationUsesFallbackEstimate "false"^^xsd:boolean ;
+  rm:carbonCalculationMethod "Carbon emissions are calculated using the emissions factor method: energy consumption (kWh) multiplied by 0.288 kg/kWh (lifecycle CO2e) from Electricity Maps latest available flow-traced carbon intensity (collection-time proxy). The value is the latest value available from the free-tier endpoint when metadata was collected. It is used as a proxy and is not guaranteed to represent the exact workflow execution interval." ;
+  rm:carbonIntensitySourceLink "https://api.electricitymaps.com/v4/carbon-intensity/latest"^^xsd:anyURI ;
+  rm:carbonIntensityZone "DE" ;
+  rm:carbonIntensityDataPointCount "1"^^xsd:integer ;
+  rm:carbonIntensityWindowStart "2026-09-08T07:00:00Z"^^xsd:dateTime ;
+  rm:carbonIntensityWindowEnd "2026-09-08T08:00:00Z"^^xsd:dateTime ;
+  rm:carbonIntensityIncludesEstimatedData "true"^^xsd:boolean ;
+  rm:carbonIntensityEmissionsBasis "lifecycle CO2e" ;
+  rm:carbonIntensityTemporalGranularity "hourly" ;
+  rm:parallelismNote "Each recorded VIVO process is one Kubernetes Job attempt. The scientific Snakemake rules run inside that Job container; CPU time is measured independently of the session wall clock." .
+
+<http://example.org/vivo-import/run-metadata/process/metagenomic-read-mapping-across-computational-architectures-kubernetes-attempt-6-a2-mg3-20260908>
+  rdf:type rm:WorkflowProcessRun ;
+  rdf:type vivo:InformationResource ;
+  rdf:type prov:Entity ;
+  rdfs:label "MG-3 Kubernetes attempt 6"@en ;
+  dcterms:title "MG-3 Kubernetes attempt 6"@en ;
+  rm:jobName "MG-3 Kubernetes attempt 6" ;
+  rm:runStatus "Failed" ;
+  rm:taskCount "1"^^xsd:integer ;
+  rm:podCount "1"^^xsd:integer ;
+  rm:succeededTaskCount "0"^^xsd:integer ;
+  rm:cachedTaskCount "0"^^xsd:integer ;
+  rm:failedTaskCount "1"^^xsd:integer ;
+  rm:abortedTaskCount "0"^^xsd:integer ;
+  prov:startedAtTime "2026-09-08T09:15:20"^^xsd:dateTime ;
+  prov:endedAtTime "2026-09-08T09:20:03"^^xsd:dateTime ;
+  rm:durationSeconds "283"^^xsd:integer ;
+  rm:durationCalculationMethod "Wall-clock time from the earliest task submission to the latest task completion or workflow termination in this stage." ;
+  rm:isWorkflowProcessOf <http://example.org/vivo-import/run-metadata/run/yagmur-metagenomic-read-mapping-across-computational-architectures-a2-mg3-20260908-2026-09-08t06-34-48-00-00> ;
+  rm:taskName "a2-mg3-run-20260908-v6" ;
+  rm:cpuTimeSeconds "526.2195833611111"^^xsd:double ;
+  rm:cpuTimeCalculationMethod "CPU time is the sum of Prometheus container_cpu_usage_seconds_total counter increases for 1 of 1 pod(s)." ;
+  rm:memoryPeakGB "3.16309504"^^xsd:double ;
+  rm:memoryAvgGB "1.7944692412631578"^^xsd:double ;
+  rm:memoryCalculationMethod "Memory is derived from Prometheus container_memory_working_set_bytes. Values are summed across concurrent workflow pods at each sample; the reported average and peak are calculated from that aggregate time series." ;
+  rm:energyKWh "0.007072037114249999"^^xsd:double ;
+  rm:carbonEmissionKgCO2e "0.0020367466889039997"^^xsd:double ;
+  rm:carbonIntensityAssumptionKgCO2ePerKWh "0.288"^^xsd:double ;
+  rm:carbonIntensitySource "Electricity Maps latest available flow-traced carbon intensity (collection-time proxy)" ;
+  rm:energyMetricSource "kepler_container_joules_total" ;
+  rm:energyCalculationMethod "Energy is the sum of per-pod Kepler measurements for 1 of 1 pod(s)." ;
+  rm:energyCalculationUsesFallbackEstimate "false"^^xsd:boolean ;
+  rm:carbonCalculationMethod "Carbon emissions are calculated using the emissions factor method: energy consumption (kWh) multiplied by 0.288 kg/kWh (lifecycle CO2e) from Electricity Maps latest available flow-traced carbon intensity (collection-time proxy). The value is the latest value available from the free-tier endpoint when metadata was collected. It is used as a proxy and is not guaranteed to represent the exact workflow execution interval." ;
+  rm:carbonIntensitySourceLink "https://api.electricitymaps.com/v4/carbon-intensity/latest"^^xsd:anyURI ;
+  rm:carbonIntensityZone "DE" ;
+  rm:carbonIntensityDataPointCount "1"^^xsd:integer ;
+  rm:carbonIntensityWindowStart "2026-09-08T07:00:00Z"^^xsd:dateTime ;
+  rm:carbonIntensityWindowEnd "2026-09-08T08:00:00Z"^^xsd:dateTime ;
+  rm:carbonIntensityIncludesEstimatedData "true"^^xsd:boolean ;
+  rm:carbonIntensityEmissionsBasis "lifecycle CO2e" ;
+  rm:carbonIntensityTemporalGranularity "hourly" ;
+  rm:parallelismNote "Each recorded VIVO process is one Kubernetes Job attempt. The scientific Snakemake rules run inside that Job container; CPU time is measured independently of the session wall clock." .
+
+<http://example.org/vivo-import/run-metadata/process/metagenomic-read-mapping-across-computational-architectures-kubernetes-attempt-7-a2-mg3-20260908>
+  rdf:type rm:WorkflowProcessRun ;
+  rdf:type vivo:InformationResource ;
+  rdf:type prov:Entity ;
+  rdfs:label "MG-3 Kubernetes attempt 7"@en ;
+  dcterms:title "MG-3 Kubernetes attempt 7"@en ;
+  rm:jobName "MG-3 Kubernetes attempt 7" ;
+  rm:runStatus "Succeeded" ;
+  rm:taskCount "1"^^xsd:integer ;
+  rm:podCount "1"^^xsd:integer ;
+  rm:succeededTaskCount "1"^^xsd:integer ;
+  rm:cachedTaskCount "0"^^xsd:integer ;
+  rm:failedTaskCount "0"^^xsd:integer ;
+  rm:abortedTaskCount "0"^^xsd:integer ;
+  prov:startedAtTime "2026-09-08T09:25:32"^^xsd:dateTime ;
+  prov:endedAtTime "2026-09-08T09:27:16"^^xsd:dateTime ;
+  rm:durationSeconds "104"^^xsd:integer ;
+  rm:durationCalculationMethod "Wall-clock time from the earliest task submission to the latest task completion or workflow termination in this stage." ;
+  rm:isWorkflowProcessOf <http://example.org/vivo-import/run-metadata/run/yagmur-metagenomic-read-mapping-across-computational-architectures-a2-mg3-20260908-2026-09-08t06-34-48-00-00> ;
+  rm:taskName "a2-mg3-run-20260908-v7" ;
+  rm:cpuTimeSeconds "115.67604209999999"^^xsd:double ;
+  rm:cpuTimeCalculationMethod "CPU time is the sum of Prometheus container_cpu_usage_seconds_total counter increases for 1 of 1 pod(s)." ;
+  rm:memoryPeakGB "2.825015296"^^xsd:double ;
+  rm:memoryAvgGB "0.7420266788571428"^^xsd:double ;
+  rm:memoryCalculationMethod "Memory is derived from Prometheus container_memory_working_set_bytes. Values are summed across concurrent workflow pods at each sample; the reported average and peak are calculated from that aggregate time series." ;
+  rm:energyKWh "0.0014258748746874999"^^xsd:double ;
+  rm:carbonEmissionKgCO2e "0.00041065196390999994"^^xsd:double ;
+  rm:carbonIntensityAssumptionKgCO2ePerKWh "0.288"^^xsd:double ;
+  rm:carbonIntensitySource "Electricity Maps latest available flow-traced carbon intensity (collection-time proxy)" ;
+  rm:energyMetricSource "kepler_container_joules_total" ;
+  rm:energyCalculationMethod "Energy is the sum of per-pod Kepler measurements for 1 of 1 pod(s)." ;
+  rm:energyCalculationUsesFallbackEstimate "false"^^xsd:boolean ;
+  rm:carbonCalculationMethod "Carbon emissions are calculated using the emissions factor method: energy consumption (kWh) multiplied by 0.288 kg/kWh (lifecycle CO2e) from Electricity Maps latest available flow-traced carbon intensity (collection-time proxy). The value is the latest value available from the free-tier endpoint when metadata was collected. It is used as a proxy and is not guaranteed to represent the exact workflow execution interval." ;
+  rm:carbonIntensitySourceLink "https://api.electricitymaps.com/v4/carbon-intensity/latest"^^xsd:anyURI ;
+  rm:carbonIntensityZone "DE" ;
+  rm:carbonIntensityDataPointCount "1"^^xsd:integer ;
+  rm:carbonIntensityWindowStart "2026-09-08T07:00:00Z"^^xsd:dateTime ;
+  rm:carbonIntensityWindowEnd "2026-09-08T08:00:00Z"^^xsd:dateTime ;
+  rm:carbonIntensityIncludesEstimatedData "true"^^xsd:boolean ;
+  rm:carbonIntensityEmissionsBasis "lifecycle CO2e" ;
+  rm:carbonIntensityTemporalGranularity "hourly" ;
+  rm:parallelismNote "Each recorded VIVO process is one Kubernetes Job attempt. The scientific Snakemake rules run inside that Job container; CPU time is measured independently of the session wall clock." .

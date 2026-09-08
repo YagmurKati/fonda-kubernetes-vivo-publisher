@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "datasets": [
+    {
+      "uri": "http://example.org/vivo-import/run-metadata/input-dataset/mg3-raptor-simulated-64-bin-small-20260908",
+      "label": "Raptor-simulated MG-3 64-bin small dataset (2026-09-08)",
+      "description": "262144000-base seed reference; 64 bins; four haplotypes per bin; 128000 single-end 150-base reads; three errors per read; SNP rate 0.01; small indel rate 0.001. Upstream simulate.sh did not apply mix_bins.",
+      "upstream_source_url": "https://github.com/eseiler/raptor_data_simulation",
+      "access_instructions_url": "https://github.com/CRC-FONDA/A2-metagenome-snakemake",
+      "format_documentation_url": "https://github.com/CRC-FONDA/A2-metagenome-snakemake/blob/d235f908a4a4336cfce297bf2f302c5e33ee4e6d/simulation_config.yaml",
+      "storage_location": "FONDA Kubernetes namespace yagmur, PVC a2-mg3-run-20260908, data/64",
+      "access_statement": "Generated input retained on the user-controlled cluster PVC; not publicly hosted. Parameters, pinned revisions and compatibility patch are retained in the run audit.",
+      "link_to_workflow": true,
+      "link_to_run": true
+    }
+  ]
+}
