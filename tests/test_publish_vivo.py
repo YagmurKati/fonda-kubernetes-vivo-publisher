@@ -189,5 +189,42 @@ class HttpPublicationTests(unittest.TestCase):
                 )
 
 
+
+class WorkflowDeleteUpdateTests(unittest.TestCase):
+    WORKFLOW = "http://example.org/vivo-import/run-metadata/workflow/stale"
+    GRAPH = "http://vitro.mannlib.cornell.edu/default/vitro-kb-2"
+    ONTOLOGY = "http://example.org/ontology/run-metadata#"
+
+    def _update(self) -> str:
+        return publish_vivo.workflow_delete_update(
+            self.WORKFLOW, self.GRAPH, self.ONTOLOGY
+        )
+
+    def test_targets_only_the_named_workflow(self) -> None:
+        update = self._update()
+        self.assertIn(f"VALUES ?target {{ <{self.WORKFLOW}> }}", update)
+        self.assertIn("FILTER (?subject = ?target || ?object = ?target)", update)
+
+    def test_refuses_to_orphan_runs(self) -> None:
+        """A workflow that still has a run must survive the update."""
+        update = self._update()
+        self.assertIn(
+            "FILTER NOT EXISTS { ?target "
+            "<http://example.org/ontology/run-metadata#hasRun> ?run }",
+            update,
+        )
+
+    def test_rejects_a_relative_workflow_iri(self) -> None:
+        with self.assertRaises(publish_vivo.PublishError):
+            publish_vivo.workflow_delete_update(
+                "not-an-iri", self.GRAPH, self.ONTOLOGY
+            )
+
+    def test_rejects_a_relative_graph(self) -> None:
+        with self.assertRaises(publish_vivo.PublishError):
+            publish_vivo.workflow_delete_update(
+                self.WORKFLOW, "kb-2", self.ONTOLOGY
+            )
+
 if __name__ == "__main__":
     unittest.main()

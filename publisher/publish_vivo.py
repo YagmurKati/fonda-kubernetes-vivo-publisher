@@ -18,6 +18,7 @@ from typing import Dict, List, Optional, Tuple
 
 DEFAULT_ENDPOINT = "https://vivo-fonda.hu-berlin.de/vivo/api/sparqlUpdate"
 DEFAULT_GRAPH = "http://vitro.mannlib.cornell.edu/default/vitro-kb-2"
+DEFAULT_ONTOLOGY_URI = "http://example.org/ontology/run-metadata#"
 
 PREFIX_RE = re.compile(
     r"^\s*@prefix\s+([A-Za-z][A-Za-z0-9_-]*)?:\s*"
@@ -170,6 +171,40 @@ def turtle_to_run_delete_update(turtle: str, graph: str) -> Tuple[str, str, int]
     return update, owned_iris[0], len(owned_iris)
 
 
+def workflow_delete_update(
+    workflow_iri: str,
+    graph: str,
+    ontology_uri: str,
+) -> str:
+    """Build a deletion limited to one workflow individual that has no runs.
+
+    Renaming a workflow changes its IRI, which leaves the previous individual
+    behind with no runs attached. Removing it is safe only while that is true,
+    so the update carries its own guard: if the workflow still has a run, the
+    WHERE clause matches nothing and the update deletes nothing. The guard is
+    evaluated by VIVO at execution time rather than by a separate query, so a
+    run published between validation and removal cannot be missed.
+    """
+    validate_absolute_iri(workflow_iri, "workflow IRI")
+    validate_absolute_iri(graph, "graph")
+    validate_absolute_iri(ontology_uri, "ontology URI")
+    has_run = f"{ontology_uri}hasRun"
+    validate_absolute_iri(has_run, "hasRun predicate")
+    return (
+        "DELETE {\n"
+        f"  GRAPH <{graph}> {{ ?subject ?predicate ?object }}\n"
+        "}\n"
+        "WHERE {\n"
+        f"  GRAPH <{graph}> {{\n"
+        f"    VALUES ?target {{ <{workflow_iri}> }}\n"
+        "    ?subject ?predicate ?object .\n"
+        "    FILTER (?subject = ?target || ?object = ?target)\n"
+        f"    FILTER NOT EXISTS {{ ?target <{has_run}> ?run }}\n"
+        "  }\n"
+        "}\n"
+    )
+
+
 def read_secret_file(path: Path, label: str) -> str:
     try:
         value = path.read_text(encoding="utf-8").rstrip("\r\n")
@@ -315,9 +350,10 @@ def build_args() -> argparse.Namespace:
             "Publish one collector-generated TTL file to the VIVO ABox graph."
         )
     )
-    parser.add_argument("ttl_file", type=Path)
+    parser.add_argument("ttl_file", type=Path, nargs="?")
     parser.add_argument("--endpoint", default=DEFAULT_ENDPOINT)
     parser.add_argument("--graph", default=DEFAULT_GRAPH)
+    parser.add_argument("--ontology-uri", default=DEFAULT_ONTOLOGY_URI)
     parser.add_argument("--email-file", type=Path, default=None)
     parser.add_argument("--password-file", type=Path, default=None)
     parser.add_argument("--receipt-file", type=Path, default=None)
@@ -329,6 +365,15 @@ def build_args() -> argparse.Namespace:
         "--remove",
         action="store_true",
         help="Remove the run represented by the TTL instead of publishing it.",
+    )
+    parser.add_argument(
+        "--remove-workflow",
+        default=None,
+        metavar="WORKFLOW_IRI",
+        help=(
+            "Remove one workflow individual that has no runs. Takes no TTL "
+            "file. Intended for a workflow individual left behind by a rename."
+        ),
     )
     parser.add_argument(
         "--confirm-removal",
@@ -356,6 +401,56 @@ def main() -> None:
     if endpoint_parts.scheme != "https":
         raise PublishError("the VIVO endpoint must use HTTPS")
     validate_absolute_iri(args.endpoint, "endpoint")
+
+    if args.remove_workflow:
+        if args.ttl_file is not None:
+            raise PublishError(
+                "--remove-workflow does not take a TTL file; a workflow "
+                "individual is identified by its IRI"
+            )
+        update = workflow_delete_update(
+            args.remove_workflow, args.graph, args.ontology_uri
+        )
+        if args.dry_run:
+            print(f"Workflow removal validated: {args.remove_workflow}")
+            print(f"Target graph: {args.graph}")
+            print(
+                "The update deletes nothing if the workflow still has a run."
+            )
+            return
+        if not args.confirm_removal:
+            raise PublishError(
+                "--confirm-removal is required to remove a workflow individual"
+            )
+        if args.email_file is None or args.password_file is None:
+            raise PublishError(
+                "--email-file and --password-file are required for removal"
+            )
+        email = read_secret_file(args.email_file, "email")
+        password = read_secret_file(args.password_file, "password")
+        if "@" not in email:
+            raise PublishError(
+                "the VIVO email credential is not a valid email address"
+            )
+        status, response_text, attempts = publish_with_retries(
+            endpoint=args.endpoint,
+            email=email,
+            password=password,
+            update=update,
+            max_attempts=args.max_attempts,
+            retry_delay_seconds=args.retry_delay_seconds,
+            timeout_seconds=args.timeout_seconds,
+        )
+        print(f"Removed VIVO workflow: {args.remove_workflow}")
+        print(f"HTTP {status} after {attempts} attempt(s)")
+        print(
+            "Verify the workflow page returns 404. A workflow that still has "
+            "a run is left untouched by design."
+        )
+        return
+
+    if args.ttl_file is None:
+        raise PublishError("a TTL file is required unless --remove-workflow is used")
 
     try:
         turtle = args.ttl_file.read_text(encoding="utf-8")

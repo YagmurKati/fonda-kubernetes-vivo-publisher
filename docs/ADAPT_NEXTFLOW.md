@@ -66,6 +66,25 @@ references. The collector merges these declarations with Kubernetes-discovered
 image names and runtime IDs, preventing a short-lived or deleted task from
 silently disappearing from container provenance.
 
+## Retiring a workflow individual
+
+Changing `WORKFLOW_URI`, including as a side effect of renaming a workflow,
+creates a new workflow individual and leaves the previous one behind. Removing a
+run does not remove it, because a workflow normally outlives its runs.
+
+Remove the abandoned individual by IRI:
+
+```bash
+./scripts/remove-workflow.sh WORKFLOW_IRI --dry-run
+./scripts/remove-workflow.sh WORKFLOW_IRI
+```
+
+The update deletes the workflow only while it has no runs; that guard is part of
+the SPARQL sent to VIVO, so a workflow that still has a run is left untouched
+rather than orphaning it. Remove its runs first if you intend to retire a
+workflow that has them. The script also refuses the `WORKFLOW_URI` of the active
+profile.
+
 ## Automatic invocation
 
 Call the publisher only after the workflow command succeeds:

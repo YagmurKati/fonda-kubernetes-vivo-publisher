@@ -219,6 +219,17 @@ The second command asks for confirmation and uses the same non-admin VIVO
 account. It removes only that run's metadata and keeps the local workflow and
 audit files. See [Remove a published run](docs/USER_GUIDE.md#7-remove-a-published-run).
 
+A workflow individual left behind by a rename keeps no runs of its own. Remove it
+by IRI:
+
+```bash
+./scripts/remove-workflow.sh WORKFLOW_IRI --dry-run
+./scripts/remove-workflow.sh WORKFLOW_IRI
+```
+
+A workflow that still has a run is left untouched, so this cannot orphan a
+published run.
+
 ## Documentation
 
 - [User guide](docs/USER_GUIDE.md)

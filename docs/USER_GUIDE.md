@@ -181,6 +181,19 @@ Kubernetes Secret used for publication. It removes the selected run, its
 process and date records, and links to those records. It does not remove shared
 workflow, dataset, researcher, or cluster records.
 
+Because a workflow record is shared and outlives its runs, renaming a workflow
+leaves the previous workflow individual in VIVO with no runs. Remove that one by
+its IRI:
+
+```bash
+./scripts/remove-workflow.sh WORKFLOW_IRI --dry-run
+./scripts/remove-workflow.sh WORKFLOW_IRI
+```
+
+The guard is inside the SPARQL update: a workflow that still has a run is left
+untouched, so a published run cannot be orphaned. Remove the runs first if you
+intend to retire a workflow that has them.
+
 The workflow results, TTL, metrics audit, and receipt stay on the PVC. The
 receipt records the removal. Open <https://vivo-fonda.hu-berlin.de/vivo/runs>
 and confirm that the run is gone. Correct the configuration or evidence before
