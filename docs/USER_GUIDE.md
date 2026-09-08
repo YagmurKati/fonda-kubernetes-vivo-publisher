@@ -46,6 +46,10 @@ cp examples/fonda-trends/input_datasets.json config/input_datasets.json
 cp examples/rnaseq-salmon-rs1/publisher.env.example config/publisher.env
 cp examples/rnaseq-salmon-rs1/input_datasets.json config/input_datasets.json
 
+# OR: RNA-seq Salmon RS1, ninon experiment configs
+cp examples/rnaseq-salmon-rs1-ninon/publisher.env.example config/publisher.env
+cp examples/rnaseq-salmon-rs1-ninon/input_datasets.json config/input_datasets.json
+
 # OR: RNA-seq Salmon RS2
 cp examples/rnaseq-salmon-rs2/publisher.env.example config/publisher.env
 cp examples/rnaseq-salmon-rs2/input_datasets.json config/input_datasets.json
