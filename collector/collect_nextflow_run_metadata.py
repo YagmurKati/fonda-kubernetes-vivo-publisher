@@ -2184,6 +2184,12 @@ def build_ttl(
     ]
     workflow_description = getattr(args, "workflow_description", "")
     if workflow_description:
+        # rm:purpose is the predicate VIVO renders on the workflow page;
+        # dcterms:description carries the same text under a standard term
+        # for consumers reading the raw RDF.
+        workflow_predicates.append(
+            ("rm:purpose", ttl_label(workflow_description))
+        )
         workflow_predicates.append(
             ("dcterms:description", ttl_label(workflow_description))
         )
@@ -2808,6 +2814,14 @@ def build_args() -> argparse.Namespace:
         help="Timezone used by Nextflow trace and debug log timestamps.",
     )
     parser.add_argument("--workflow-name", default=DEFAULT_WORKFLOW_NAME)
+    parser.add_argument(
+        "--workflow-description",
+        default="",
+        help=(
+            "Short description of what the workflow does, shown as the "
+            "purpose of the workflow individual in VIVO."
+        ),
+    )
     parser.add_argument("--workflow-uri", default=DEFAULT_WORKFLOW_URI)
     parser.add_argument("--publication-uri", default=DEFAULT_PUBLICATION_URI)
     parser.add_argument("--code-path", default=str(default_code_path))

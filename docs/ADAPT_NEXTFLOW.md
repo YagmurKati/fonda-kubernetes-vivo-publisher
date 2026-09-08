@@ -42,6 +42,14 @@ Set `SERVICE_ACCOUNT` to an existing service account in the same namespace.
 It must be allowed to run a Job and read the mounted PVC. Node read permission
 is optional.
 
+## Workflow description
+
+Set `WORKFLOW_DESCRIPTION` to a short statement of what the workflow does. It is
+written to the workflow individual as `rm:purpose`, which VIVO renders as the
+purpose of the workflow, and as `dcterms:description` for consumers reading the
+raw RDF. It describes the workflow, not a run, so keep it stable across runs and
+free of run-specific numbers. Leave it empty to omit both triples.
+
 ## Stable RDF identity
 
 Use one stable `WORKFLOW_URI` for a workflow across runs. Use a different URI

@@ -63,6 +63,7 @@ spec:
                 --trace-timezone "$TRACE_TIMEZONE"
                 --code-path "$CODE_PATH"
                 --workflow-name "$WORKFLOW_NAME"
+                --workflow-description "$WORKFLOW_DESCRIPTION"
                 --workflow-uri "$WORKFLOW_URI"
                 --workflow-repo-url "$WORKFLOW_REPO_URL"
                 --code-uri "$CODE_URI"

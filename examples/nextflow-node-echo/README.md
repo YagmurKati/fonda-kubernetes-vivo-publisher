@@ -23,6 +23,8 @@ cp examples/nextflow-node-echo/input_datasets.json config/input_datasets.json
 ```
 
 Replace every `REPLACE_ME` value and confirm the trace, log, and code paths.
+`WORKFLOW_DESCRIPTION` supplies the purpose shown on the workflow individual
+in VIVO; it describes the workflow rather than any single run.
 Store the VIVO credentials:
 
 ```bash
