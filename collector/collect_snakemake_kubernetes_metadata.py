@@ -342,22 +342,52 @@ def read_mg3_result_metadata(run_root: Path) -> Dict[str, Any]:
     commit = (run_root / "source/.git/HEAD").read_text().strip()
     if not re.fullmatch(r"[0-9a-f]{40}", commit):
         raise RuntimeError("MG-3 requires the detached upstream revision evidence")
-    if commit != "d235f908a4a4336cfce297bf2f302c5e33ee4e6d":
-        raise RuntimeError("MG-3 small-data profile requires the documented upstream revision")
-    log = (run_root / "results/run.log").read_text()
-    if "snakemake-7.32.4" not in log:
-        raise RuntimeError("MG-3 Snakemake version is not supported by the installation log")
-    return {
-        "completed_at": completed.read_text().strip(),
-        "provenance": {
+    provenance_path = run_root / "results/provenance.json"
+    if provenance_path.is_file():
+        provenance = json.loads(provenance_path.read_text())
+        if provenance.get("schema_version") != 1:
+            raise RuntimeError("Unsupported MG-3 provenance schema")
+        if provenance.get("workflow_commit") != commit:
+            raise RuntimeError("MG-3 provenance workflow revision does not match checkout")
+        runtime_version = read_optional_text(run_root / "results/snakemake-version.txt")
+        if not runtime_version or provenance.get("snakemake") != runtime_version:
+            raise RuntimeError("MG-3 Snakemake version does not match runtime evidence")
+        cores = provenance.get("snakemake_cores")
+        if type(cores) is not int or cores < 1:
+            raise RuntimeError("MG-3 provenance needs a positive core count")
+        for key in ("simulator_commit", "dream_yara_commit"):
+            if not re.fullmatch(r"[0-9a-f]{40}", provenance.get(key, "")):
+                raise RuntimeError(f"Invalid MG-3 provenance {key}")
+        if provenance.get("dependency_mode") not in {"built", "cache"}:
+            raise RuntimeError("MG-3 provenance needs dependency_mode built or cache")
+        for key in ("run_id", "dependency_provenance_scope"):
+            if not isinstance(provenance.get(key), str) or not provenance[key].strip():
+                raise RuntimeError(f"MG-3 provenance needs {key}")
+        hashes = provenance.get("tool_sha256")
+        if not isinstance(hashes, dict) or not hashes or any(
+            not isinstance(value, str) or not re.fullmatch(r"[0-9a-f]{64}", value)
+            for value in hashes.values()
+        ):
+            raise RuntimeError("MG-3 provenance needs valid binary checksums")
+        provenance["evidence_source"] = "Runtime provenance manifest and version file"
+    else:
+        # Preserve support for the actual published legacy layout, without assigning
+        # its old dependency versions or CPU settings to unrelated future runs.
+        if commit != "d235f908a4a4336cfce297bf2f302c5e33ee4e6d":
+            raise RuntimeError("Legacy MG-3 evidence requires the documented source revision")
+        log = (run_root / "results/run.log").read_text()
+        if not re.search(r"^Successfully installed .*\bsnakemake-7\.32\.4(?:\s|$)", log, re.M):
+            raise RuntimeError("MG-3 version is not supported by the successful installation log")
+        provenance = {
             "workflow_commit": commit,
             "snakemake": "7.32.4",
-            "snakemake_version_evidence": "Pinned install command and successful installation in results/run.log",
-            "simulator_commit": "d8cdc4663ccc7664ec17a4264e98ceef5c1c9108",
-            "dream_yara_commit": "e1bf6b5bbbeb74659379d54b9d3623660f316751",
-            "dependency_provenance_scope": "Previously compiled tools reused read-only from yagmur-a2-mg4-work; historical build energy excluded",
-            "compatibility_patch": (run_root / "results/compatibility.patch").read_text(),
-        },
+            "evidence_source": "Legacy detached checkout and installation log",
+            "dependency_provenance_scope": "Legacy run has no runtime dependency manifest; dependency build mode and revisions are not independently established by this reader.",
+        }
+    provenance["compatibility_patch"] = (run_root / "results/compatibility.patch").read_text()
+    return {
+        "completed_at": completed.read_text().strip(),
+        "provenance": provenance,
         "mapped_record_count": count,
         "output_path": str(output),
         "output_size_bytes": output.stat().st_size,
@@ -392,21 +422,25 @@ def collector_args(
         else ""
     )
     if profile == "mg3":
+        provenance = result["provenance"]
+        cores = provenance.get("snakemake_cores")
+        parallelism = (
+            f"Snakemake used {cores} cores inside each workflow pod. "
+            if cores else "Snakemake rules ran inside the workflow pods. "
+        )
         description = (
-            "Small simulated-data execution of MG-3 from CRC-FONDA/A2-metagenome-snakemake: "
-            "64 bins, 262144000-base seed reference, four haplotypes, 128000 single-end reads "
-            "of 150 bases with three errors; 1 GB IBF and integer 2% mapping error threshold. "
-            f"Final output contains {result['mapped_record_count']} SAM records; "
+            "Execution of MG-3 from CRC-FONDA/A2-metagenome-snakemake. "
+            f"The verified final output contains {result['mapped_record_count']} SAM records. "
             f"The session used {attempt_count} Kubernetes attempts{failed_clause}. "
-            "Snakemake used eight cores within one pod, not a multi-pod executor. "
-            "Compatibility fixes and cached DREAM-Yara fork are recorded in the audit. "
-            "The upstream simulation script did not apply mix_bins. "
+            + parallelism +
+            "Exact simulation/search configuration, compatibility changes, runtime provenance "
+            "and validation evidence are retained in the metrics audit. "
             f"Final SAM SHA-256: {result['output_sha256']}."
         )
         resource_scope = (
-            "All selected workflow-attempt pods in this resumed MG-3 session, including setup, "
-            "simulation, retained indices, failed attempts, mapping and validation. "
-            "Excludes inspection/metadata pods and historical compilation of reused tools."
+            "All selected MG-3 workflow-attempt pods, including their setup and scientific work. "
+            "Inspection and metadata pods are excluded. "
+            + provenance["dependency_provenance_scope"]
         )
     elif profile == "mg4":
         description = (
@@ -515,6 +549,16 @@ def enrich_metrics_from_pods(
     return images
 
 
+def validate_mg3_attempt_evidence(result, tasks, run_id):
+    recorded_id = result["provenance"].get("run_id")
+    if recorded_id and recorded_id != run_id:
+        raise RuntimeError("MG-3 provenance run_id differs from requested run")
+    completed = parse_time(result["completed_at"])
+    successful = [task for task in tasks if task.status == "COMPLETED"]
+    if not any(task.submit <= completed <= task.end + timedelta(seconds=1) for task in successful):
+        raise RuntimeError("MG-3 completion marker is outside successful pod execution")
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--run-id", required=True)
@@ -532,6 +576,8 @@ def main() -> None:
     tasks, pods = build_tasks(select_attempt_pods(namespace, cli.run_id))
     if not any(task.status == "COMPLETED" for task in tasks):
         raise RuntimeError("No successful Kubernetes attempt exists for this run")
+    if profile == "mg3":
+        validate_mg3_attempt_evidence(result, tasks, cli.run_id)
     run_start = min(task.submit for task in tasks)
     run_end = max(task.end for task in tasks if task.end is not None)
     failed_tasks = [task for task in tasks if task.status == "FAILED"]
@@ -572,7 +618,7 @@ def main() -> None:
     stages = []
     for index, task in enumerate(tasks, start=1):
         suffix_match = re.search(r"(?:-v|-)([0-9]+)$", task.name)
-        suffix = suffix_match.group(1) if suffix_match else str(index)
+        suffix = str(index) if profile == "mg3" else (suffix_match.group(1) if suffix_match else str(index))
         stages.append(
             {
                 "slug": f"kubernetes-attempt-{index}",

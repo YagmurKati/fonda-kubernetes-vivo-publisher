@@ -36,8 +36,9 @@ spec:
 
               if [[ "$DRY_RUN" != "1" && "$FORCE_REPUBLISH" != "1" ]]; then
                 shopt -s nullglob
-                receipts=("$output_dir/${RUN_ID}-"*.published.json)
+                receipts=("$output_dir/${RUN_ID}.published.json" "$output_dir/${RUN_ID}-"*.published.json)
                 for receipt in "${receipts[@]}"; do
+                  [[ -f "$receipt" ]] || continue
                   if ! grep -Eq '"removed_at"[[:space:]]*:' "$receipt"; then
                     printf 'A publication receipt already exists for %s: %s\n' \
                       "$RUN_ID" "$receipt" >&2

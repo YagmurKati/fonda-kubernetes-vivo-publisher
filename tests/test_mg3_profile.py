@@ -1,4 +1,10 @@
 import hashlib
+import json
+import os
+import subprocess
+import textwrap
+from datetime import datetime, timezone
+from types import SimpleNamespace
 import tempfile
 import unittest
 from pathlib import Path
@@ -50,3 +56,60 @@ class MG3EvidenceTests(unittest.TestCase):
             (root / 'results/run.log').write_text('')
             with self.assertRaisesRegex(RuntimeError, 'version'):
                 adapter.read_mg3_result_metadata(root)
+
+
+class MG3RuntimeProvenanceTests(MG3EvidenceTests):
+    def manifest(self, root):
+        data = {"schema_version": 1, "run_id": "new-run", "workflow_commit": "d235f908a4a4336cfce297bf2f302c5e33ee4e6d",
+                "snakemake": "7.32.4", "snakemake_cores": 4, "simulator_commit": "a"*40,
+                "dream_yara_commit": "b"*40, "dependency_mode": "built",
+                "dependency_provenance_scope": "Tools built inside this pod.", "tool_sha256": {"mapper": "c"*64}}
+        (root/'results/provenance.json').write_text(json.dumps(data))
+        (root/'results/snakemake-version.txt').write_text('7.32.4')
+        return data
+
+    def test_runtime_manifest_is_preserved_and_checked(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self.fixture(root)
+            data = self.manifest(root)
+            value = adapter.read_mg3_result_metadata(root)['provenance']
+            self.assertEqual(value['snakemake_cores'], 4)
+            self.assertEqual(value['simulator_commit'], 'a'*40)
+            data['workflow_commit'] = 'e'*40
+            (root/'results/provenance.json').write_text(json.dumps(data))
+            with self.assertRaisesRegex(RuntimeError, 'revision'):
+                adapter.read_mg3_result_metadata(root)
+
+    def test_legacy_does_not_invent_dependency_versions(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self.fixture(root)
+            provenance = adapter.read_mg3_result_metadata(root)['provenance']
+            self.assertNotIn('simulator_commit', provenance)
+            self.assertNotIn('snakemake_cores', provenance)
+
+    def test_rejects_unrelated_run_and_stale_completion(self):
+        result = {'completed_at': '2026-09-08T07:27:16Z', 'provenance': {'run_id':'new-run'}}
+        task = SimpleNamespace(status='COMPLETED', submit=datetime(2026,9,8,7,26,tzinfo=timezone.utc),end=datetime(2026,9,8,7,28,tzinfo=timezone.utc))
+        adapter.validate_mg3_attempt_evidence(result,[task],'new-run')
+        with self.assertRaisesRegex(RuntimeError,'run_id'):
+            adapter.validate_mg3_attempt_evidence(result,[task],'other-run')
+        result['completed_at']='2026-09-07T07:27:16Z'
+        with self.assertRaisesRegex(RuntimeError,'outside'):
+            adapter.validate_mg3_attempt_evidence(result,[task],'new-run')
+
+class HistoricalReceiptGuardTests(unittest.TestCase):
+    def test_existing_plain_receipt_blocks_duplicate_publication(self):
+        template = (Path(__file__).resolve().parents[1]/'k8s/snakemake-publisher-job.yaml').read_text()
+        guard = textwrap.dedent(template.split('            - |\n',1)[1].split('              python3 /opt/fonda-vivo/collector.py',1)[0])
+        with tempfile.TemporaryDirectory() as directory:
+            outbox = Path(directory)/'vivo-outbox'
+            outbox.mkdir()
+            (outbox/'example.published.json').write_text('{"http_status":200}')
+            env = dict(os.environ,RUN_ROOT=directory,RUN_ID='example',OUTPUT_STAMP='stamp',DRY_RUN='0',FORCE_REPUBLISH='0')
+            proc = subprocess.run(['bash','-c',guard],env=env,capture_output=True,text=True)
+            self.assertEqual(proc.returncode,4,proc.stderr)
+            self.assertIn('already exists',proc.stderr)
+            env['DRY_RUN']='1'
+            self.assertEqual(subprocess.run(['bash','-c',guard],env=env,capture_output=True).returncode,0)
