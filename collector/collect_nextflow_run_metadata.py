@@ -83,7 +83,10 @@ LOG_TS_RE = re.compile(
     r"^(?P<month>[A-Z][a-z]{2})-(?P<day>\d{2}) "
     r"(?P<time>\d{2}:\d{2}:\d{2}\.\d+)"
 )
-SESSION_RE = re.compile(r"Session UUID:\s*(\S+)")
+# Nextflow logs "Session uuid:" up to the 21.x line and "Session UUID:"
+# afterwards. Match case-insensitively so a run launched with an older
+# Nextflow keeps its session identity in the run URI.
+SESSION_RE = re.compile(r"Session UUID:\s*(\S+)", re.IGNORECASE)
 RUN_NAME_RE = re.compile(r"Run name:\s*(\S+)")
 NEXTFLOW_VERSION_RE = re.compile(r"N E X T F L O W\s+~\s+version\s+(\S+)")
 CONTAINER_RE = re.compile(r"(?m)^\s*container\s*=\s*['\"]([^'\"]+)['\"]")
