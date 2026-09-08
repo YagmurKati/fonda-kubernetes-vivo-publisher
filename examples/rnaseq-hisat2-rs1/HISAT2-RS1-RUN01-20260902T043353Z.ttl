@@ -1,0 +1,580 @@
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix vivo: <http://vivoweb.org/ontology/core#> .
+@prefix bibo: <http://purl.org/ontology/bibo/> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix rm: <http://example.org/ontology/run-metadata#> .
+@prefix ex: <http://example.org/vivo-import/run-metadata/> .
+
+<http://example.org/vivo-import/run-metadata/engine/nextflow>
+  rdf:type rm:WorkflowEngine ;
+  rdf:type vivo:InformationResource ;
+  rdfs:label "Nextflow"@en ;
+  dcterms:title "Nextflow"@en ;
+  rm:hasWorkflow <http://example.org/vivo-import/run-metadata/workflow/rna-seq-analysis-hisat2-rs1> .
+
+<http://example.org/vivo-import/run-metadata/language/shell>
+  rdf:type rm:Language ;
+  rdf:type vivo:InformationResource ;
+  rdfs:label "Shell"@en ;
+  dcterms:title "Shell"@en ;
+  rm:hasWorkflow <http://example.org/vivo-import/run-metadata/workflow/rna-seq-analysis-hisat2-rs1> .
+
+<http://172.28.33.178:8080/vivo/individual/n5703>
+  rm:hasWorkflow <http://example.org/vivo-import/run-metadata/workflow/rna-seq-analysis-hisat2-rs1> .
+
+<http://example.org/vivo-import/run-metadata/cluster/fonda-cluster>
+  rdf:type rm:ComputeCluster ;
+  rdf:type vivo:InformationResource ;
+  rdfs:label "Fonda Cluster"@en ;
+  dcterms:title "Fonda Cluster"@en ;
+  rm:hasRun <http://example.org/vivo-import/run-metadata/run/yagmur-rna-seq-analysis-workflow-hisat2-rs1-c0ece5b9-63ab-41ac-a0f5-1980d02b79dc-2026-09-01t11-38-23-240000-00-00> ;
+  rm:hasWorkflow <http://example.org/vivo-import/run-metadata/workflow/rna-seq-analysis-hisat2-rs1> .
+
+<http://example.org/vivo-import/run-metadata/workflow/rna-seq-analysis-hisat2-rs1>
+  rdf:type rm:Workflow ;
+  rdf:type vivo:InformationResource ;
+  rdf:type prov:Entity ;
+  rdfs:label "RNA-seq analysis workflow (Hisat2, RS1)"@en ;
+  dcterms:title "RNA-seq analysis workflow (Hisat2, RS1)"@en ;
+  rm:workflowName "RNA-seq analysis workflow (Hisat2, RS1)" ;
+  rm:traceTypes "Nextflow trace, execution report, timeline, and execution logs" ;
+  rm:traceDataFormat "TSV, HTML, and plain text" ;
+  rm:workflowEngine <http://example.org/vivo-import/run-metadata/engine/nextflow> ;
+  rm:computeCluster <http://example.org/vivo-import/run-metadata/cluster/fonda-cluster> ;
+  rm:workflowCodeLink "https://github.com/Nine-s/nextflow_RS1_hisat2_new"^^xsd:anyURI ;
+  rm:applicationDomain <http://example.org/vivo-import/run-metadata/domain/bioinformatics> ;
+  rm:backend <http://172.28.33.178:8080/vivo/individual/n5703> ;
+  rm:responsibleResearcher <https://fonda.hu-berlin.de/?page_id=2066#NinonDeMequenem> ;
+  rm:subproject <http://141.20.184.157:8080/vivo/individual/fonda-group-a2-energy-aware-optimization-of-workflows-in-bioinformatics> ;
+  rm:language <http://example.org/vivo-import/run-metadata/language/shell> ;
+  rm:hasUsedInputData <http://example.org/vivo-import/run-metadata/input-dataset/rnaseq-a2-drosophila-sra-reads> ;
+  rm:hasUsedInputData <http://example.org/vivo-import/run-metadata/input-dataset/rnaseq-a2-drosophila-ensembl-reference> ;
+  rm:hasRun <http://example.org/vivo-import/run-metadata/run/yagmur-rna-seq-analysis-workflow-hisat2-rs1-c0ece5b9-63ab-41ac-a0f5-1980d02b79dc-2026-09-01t11-38-23-240000-00-00> ;
+  rm:hasWorkflowRun <http://example.org/vivo-import/run-metadata/run/yagmur-rna-seq-analysis-workflow-hisat2-rs1-c0ece5b9-63ab-41ac-a0f5-1980d02b79dc-2026-09-01t11-38-23-240000-00-00> .
+
+<https://fonda.hu-berlin.de/?page_id=2066#NinonDeMequenem>
+  rm:workflows <http://example.org/vivo-import/run-metadata/workflow/rna-seq-analysis-hisat2-rs1> .
+
+<http://141.20.184.157:8080/vivo/individual/fonda-group-a2-energy-aware-optimization-of-workflows-in-bioinformatics>
+  rm:hasWorkflow <http://example.org/vivo-import/run-metadata/workflow/rna-seq-analysis-hisat2-rs1> .
+
+<http://example.org/vivo-import/run-metadata/run/yagmur-rna-seq-analysis-workflow-hisat2-rs1-c0ece5b9-63ab-41ac-a0f5-1980d02b79dc-2026-09-01t11-38-23-240000-00-00>
+  rdf:type rm:RunMetadata ;
+  rdf:type vivo:InformationResource ;
+  rdf:type prov:Entity ;
+  rdfs:label "RNA-seq analysis workflow (Hisat2, RS1) · run 2026-09-01 13:38–23:06 CEST"@en ;
+  dcterms:title "RNA-seq analysis workflow (Hisat2, RS1) · run 2026-09-01 13:38–23:06 CEST"@en ;
+  rm:workflow <http://example.org/vivo-import/run-metadata/workflow/rna-seq-analysis-hisat2-rs1> ;
+  rm:computeCluster <http://example.org/vivo-import/run-metadata/cluster/fonda-cluster> ;
+  rm:codeVersion "sha256:483a17c28d15d0ff4f6cb3595a09eb6c07de6d40505e5ff8ff7144e74bc83931" ;
+  rm:runStatus "Succeeded" ;
+  rm:workflowEngine <http://example.org/vivo-import/run-metadata/engine/nextflow> ;
+  prov:startedAtTime "2026-09-01T13:38:23"^^xsd:dateTime ;
+  prov:endedAtTime "2026-09-01T23:06:20"^^xsd:dateTime ;
+  rm:startTime "2026-09-01T13:38:23"^^xsd:dateTime ;
+  rm:endTime "2026-09-01T23:06:20"^^xsd:dateTime ;
+  rm:durationSeconds "34078"^^xsd:integer ;
+  rm:durationCalculationMethod "Wall-clock time from the first to last timestamp in the Nextflow debug log, with trace timestamps as a fallback." ;
+  dcterms:created "2026-09-02T06:33:57+02:00"^^xsd:dateTime ;
+  vivo:dateTimeValue <http://example.org/vivo-import/run-metadata/datetime/yagmur-rna-seq-analysis-workflow-hisat2-rs1-c0ece5b9-63ab-41ac-a0f5-1980d02b79dc-2026-09-01t11-38-23-240000-00-00> ;
+  rm:jobName "rnaseq_hisat2_rs1_run01_resume" ;
+  rm:taskCount "18"^^xsd:integer ;
+  rm:podCount "18"^^xsd:integer ;
+  rm:succeededTaskCount "18"^^xsd:integer ;
+  rm:cachedTaskCount "0"^^xsd:integer ;
+  rm:failedTaskCount "0"^^xsd:integer ;
+  rm:abortedTaskCount "0"^^xsd:integer ;
+  rm:resourceAccountingScope "Pods executed by the current Nextflow execution." ;
+  rm:resourceAccountingStartTime "2026-09-01T13:38:23"^^xsd:dateTime ;
+  rm:resourceAccountingEndTime "2026-09-01T23:06:20"^^xsd:dateTime ;
+  rm:traceTypes "Nextflow trace, execution report, timeline, and execution logs" ;
+  rm:traceDataFormat "TSV, HTML, and plain text" ;
+  rm:backend <http://172.28.33.178:8080/vivo/individual/n5703> ;
+  rm:inputData <http://example.org/vivo-import/run-metadata/input-dataset/rnaseq-a2-drosophila-sra-reads> ;
+  rm:inputData <http://example.org/vivo-import/run-metadata/input-dataset/rnaseq-a2-drosophila-ensembl-reference> ;
+  rm:runOperator <https://fonda.hu-berlin.de/?page_id=2066#YagmurKati> ;
+  rm:nextflowSessionId "c0ece5b9-63ab-41ac-a0f5-1980d02b79dc" ;
+  rm:nextflowVersion "25.04.8" ;
+  rm:gitCommit "6b7688c7cab3c0bdb39e0e228ceab2bac31e2caa" ;
+  rm:codeCommitLink "https://github.com/Nine-s/nextflow_RS1_hisat2_new/commit/6b7688c7cab3c0bdb39e0e228ceab2bac31e2caa"^^xsd:anyURI ;
+  rm:cpuTimeSeconds "72348.75662255245"^^xsd:double ;
+  rm:cpuTimeCalculationMethod "CPU time is the sum of Prometheus container_cpu_usage_seconds_total counter increases for 16 of 18 pod(s)." ;
+  rm:memoryPeakGB "14.8994"^^xsd:double ;
+  rm:memoryAvgGB "2.02844894429272"^^xsd:double ;
+  rm:memoryCalculationMethod "Memory is approximated from peak_rss in the Nextflow trace for 18 task(s). Each task contributes its peak resident memory over its execution interval; the peak is the maximum concurrent sum and the average is time-weighted." ;
+  rm:energyKWh "0.8043683907056287"^^xsd:double ;
+  rm:carbonEmissionKgCO2e "0.34105219765918654"^^xsd:double ;
+  rm:carbonIntensityAssumptionKgCO2ePerKWh "0.424"^^xsd:double ;
+  rm:carbonIntensitySource "Electricity Maps latest available flow-traced carbon intensity (collection-time proxy)" ;
+  rm:energyMetricSource "kepler_container_joules_total" ;
+  rm:energyCalculationMethod "Energy is the sum of per-pod Kepler measurements for 16 of 18 pod(s)." ;
+  rm:energyCalculationUsesFallbackEstimate "false"^^xsd:boolean ;
+  rm:carbonCalculationMethod "Carbon emissions are calculated using the emissions factor method: energy consumption (kWh) multiplied by 0.424 kg/kWh (lifecycle CO2e) from Electricity Maps latest available flow-traced carbon intensity (collection-time proxy). The value is the latest value available from the free-tier endpoint when metadata was collected. It is used as a proxy and is not guaranteed to represent the exact workflow execution interval." ;
+  rm:carbonIntensitySourceLink "https://api.electricitymaps.com/v4/carbon-intensity/latest"^^xsd:anyURI ;
+  rm:carbonIntensityZone "DE" ;
+  rm:carbonIntensityDataPointCount "1"^^xsd:integer ;
+  rm:carbonIntensityWindowStart "2026-09-02T04:00:00Z"^^xsd:dateTime ;
+  rm:carbonIntensityWindowEnd "2026-09-02T05:00:00Z"^^xsd:dateTime ;
+  rm:carbonIntensityIncludesEstimatedData "true"^^xsd:boolean ;
+  rm:carbonIntensityEmissionsBasis "lifecycle CO2e" ;
+  rm:carbonIntensityTemporalGranularity "hourly" ;
+  rm:containerImage "ninedem/check_strandedness@sha256:1a8e1b00f51f02ad4c7876975d735b9f4ee7c365f1d499eceb3a35fdea8dcdde" ;
+  rm:containerImage "biocontainers/fastp@sha256:36c3841644a023f360c1e33ac2497dc91755d4ace5e2b1162e16304b8f5179d0" ;
+  rm:containerImage "quay.io/biocontainers/hisat2@sha256:21be9c91bf66404e677bc2c70e986e39ce9a40e7950d5034e3561bb992e82ec6" ;
+  rm:containerImage "quay.io/biocontainers/samtools@sha256:557b8fd747df1965feb4e81360a3dd24f0890d7a3b91a0c993a375e1dc08beca" ;
+  rm:containerImage "pgcbioinfo/cufflinks@sha256:833b5af0c5790093821aa064f5bd87543d9589b90c4a0450927051594e4bb52d" ;
+  rm:containerImage "docker.io/biocontainers/fastp:v0.20.1_cv1" ;
+  rm:containerImage "docker.io/ninedem/check_strandedness:latest" ;
+  rm:containerImage "sha256:9a1f8667dcfd4473e3c4ed6690d374c14ba096b801b0579270c0517afb95194a" ;
+  rm:containerImage "sha256:8aa181a23783aa3720ba17f360493b6340694cc96a8a3233e8b96a9c1a2a31bf" ;
+  rm:containerImage "sha256:9aaeb065bbca59b6c9d427b7120c86e0521f0113329404ce8d98b51d352f70a0" ;
+  rm:containerImage "sha256:11c4a0855fe88e011d0a1f4dbd4ad7c8c10d1ad4ac7fbb417aa3ab965e1f0a4d" ;
+  rm:containerImage "sha256:c121db069fc141abe7e1c9f2ea5ae383aa02dc934a5f8cfe32c96ca263ce61e9" ;
+  rm:containerImage "docker.io/pgcbioinfo/cufflinks:2.2.1" ;
+  rm:executionHost "hu-worker-c45" ;
+  rm:executionHost "hu-worker-c41" ;
+  rm:executionHost "hu-worker-c36" ;
+  rm:executionHost "hu-worker-c37" ;
+  rm:executionHost "hu-worker-c38" ;
+  rm:executionHost "hu-worker-c34" ;
+  rm:executionHost "hu-worker-c42" ;
+  rm:executionHost "hu-worker-c40" ;
+  rm:allocatableCpu "32" ;
+  rm:allocatableMemoryGB "269.78207744"^^xsd:double ;
+  rm:architecture "amd64" ;
+  rm:kernelVersion "5.15.0-177-generic" ;
+  rm:kubeletVersion "v1.27.7" ;
+  rm:osImage "Ubuntu 22.04.2 LTS" ;
+  rm:allocatableCpu "32" ;
+  rm:allocatableMemoryGB "269.780221952"^^xsd:double ;
+  rm:architecture "amd64" ;
+  rm:kernelVersion "5.15.0-177-generic" ;
+  rm:kubeletVersion "v1.27.7" ;
+  rm:osImage "Ubuntu 22.04.4 LTS" ;
+  rm:allocatableCpu "32" ;
+  rm:allocatableMemoryGB "269.78021376"^^xsd:double ;
+  rm:architecture "amd64" ;
+  rm:kernelVersion "5.15.0-177-generic" ;
+  rm:kubeletVersion "v1.27.7" ;
+  rm:osImage "Ubuntu 22.04.2 LTS" ;
+  rm:allocatableCpu "32" ;
+  rm:allocatableMemoryGB "269.780209664"^^xsd:double ;
+  rm:architecture "amd64" ;
+  rm:kernelVersion "5.15.0-177-generic" ;
+  rm:kubeletVersion "v1.27.7" ;
+  rm:osImage "Ubuntu 22.04.2 LTS" ;
+  rm:allocatableCpu "32" ;
+  rm:allocatableMemoryGB "269.780221952"^^xsd:double ;
+  rm:architecture "amd64" ;
+  rm:kernelVersion "5.15.0-177-generic" ;
+  rm:kubeletVersion "v1.27.7" ;
+  rm:osImage "Ubuntu 22.04.2 LTS" ;
+  rm:allocatableCpu "32" ;
+  rm:allocatableMemoryGB "269.780226048"^^xsd:double ;
+  rm:architecture "amd64" ;
+  rm:kernelVersion "5.15.0-177-generic" ;
+  rm:kubeletVersion "v1.27.7" ;
+  rm:osImage "Ubuntu 22.04.2 LTS" ;
+  rm:allocatableCpu "32" ;
+  rm:allocatableMemoryGB "269.780230144"^^xsd:double ;
+  rm:architecture "amd64" ;
+  rm:kernelVersion "5.15.0-177-generic" ;
+  rm:kubeletVersion "v1.27.7" ;
+  rm:osImage "Ubuntu 22.04.2 LTS" ;
+  rm:allocatableCpu "32" ;
+  rm:allocatableMemoryGB "269.780221952"^^xsd:double ;
+  rm:architecture "amd64" ;
+  rm:kernelVersion "5.15.0-177-generic" ;
+  rm:kubeletVersion "v1.27.7" ;
+  rm:osImage "Ubuntu 22.04.2 LTS" ;
+  rm:gpuRequested "false"^^xsd:boolean ;
+  rm:gpuMetricsAvailable "false"^^xsd:boolean ;
+  rm:gpuCapableNodeUsed "false"^^xsd:boolean ;
+  rm:gpuUsageStatus "CPU-only workflow run" ;
+  rm:hasWorkflowProcess <http://example.org/vivo-import/run-metadata/process/rna-seq-analysis-workflow-hisat2-rs1-check-strandness-c0ece5b9-63ab-41ac-a0f5-1980d02b79dc> ;
+  rm:hasWorkflowProcess <http://example.org/vivo-import/run-metadata/process/rna-seq-analysis-workflow-hisat2-rs1-cufflinks-c0ece5b9-63ab-41ac-a0f5-1980d02b79dc> ;
+  rm:hasWorkflowProcess <http://example.org/vivo-import/run-metadata/process/rna-seq-analysis-workflow-hisat2-rs1-extract-exons-c0ece5b9-63ab-41ac-a0f5-1980d02b79dc> ;
+  rm:hasWorkflowProcess <http://example.org/vivo-import/run-metadata/process/rna-seq-analysis-workflow-hisat2-rs1-extract-splice-sites-c0ece5b9-63ab-41ac-a0f5-1980d02b79dc> ;
+  rm:hasWorkflowProcess <http://example.org/vivo-import/run-metadata/process/rna-seq-analysis-workflow-hisat2-rs1-fastp-c0ece5b9-63ab-41ac-a0f5-1980d02b79dc> ;
+  rm:hasWorkflowProcess <http://example.org/vivo-import/run-metadata/process/rna-seq-analysis-workflow-hisat2-rs1-hisat2-align-c0ece5b9-63ab-41ac-a0f5-1980d02b79dc> ;
+  rm:hasWorkflowProcess <http://example.org/vivo-import/run-metadata/process/rna-seq-analysis-workflow-hisat2-rs1-hisat2-index-reference-c0ece5b9-63ab-41ac-a0f5-1980d02b79dc> ;
+  rm:hasWorkflowProcess <http://example.org/vivo-import/run-metadata/process/rna-seq-analysis-workflow-hisat2-rs1-samtools-c0ece5b9-63ab-41ac-a0f5-1980d02b79dc> .
+
+<http://example.org/vivo-import/run-metadata/input-dataset/rnaseq-a2-drosophila-sra-reads>
+  rdf:type rm:InputDataset ;
+  rdf:type vivo:InformationResource ;
+  rdf:type prov:Entity ;
+  rdfs:label "Drosophila melanogaster RNA-seq read set (SRR1509507, SRR14197369, SRR14404397)"@en ;
+  dcterms:title "Drosophila melanogaster RNA-seq read set (SRR1509507, SRR14197369, SRR14404397)"@en ;
+  dcterms:description "Three paired-end Drosophila melanogaster RNA-seq read sets consumed through params.reads by the HISAT2 RS1 workflow."@en ;
+  rm:accessInstructionsURL "https://ena-docs.readthedocs.io/en/latest/retrieval/file-download.html"^^xsd:anyURI ;
+  rm:upstreamSourceURL "https://www.ebi.ac.uk/ena/browser/view/SRR1509507"^^xsd:anyURI ;
+  rm:upstreamSourceURL "https://www.ebi.ac.uk/ena/browser/view/SRR14197369"^^xsd:anyURI ;
+  rm:upstreamSourceURL "https://www.ebi.ac.uk/ena/browser/view/SRR14404397"^^xsd:anyURI ;
+  rm:storageLocation "FONDA Kubernetes persistent storage: /workspace/data/reads (one _1.fastq.gz and one _2.fastq.gz file per accession)" ;
+  rm:accessStatement "The public FASTQ files were resolved through the ENA Portal API and downloaded resumably from ENA. The exact bytes staged on the shared PVC are the same read set used by the sibling A2 RNA-seq RS1 profiles."@en ;
+  rm:inputDataOfWorkflow <http://example.org/vivo-import/run-metadata/workflow/rna-seq-analysis-hisat2-rs1> ;
+  rm:usedByWorkflowRun <http://example.org/vivo-import/run-metadata/run/yagmur-rna-seq-analysis-workflow-hisat2-rs1-c0ece5b9-63ab-41ac-a0f5-1980d02b79dc-2026-09-01t11-38-23-240000-00-00> .
+
+<http://example.org/vivo-import/run-metadata/input-dataset/rnaseq-a2-drosophila-ensembl-reference>
+  rdf:type rm:InputDataset ;
+  rdf:type vivo:InformationResource ;
+  rdf:type prov:Entity ;
+  rdfs:label "Drosophila melanogaster reference genome, annotation and cDNA (Ensembl BDGP6.32, release 106)"@en ;
+  dcterms:title "Drosophila melanogaster reference genome, annotation and cDNA (Ensembl BDGP6.32, release 106)"@en ;
+  dcterms:description "The genome FASTA, cDNA FASTA and GTF inputs used for HISAT2 splice-aware indexing and alignment, strandedness checking, and Cufflinks quantification."@en ;
+  rm:accessInstructionsURL "https://www.ensembl.org/info/data/ftp/index.html"^^xsd:anyURI ;
+  rm:formatDocumentationURL "https://www.ensembl.org/info/website/upload/gff.html"^^xsd:anyURI ;
+  rm:upstreamSourceURL "https://ftp.ensembl.org/pub/release-106/fasta/drosophila_melanogaster/dna/Drosophila_melanogaster.BDGP6.32.dna.toplevel.fa.gz"^^xsd:anyURI ;
+  rm:upstreamSourceURL "https://ftp.ensembl.org/pub/release-106/fasta/drosophila_melanogaster/cdna/Drosophila_melanogaster.BDGP6.32.cdna.all.fa.gz"^^xsd:anyURI ;
+  rm:upstreamSourceURL "https://ftp.ensembl.org/pub/release-106/gtf/drosophila_melanogaster/Drosophila_melanogaster.BDGP6.32.106.gtf.gz"^^xsd:anyURI ;
+  rm:storageLocation "FONDA Kubernetes persistent storage: /workspace/data/reference (genome FASTA, cDNA FASTA and GTF stored uncompressed)" ;
+  rm:accessStatement "Assembly BDGP6.32 and Ensembl release 106 are pinned from the RS1 HISAT2 workflow configuration."@en ;
+  rm:inputDataOfWorkflow <http://example.org/vivo-import/run-metadata/workflow/rna-seq-analysis-hisat2-rs1> ;
+  rm:usedByWorkflowRun <http://example.org/vivo-import/run-metadata/run/yagmur-rna-seq-analysis-workflow-hisat2-rs1-c0ece5b9-63ab-41ac-a0f5-1980d02b79dc-2026-09-01t11-38-23-240000-00-00> .
+
+<http://example.org/vivo-import/run-metadata/datetime/yagmur-rna-seq-analysis-workflow-hisat2-rs1-c0ece5b9-63ab-41ac-a0f5-1980d02b79dc-2026-09-01t11-38-23-240000-00-00>
+  rdf:type vivo:DateTimeValue ;
+  vivo:dateTime "2026-09-01T13:38:23"^^xsd:dateTime ;
+  vivo:dateTimePrecision vivo:yearMonthDayTimePrecision .
+
+<http://example.org/vivo-import/run-metadata/process/rna-seq-analysis-workflow-hisat2-rs1-check-strandness-c0ece5b9-63ab-41ac-a0f5-1980d02b79dc>
+  rdf:type rm:WorkflowProcessRun ;
+  rdf:type vivo:InformationResource ;
+  rdf:type prov:Entity ;
+  rdfs:label "CHECK STRANDNESS"@en ;
+  dcterms:title "CHECK STRANDNESS"@en ;
+  rm:jobName "CHECK STRANDNESS" ;
+  rm:runStatus "Succeeded" ;
+  rm:taskCount "3"^^xsd:integer ;
+  rm:podCount "3"^^xsd:integer ;
+  rm:succeededTaskCount "3"^^xsd:integer ;
+  rm:cachedTaskCount "0"^^xsd:integer ;
+  rm:failedTaskCount "0"^^xsd:integer ;
+  rm:abortedTaskCount "0"^^xsd:integer ;
+  prov:startedAtTime "2026-09-01T13:38:31"^^xsd:dateTime ;
+  prov:endedAtTime "2026-09-01T13:40:38"^^xsd:dateTime ;
+  rm:durationSeconds "127"^^xsd:integer ;
+  rm:durationCalculationMethod "Wall-clock time from the earliest task submission to the latest task completion or workflow termination in this stage." ;
+  rm:isWorkflowProcessOf <http://example.org/vivo-import/run-metadata/run/yagmur-rna-seq-analysis-workflow-hisat2-rs1-c0ece5b9-63ab-41ac-a0f5-1980d02b79dc-2026-09-01t11-38-23-240000-00-00> ;
+  rm:taskName "CHECK_STRANDNESS" ;
+  rm:cpuTimeSeconds "343.7602321904762"^^xsd:double ;
+  rm:cpuTimeCalculationMethod "CPU time is the sum of Prometheus container_cpu_usage_seconds_total counter increases for 3 of 3 pod(s)." ;
+  rm:memoryPeakGB "7.2"^^xsd:double ;
+  rm:memoryAvgGB "6.68"^^xsd:double ;
+  rm:memoryCalculationMethod "Memory is approximated from peak_rss in the Nextflow trace for 3 task(s). Each task contributes its peak resident memory over its execution interval; the peak is the maximum concurrent sum and the average is time-weighted." ;
+  rm:energyKWh "0.005617157777777778"^^xsd:double ;
+  rm:carbonEmissionKgCO2e "0.0023816748977777778"^^xsd:double ;
+  rm:carbonIntensityAssumptionKgCO2ePerKWh "0.424"^^xsd:double ;
+  rm:carbonIntensitySource "Electricity Maps latest available flow-traced carbon intensity (collection-time proxy)" ;
+  rm:energyMetricSource "kepler_container_joules_total" ;
+  rm:energyCalculationMethod "Energy is the sum of per-pod Kepler measurements for 3 of 3 pod(s)." ;
+  rm:energyCalculationUsesFallbackEstimate "false"^^xsd:boolean ;
+  rm:carbonCalculationMethod "Carbon emissions are calculated using the emissions factor method: energy consumption (kWh) multiplied by 0.424 kg/kWh (lifecycle CO2e) from Electricity Maps latest available flow-traced carbon intensity (collection-time proxy). The value is the latest value available from the free-tier endpoint when metadata was collected. It is used as a proxy and is not guaranteed to represent the exact workflow execution interval." ;
+  rm:carbonIntensitySourceLink "https://api.electricitymaps.com/v4/carbon-intensity/latest"^^xsd:anyURI ;
+  rm:carbonIntensityZone "DE" ;
+  rm:carbonIntensityDataPointCount "1"^^xsd:integer ;
+  rm:carbonIntensityWindowStart "2026-09-02T04:00:00Z"^^xsd:dateTime ;
+  rm:carbonIntensityWindowEnd "2026-09-02T05:00:00Z"^^xsd:dateTime ;
+  rm:carbonIntensityIncludesEstimatedData "true"^^xsd:boolean ;
+  rm:carbonIntensityEmissionsBasis "lifecycle CO2e" ;
+  rm:carbonIntensityTemporalGranularity "hourly" ;
+  rm:parallelismNote "CPU time can exceed wall-clock duration when Nextflow tasks execute concurrently." .
+
+<http://example.org/vivo-import/run-metadata/process/rna-seq-analysis-workflow-hisat2-rs1-cufflinks-c0ece5b9-63ab-41ac-a0f5-1980d02b79dc>
+  rdf:type rm:WorkflowProcessRun ;
+  rdf:type vivo:InformationResource ;
+  rdf:type prov:Entity ;
+  rdfs:label "CUFFLINKS"@en ;
+  dcterms:title "CUFFLINKS"@en ;
+  rm:jobName "CUFFLINKS" ;
+  rm:runStatus "Succeeded" ;
+  rm:taskCount "3"^^xsd:integer ;
+  rm:podCount "3"^^xsd:integer ;
+  rm:succeededTaskCount "3"^^xsd:integer ;
+  rm:cachedTaskCount "0"^^xsd:integer ;
+  rm:failedTaskCount "0"^^xsd:integer ;
+  rm:abortedTaskCount "0"^^xsd:integer ;
+  prov:startedAtTime "2026-09-01T14:06:59"^^xsd:dateTime ;
+  prov:endedAtTime "2026-09-01T23:06:08"^^xsd:dateTime ;
+  rm:durationSeconds "32349"^^xsd:integer ;
+  rm:durationCalculationMethod "Wall-clock time from the earliest task submission to the latest task completion or workflow termination in this stage." ;
+  rm:isWorkflowProcessOf <http://example.org/vivo-import/run-metadata/run/yagmur-rna-seq-analysis-workflow-hisat2-rs1-c0ece5b9-63ab-41ac-a0f5-1980d02b79dc-2026-09-01t11-38-23-240000-00-00> ;
+  rm:taskName "CUFFLINKS" ;
+  rm:cpuTimeSeconds "16792.60295747139"^^xsd:double ;
+  rm:cpuTimeCalculationMethod "CPU time is the sum of Prometheus container_cpu_usage_seconds_total counter increases for 3 of 3 pod(s)." ;
+  rm:memoryPeakGB "3.0"^^xsd:double ;
+  rm:memoryAvgGB "1.3316402782501158"^^xsd:double ;
+  rm:memoryCalculationMethod "Memory is approximated from peak_rss in the Nextflow trace for 3 task(s). Each task contributes its peak resident memory over its execution interval; the peak is the maximum concurrent sum and the average is time-weighted." ;
+  rm:energyKWh "0.2200273824096025"^^xsd:double ;
+  rm:carbonEmissionKgCO2e "0.09329161014167146"^^xsd:double ;
+  rm:carbonIntensityAssumptionKgCO2ePerKWh "0.424"^^xsd:double ;
+  rm:carbonIntensitySource "Electricity Maps latest available flow-traced carbon intensity (collection-time proxy)" ;
+  rm:energyMetricSource "kepler_container_joules_total" ;
+  rm:energyCalculationMethod "Energy is the sum of per-pod Kepler measurements for 3 of 3 pod(s)." ;
+  rm:energyCalculationUsesFallbackEstimate "false"^^xsd:boolean ;
+  rm:carbonCalculationMethod "Carbon emissions are calculated using the emissions factor method: energy consumption (kWh) multiplied by 0.424 kg/kWh (lifecycle CO2e) from Electricity Maps latest available flow-traced carbon intensity (collection-time proxy). The value is the latest value available from the free-tier endpoint when metadata was collected. It is used as a proxy and is not guaranteed to represent the exact workflow execution interval." ;
+  rm:carbonIntensitySourceLink "https://api.electricitymaps.com/v4/carbon-intensity/latest"^^xsd:anyURI ;
+  rm:carbonIntensityZone "DE" ;
+  rm:carbonIntensityDataPointCount "1"^^xsd:integer ;
+  rm:carbonIntensityWindowStart "2026-09-02T04:00:00Z"^^xsd:dateTime ;
+  rm:carbonIntensityWindowEnd "2026-09-02T05:00:00Z"^^xsd:dateTime ;
+  rm:carbonIntensityIncludesEstimatedData "true"^^xsd:boolean ;
+  rm:carbonIntensityEmissionsBasis "lifecycle CO2e" ;
+  rm:carbonIntensityTemporalGranularity "hourly" ;
+  rm:parallelismNote "CPU time can exceed wall-clock duration when Nextflow tasks execute concurrently." .
+
+<http://example.org/vivo-import/run-metadata/process/rna-seq-analysis-workflow-hisat2-rs1-extract-exons-c0ece5b9-63ab-41ac-a0f5-1980d02b79dc>
+  rdf:type rm:WorkflowProcessRun ;
+  rdf:type vivo:InformationResource ;
+  rdf:type prov:Entity ;
+  rdfs:label "EXTRACT EXONS"@en ;
+  dcterms:title "EXTRACT EXONS"@en ;
+  rm:jobName "EXTRACT EXONS" ;
+  rm:runStatus "Succeeded" ;
+  rm:taskCount "1"^^xsd:integer ;
+  rm:podCount "1"^^xsd:integer ;
+  rm:succeededTaskCount "1"^^xsd:integer ;
+  rm:cachedTaskCount "0"^^xsd:integer ;
+  rm:failedTaskCount "0"^^xsd:integer ;
+  rm:abortedTaskCount "0"^^xsd:integer ;
+  prov:startedAtTime "2026-09-01T13:38:31"^^xsd:dateTime ;
+  prov:endedAtTime "2026-09-01T13:38:40"^^xsd:dateTime ;
+  rm:durationSeconds "9"^^xsd:integer ;
+  rm:durationCalculationMethod "Wall-clock time from the earliest task submission to the latest task completion or workflow termination in this stage." ;
+  rm:isWorkflowProcessOf <http://example.org/vivo-import/run-metadata/run/yagmur-rna-seq-analysis-workflow-hisat2-rs1-c0ece5b9-63ab-41ac-a0f5-1980d02b79dc-2026-09-01t11-38-23-240000-00-00> ;
+  rm:taskName "EXTRACT_EXONS" ;
+  rm:cpuTimeCalculationMethod "CPU time is the sum of Prometheus container_cpu_usage_seconds_total counter increases for 0 of 1 pod(s)." ;
+  rm:memoryPeakGB "0.0653"^^xsd:double ;
+  rm:memoryAvgGB "0.0653"^^xsd:double ;
+  rm:memoryCalculationMethod "Memory is approximated from peak_rss in the Nextflow trace for 1 task(s). Each task contributes its peak resident memory over its execution interval; the peak is the maximum concurrent sum and the average is time-weighted." ;
+  rm:carbonIntensityAssumptionKgCO2ePerKWh "0.424"^^xsd:double ;
+  rm:carbonIntensitySource "Electricity Maps latest available flow-traced carbon intensity (collection-time proxy)" ;
+  rm:energyMetricSource "kepler_container_joules_total" ;
+  rm:energyCalculationMethod "Energy is the sum of per-pod Kepler measurements for 0 of 1 pod(s)." ;
+  rm:energyCalculationUsesFallbackEstimate "false"^^xsd:boolean ;
+  rm:carbonCalculationMethod "Carbon emissions are calculated using the emissions factor method: energy consumption (kWh) multiplied by 0.424 kg/kWh (lifecycle CO2e) from Electricity Maps latest available flow-traced carbon intensity (collection-time proxy). The value is the latest value available from the free-tier endpoint when metadata was collected. It is used as a proxy and is not guaranteed to represent the exact workflow execution interval." ;
+  rm:carbonIntensitySourceLink "https://api.electricitymaps.com/v4/carbon-intensity/latest"^^xsd:anyURI ;
+  rm:carbonIntensityZone "DE" ;
+  rm:carbonIntensityDataPointCount "1"^^xsd:integer ;
+  rm:carbonIntensityWindowStart "2026-09-02T04:00:00Z"^^xsd:dateTime ;
+  rm:carbonIntensityWindowEnd "2026-09-02T05:00:00Z"^^xsd:dateTime ;
+  rm:carbonIntensityIncludesEstimatedData "true"^^xsd:boolean ;
+  rm:carbonIntensityEmissionsBasis "lifecycle CO2e" ;
+  rm:carbonIntensityTemporalGranularity "hourly" ;
+  rm:parallelismNote "CPU time can exceed wall-clock duration when Nextflow tasks execute concurrently." .
+
+<http://example.org/vivo-import/run-metadata/process/rna-seq-analysis-workflow-hisat2-rs1-extract-splice-sites-c0ece5b9-63ab-41ac-a0f5-1980d02b79dc>
+  rdf:type rm:WorkflowProcessRun ;
+  rdf:type vivo:InformationResource ;
+  rdf:type prov:Entity ;
+  rdfs:label "EXTRACT SPLICE SITES"@en ;
+  dcterms:title "EXTRACT SPLICE SITES"@en ;
+  rm:jobName "EXTRACT SPLICE SITES" ;
+  rm:runStatus "Succeeded" ;
+  rm:taskCount "1"^^xsd:integer ;
+  rm:podCount "1"^^xsd:integer ;
+  rm:succeededTaskCount "1"^^xsd:integer ;
+  rm:cachedTaskCount "0"^^xsd:integer ;
+  rm:failedTaskCount "0"^^xsd:integer ;
+  rm:abortedTaskCount "0"^^xsd:integer ;
+  prov:startedAtTime "2026-09-01T13:38:31"^^xsd:dateTime ;
+  prov:endedAtTime "2026-09-01T13:38:40"^^xsd:dateTime ;
+  rm:durationSeconds "9"^^xsd:integer ;
+  rm:durationCalculationMethod "Wall-clock time from the earliest task submission to the latest task completion or workflow termination in this stage." ;
+  rm:isWorkflowProcessOf <http://example.org/vivo-import/run-metadata/run/yagmur-rna-seq-analysis-workflow-hisat2-rs1-c0ece5b9-63ab-41ac-a0f5-1980d02b79dc-2026-09-01t11-38-23-240000-00-00> ;
+  rm:taskName "EXTRACT_SPLICE_SITES" ;
+  rm:cpuTimeCalculationMethod "CPU time is the sum of Prometheus container_cpu_usage_seconds_total counter increases for 0 of 1 pod(s)." ;
+  rm:memoryPeakGB "0.0681"^^xsd:double ;
+  rm:memoryAvgGB "0.0681"^^xsd:double ;
+  rm:memoryCalculationMethod "Memory is approximated from peak_rss in the Nextflow trace for 1 task(s). Each task contributes its peak resident memory over its execution interval; the peak is the maximum concurrent sum and the average is time-weighted." ;
+  rm:carbonIntensityAssumptionKgCO2ePerKWh "0.424"^^xsd:double ;
+  rm:carbonIntensitySource "Electricity Maps latest available flow-traced carbon intensity (collection-time proxy)" ;
+  rm:energyMetricSource "kepler_container_joules_total" ;
+  rm:energyCalculationMethod "Energy is the sum of per-pod Kepler measurements for 0 of 1 pod(s)." ;
+  rm:energyCalculationUsesFallbackEstimate "false"^^xsd:boolean ;
+  rm:carbonCalculationMethod "Carbon emissions are calculated using the emissions factor method: energy consumption (kWh) multiplied by 0.424 kg/kWh (lifecycle CO2e) from Electricity Maps latest available flow-traced carbon intensity (collection-time proxy). The value is the latest value available from the free-tier endpoint when metadata was collected. It is used as a proxy and is not guaranteed to represent the exact workflow execution interval." ;
+  rm:carbonIntensitySourceLink "https://api.electricitymaps.com/v4/carbon-intensity/latest"^^xsd:anyURI ;
+  rm:carbonIntensityZone "DE" ;
+  rm:carbonIntensityDataPointCount "1"^^xsd:integer ;
+  rm:carbonIntensityWindowStart "2026-09-02T04:00:00Z"^^xsd:dateTime ;
+  rm:carbonIntensityWindowEnd "2026-09-02T05:00:00Z"^^xsd:dateTime ;
+  rm:carbonIntensityIncludesEstimatedData "true"^^xsd:boolean ;
+  rm:carbonIntensityEmissionsBasis "lifecycle CO2e" ;
+  rm:carbonIntensityTemporalGranularity "hourly" ;
+  rm:parallelismNote "CPU time can exceed wall-clock duration when Nextflow tasks execute concurrently." .
+
+<http://example.org/vivo-import/run-metadata/process/rna-seq-analysis-workflow-hisat2-rs1-fastp-c0ece5b9-63ab-41ac-a0f5-1980d02b79dc>
+  rdf:type rm:WorkflowProcessRun ;
+  rdf:type vivo:InformationResource ;
+  rdf:type prov:Entity ;
+  rdfs:label "FASTP"@en ;
+  dcterms:title "FASTP"@en ;
+  rm:jobName "FASTP" ;
+  rm:runStatus "Succeeded" ;
+  rm:taskCount "3"^^xsd:integer ;
+  rm:podCount "3"^^xsd:integer ;
+  rm:succeededTaskCount "3"^^xsd:integer ;
+  rm:cachedTaskCount "0"^^xsd:integer ;
+  rm:failedTaskCount "0"^^xsd:integer ;
+  rm:abortedTaskCount "0"^^xsd:integer ;
+  prov:startedAtTime "2026-09-01T13:38:30"^^xsd:dateTime ;
+  prov:endedAtTime "2026-09-01T13:59:26"^^xsd:dateTime ;
+  rm:durationSeconds "1256"^^xsd:integer ;
+  rm:durationCalculationMethod "Wall-clock time from the earliest task submission to the latest task completion or workflow termination in this stage." ;
+  rm:isWorkflowProcessOf <http://example.org/vivo-import/run-metadata/run/yagmur-rna-seq-analysis-workflow-hisat2-rs1-c0ece5b9-63ab-41ac-a0f5-1980d02b79dc-2026-09-01t11-38-23-240000-00-00> ;
+  rm:taskName "FASTP" ;
+  rm:cpuTimeSeconds "8486.606400887144"^^xsd:double ;
+  rm:cpuTimeCalculationMethod "CPU time is the sum of Prometheus container_cpu_usage_seconds_total counter increases for 3 of 3 pod(s)." ;
+  rm:memoryPeakGB "2.1976"^^xsd:double ;
+  rm:memoryAvgGB "1.0410223820943245"^^xsd:double ;
+  rm:memoryCalculationMethod "Memory is approximated from peak_rss in the Nextflow trace for 3 task(s). Each task contributes its peak resident memory over its execution interval; the peak is the maximum concurrent sum and the average is time-weighted." ;
+  rm:energyKWh "0.04624397474762873"^^xsd:double ;
+  rm:carbonEmissionKgCO2e "0.01960744529299458"^^xsd:double ;
+  rm:carbonIntensityAssumptionKgCO2ePerKWh "0.424"^^xsd:double ;
+  rm:carbonIntensitySource "Electricity Maps latest available flow-traced carbon intensity (collection-time proxy)" ;
+  rm:energyMetricSource "kepler_container_joules_total" ;
+  rm:energyCalculationMethod "Energy is the sum of per-pod Kepler measurements for 3 of 3 pod(s)." ;
+  rm:energyCalculationUsesFallbackEstimate "false"^^xsd:boolean ;
+  rm:carbonCalculationMethod "Carbon emissions are calculated using the emissions factor method: energy consumption (kWh) multiplied by 0.424 kg/kWh (lifecycle CO2e) from Electricity Maps latest available flow-traced carbon intensity (collection-time proxy). The value is the latest value available from the free-tier endpoint when metadata was collected. It is used as a proxy and is not guaranteed to represent the exact workflow execution interval." ;
+  rm:carbonIntensitySourceLink "https://api.electricitymaps.com/v4/carbon-intensity/latest"^^xsd:anyURI ;
+  rm:carbonIntensityZone "DE" ;
+  rm:carbonIntensityDataPointCount "1"^^xsd:integer ;
+  rm:carbonIntensityWindowStart "2026-09-02T04:00:00Z"^^xsd:dateTime ;
+  rm:carbonIntensityWindowEnd "2026-09-02T05:00:00Z"^^xsd:dateTime ;
+  rm:carbonIntensityIncludesEstimatedData "true"^^xsd:boolean ;
+  rm:carbonIntensityEmissionsBasis "lifecycle CO2e" ;
+  rm:carbonIntensityTemporalGranularity "hourly" ;
+  rm:parallelismNote "CPU time can exceed wall-clock duration when Nextflow tasks execute concurrently." .
+
+<http://example.org/vivo-import/run-metadata/process/rna-seq-analysis-workflow-hisat2-rs1-hisat2-align-c0ece5b9-63ab-41ac-a0f5-1980d02b79dc>
+  rdf:type rm:WorkflowProcessRun ;
+  rdf:type vivo:InformationResource ;
+  rdf:type prov:Entity ;
+  rdfs:label "HISAT2 ALIGN"@en ;
+  dcterms:title "HISAT2 ALIGN"@en ;
+  rm:jobName "HISAT2 ALIGN" ;
+  rm:runStatus "Succeeded" ;
+  rm:taskCount "3"^^xsd:integer ;
+  rm:podCount "3"^^xsd:integer ;
+  rm:succeededTaskCount "3"^^xsd:integer ;
+  rm:cachedTaskCount "0"^^xsd:integer ;
+  rm:failedTaskCount "0"^^xsd:integer ;
+  rm:abortedTaskCount "0"^^xsd:integer ;
+  prov:startedAtTime "2026-09-01T13:44:24"^^xsd:dateTime ;
+  prov:endedAtTime "2026-09-01T14:21:52"^^xsd:dateTime ;
+  rm:durationSeconds "2248"^^xsd:integer ;
+  rm:durationCalculationMethod "Wall-clock time from the earliest task submission to the latest task completion or workflow termination in this stage." ;
+  rm:isWorkflowProcessOf <http://example.org/vivo-import/run-metadata/run/yagmur-rna-seq-analysis-workflow-hisat2-rs1-c0ece5b9-63ab-41ac-a0f5-1980d02b79dc-2026-09-01t11-38-23-240000-00-00> ;
+  rm:taskName "HISAT2_ALIGN" ;
+  rm:cpuTimeSeconds "14757.467922901842"^^xsd:double ;
+  rm:cpuTimeCalculationMethod "CPU time is the sum of Prometheus container_cpu_usage_seconds_total counter increases for 3 of 3 pod(s)." ;
+  rm:memoryPeakGB "1.3"^^xsd:double ;
+  rm:memoryAvgGB "0.9170013374944271"^^xsd:double ;
+  rm:memoryCalculationMethod "Memory is approximated from peak_rss in the Nextflow trace for 3 task(s). Each task contributes its peak resident memory over its execution interval; the peak is the maximum concurrent sum and the average is time-weighted." ;
+  rm:energyKWh "0.07507094740530304"^^xsd:double ;
+  rm:carbonEmissionKgCO2e "0.03183008169984849"^^xsd:double ;
+  rm:carbonIntensityAssumptionKgCO2ePerKWh "0.424"^^xsd:double ;
+  rm:carbonIntensitySource "Electricity Maps latest available flow-traced carbon intensity (collection-time proxy)" ;
+  rm:energyMetricSource "kepler_container_joules_total" ;
+  rm:energyCalculationMethod "Energy is the sum of per-pod Kepler measurements for 3 of 3 pod(s)." ;
+  rm:energyCalculationUsesFallbackEstimate "false"^^xsd:boolean ;
+  rm:carbonCalculationMethod "Carbon emissions are calculated using the emissions factor method: energy consumption (kWh) multiplied by 0.424 kg/kWh (lifecycle CO2e) from Electricity Maps latest available flow-traced carbon intensity (collection-time proxy). The value is the latest value available from the free-tier endpoint when metadata was collected. It is used as a proxy and is not guaranteed to represent the exact workflow execution interval." ;
+  rm:carbonIntensitySourceLink "https://api.electricitymaps.com/v4/carbon-intensity/latest"^^xsd:anyURI ;
+  rm:carbonIntensityZone "DE" ;
+  rm:carbonIntensityDataPointCount "1"^^xsd:integer ;
+  rm:carbonIntensityWindowStart "2026-09-02T04:00:00Z"^^xsd:dateTime ;
+  rm:carbonIntensityWindowEnd "2026-09-02T05:00:00Z"^^xsd:dateTime ;
+  rm:carbonIntensityIncludesEstimatedData "true"^^xsd:boolean ;
+  rm:carbonIntensityEmissionsBasis "lifecycle CO2e" ;
+  rm:carbonIntensityTemporalGranularity "hourly" ;
+  rm:parallelismNote "CPU time can exceed wall-clock duration when Nextflow tasks execute concurrently." .
+
+<http://example.org/vivo-import/run-metadata/process/rna-seq-analysis-workflow-hisat2-rs1-hisat2-index-reference-c0ece5b9-63ab-41ac-a0f5-1980d02b79dc>
+  rdf:type rm:WorkflowProcessRun ;
+  rdf:type vivo:InformationResource ;
+  rdf:type prov:Entity ;
+  rdfs:label "HISAT2 INDEX REFERENCE"@en ;
+  dcterms:title "HISAT2 INDEX REFERENCE"@en ;
+  rm:jobName "HISAT2 INDEX REFERENCE" ;
+  rm:runStatus "Succeeded" ;
+  rm:taskCount "1"^^xsd:integer ;
+  rm:podCount "1"^^xsd:integer ;
+  rm:succeededTaskCount "1"^^xsd:integer ;
+  rm:cachedTaskCount "0"^^xsd:integer ;
+  rm:failedTaskCount "0"^^xsd:integer ;
+  rm:abortedTaskCount "0"^^xsd:integer ;
+  prov:startedAtTime "2026-09-01T13:40:29"^^xsd:dateTime ;
+  prov:endedAtTime "2026-09-01T13:44:22"^^xsd:dateTime ;
+  rm:durationSeconds "233"^^xsd:integer ;
+  rm:durationCalculationMethod "Wall-clock time from the earliest task submission to the latest task completion or workflow termination in this stage." ;
+  rm:isWorkflowProcessOf <http://example.org/vivo-import/run-metadata/run/yagmur-rna-seq-analysis-workflow-hisat2-rs1-c0ece5b9-63ab-41ac-a0f5-1980d02b79dc-2026-09-01t11-38-23-240000-00-00> ;
+  rm:taskName "HISAT2_INDEX_REFERENCE" ;
+  rm:cpuTimeSeconds "485.94175628571423"^^xsd:double ;
+  rm:cpuTimeCalculationMethod "CPU time is the sum of Prometheus container_cpu_usage_seconds_total counter increases for 1 of 1 pod(s)." ;
+  rm:memoryPeakGB "8.5"^^xsd:double ;
+  rm:memoryAvgGB "8.5"^^xsd:double ;
+  rm:memoryCalculationMethod "Memory is approximated from peak_rss in the Nextflow trace for 1 task(s). Each task contributes its peak resident memory over its execution interval; the peak is the maximum concurrent sum and the average is time-weighted." ;
+  rm:energyKWh "0.004002743988095238"^^xsd:double ;
+  rm:carbonEmissionKgCO2e "0.001697163450952381"^^xsd:double ;
+  rm:carbonIntensityAssumptionKgCO2ePerKWh "0.424"^^xsd:double ;
+  rm:carbonIntensitySource "Electricity Maps latest available flow-traced carbon intensity (collection-time proxy)" ;
+  rm:energyMetricSource "kepler_container_joules_total" ;
+  rm:energyCalculationMethod "Energy is the sum of per-pod Kepler measurements for 1 of 1 pod(s)." ;
+  rm:energyCalculationUsesFallbackEstimate "false"^^xsd:boolean ;
+  rm:carbonCalculationMethod "Carbon emissions are calculated using the emissions factor method: energy consumption (kWh) multiplied by 0.424 kg/kWh (lifecycle CO2e) from Electricity Maps latest available flow-traced carbon intensity (collection-time proxy). The value is the latest value available from the free-tier endpoint when metadata was collected. It is used as a proxy and is not guaranteed to represent the exact workflow execution interval." ;
+  rm:carbonIntensitySourceLink "https://api.electricitymaps.com/v4/carbon-intensity/latest"^^xsd:anyURI ;
+  rm:carbonIntensityZone "DE" ;
+  rm:carbonIntensityDataPointCount "1"^^xsd:integer ;
+  rm:carbonIntensityWindowStart "2026-09-02T04:00:00Z"^^xsd:dateTime ;
+  rm:carbonIntensityWindowEnd "2026-09-02T05:00:00Z"^^xsd:dateTime ;
+  rm:carbonIntensityIncludesEstimatedData "true"^^xsd:boolean ;
+  rm:carbonIntensityEmissionsBasis "lifecycle CO2e" ;
+  rm:carbonIntensityTemporalGranularity "hourly" ;
+  rm:parallelismNote "CPU time can exceed wall-clock duration when Nextflow tasks execute concurrently." .
+
+<http://example.org/vivo-import/run-metadata/process/rna-seq-analysis-workflow-hisat2-rs1-samtools-c0ece5b9-63ab-41ac-a0f5-1980d02b79dc>
+  rdf:type rm:WorkflowProcessRun ;
+  rdf:type vivo:InformationResource ;
+  rdf:type prov:Entity ;
+  rdfs:label "SAMTOOLS"@en ;
+  dcterms:title "SAMTOOLS"@en ;
+  rm:jobName "SAMTOOLS" ;
+  rm:runStatus "Succeeded" ;
+  rm:taskCount "3"^^xsd:integer ;
+  rm:podCount "3"^^xsd:integer ;
+  rm:succeededTaskCount "3"^^xsd:integer ;
+  rm:cachedTaskCount "0"^^xsd:integer ;
+  rm:failedTaskCount "0"^^xsd:integer ;
+  rm:abortedTaskCount "0"^^xsd:integer ;
+  prov:startedAtTime "2026-09-01T13:46:24"^^xsd:dateTime ;
+  prov:endedAtTime "2026-09-01T19:13:16"^^xsd:dateTime ;
+  rm:durationSeconds "19612"^^xsd:integer ;
+  rm:durationCalculationMethod "Wall-clock time from the earliest task submission to the latest task completion or workflow termination in this stage." ;
+  rm:isWorkflowProcessOf <http://example.org/vivo-import/run-metadata/run/yagmur-rna-seq-analysis-workflow-hisat2-rs1-c0ece5b9-63ab-41ac-a0f5-1980d02b79dc-2026-09-01t11-38-23-240000-00-00> ;
+  rm:taskName "SAMTOOLS" ;
+  rm:cpuTimeSeconds "31482.377352815885"^^xsd:double ;
+  rm:cpuTimeCalculationMethod "CPU time is the sum of Prometheus container_cpu_usage_seconds_total counter increases for 3 of 3 pod(s)." ;
+  rm:memoryPeakGB "1.7193"^^xsd:double ;
+  rm:memoryAvgGB "1.0141557703095516"^^xsd:double ;
+  rm:memoryCalculationMethod "Memory is approximated from peak_rss in the Nextflow trace for 3 task(s). Each task contributes its peak resident memory over its execution interval; the peak is the maximum concurrent sum and the average is time-weighted." ;
+  rm:energyKWh "0.45340618437722136"^^xsd:double ;
+  rm:carbonEmissionKgCO2e "0.19224422217594184"^^xsd:double ;
+  rm:carbonIntensityAssumptionKgCO2ePerKWh "0.424"^^xsd:double ;
+  rm:carbonIntensitySource "Electricity Maps latest available flow-traced carbon intensity (collection-time proxy)" ;
+  rm:energyMetricSource "kepler_container_joules_total" ;
+  rm:energyCalculationMethod "Energy is the sum of per-pod Kepler measurements for 3 of 3 pod(s)." ;
+  rm:energyCalculationUsesFallbackEstimate "false"^^xsd:boolean ;
+  rm:carbonCalculationMethod "Carbon emissions are calculated using the emissions factor method: energy consumption (kWh) multiplied by 0.424 kg/kWh (lifecycle CO2e) from Electricity Maps latest available flow-traced carbon intensity (collection-time proxy). The value is the latest value available from the free-tier endpoint when metadata was collected. It is used as a proxy and is not guaranteed to represent the exact workflow execution interval." ;
+  rm:carbonIntensitySourceLink "https://api.electricitymaps.com/v4/carbon-intensity/latest"^^xsd:anyURI ;
+  rm:carbonIntensityZone "DE" ;
+  rm:carbonIntensityDataPointCount "1"^^xsd:integer ;
+  rm:carbonIntensityWindowStart "2026-09-02T04:00:00Z"^^xsd:dateTime ;
+  rm:carbonIntensityWindowEnd "2026-09-02T05:00:00Z"^^xsd:dateTime ;
+  rm:carbonIntensityIncludesEstimatedData "true"^^xsd:boolean ;
+  rm:carbonIntensityEmissionsBasis "lifecycle CO2e" ;
+  rm:carbonIntensityTemporalGranularity "hourly" ;
+  rm:parallelismNote "CPU time can exceed wall-clock duration when Nextflow tasks execute concurrently." .
