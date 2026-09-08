@@ -17,6 +17,7 @@ PROFILE_NAMES = (
     "rnaseq-hisat2-rs1",
     "rnaseq-hisat2-rs2",
     "rnaseq-salmon-rs1",
+    "rnaseq-salmon-rs1-ninon",
     "rnaseq-salmon-rs2",
     "rnaseq-star-rs1",
 )
