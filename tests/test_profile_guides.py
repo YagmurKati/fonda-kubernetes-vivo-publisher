@@ -11,6 +11,7 @@ PROFILE_NAMES = (
     "force2nxf",
     "geoflow",
     "popinsnake",
+    "rangeland-nfcore",
     "rnaseq-hisat2-rs1",
     "rnaseq-hisat2-rs2",
     "rnaseq-salmon-rs1",

@@ -30,6 +30,10 @@ cp examples/geoflow/input_datasets.json config/input_datasets.json
 cp examples/force2nxf/publisher.env.example config/publisher.env
 cp examples/force2nxf/input_datasets.json config/input_datasets.json
 
+# OR: nf-core/rangeland
+cp examples/rangeland-nfcore/publisher.env.example config/publisher.env
+cp examples/rangeland-nfcore/input_datasets.json config/input_datasets.json
+
 # OR: FONDA_trends European grasslands
 cp examples/fonda-trends/publisher.env.example config/publisher.env
 cp examples/fonda-trends/input_datasets.json config/input_datasets.json

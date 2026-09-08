@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "datasets": [
+    {
+      "uri": "http://example.org/vivo-import/run-metadata/dataset/nf-core-test-datasets-rangeland",
+      "label": "nf-core/test-datasets rangeland minimal test dataset",
+      "description": "Public nf-core minimal test dataset for the rangeland pipeline (rangeland branch of nf-core/test-datasets): Landsat Collection 2 Level-1 scenes for WRS-2 path/row 181/036, a DEM, a water vapour database, the datacube definition, an area-of-interest vector, and the Hostert 2003 endmember file. Used to exercise the full pipeline; it is not the Mediterranean study input.",
+      "storage_location": "https://github.com/nf-core/test-datasets/tree/rangeland",
+      "access_statement": "Publicly available under the nf-core/test-datasets licence.",
+      "link_to_workflow": false,
+      "link_to_run": true
+    }
+  ]
+}
