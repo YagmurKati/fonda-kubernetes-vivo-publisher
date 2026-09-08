@@ -10,6 +10,7 @@ PROFILE_NAMES = (
     "fonda-trends",
     "force2nxf",
     "geoflow",
+    "nextflow-node-echo",
     "popinsnake",
     "rangeland-nfcore",
     "rnaseq-hisat2-rs1",

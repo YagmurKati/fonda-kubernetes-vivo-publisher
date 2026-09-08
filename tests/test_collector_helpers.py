@@ -19,6 +19,7 @@ from collector.collect_nextflow_run_metadata import (
     group_tasks,
     load_input_datasets,
     parse_cpu_percent,
+    parse_log_metadata,
     parse_size_bytes,
     resolve_electricity_maps_latest_intensity,
     resolve_output_path,
@@ -403,6 +404,36 @@ class OutputPathTests(unittest.TestCase):
             self.assertEqual(actual, expected.resolve())
             self.assertTrue(expected.parent.is_dir())
 
+
+
+class SessionIdParsingTests(unittest.TestCase):
+    """Nextflow changed the casing of the session line between releases."""
+
+    LOG_20_10 = (
+        "Sep-08 06:31:57.112 [main] DEBUG nextflow.Session - "
+        "Session uuid: 34a93e41-cd57-4edc-ad3e-d2b47cb78f71\n"
+        "Sep-08 06:31:57.112 [main] DEBUG nextflow.Session - Run name: dnn-run01\n"
+    )
+    LOG_MODERN = (
+        "Sep-07 23:42:29.001 [main] DEBUG nextflow.Session - "
+        "Session UUID: efd0ee83-ae64-451e-ad2a-efd52b206ad7\n"
+        "Sep-07 23:42:29.001 [main] DEBUG nextflow.Session - Run name: rangeland-run02\n"
+    )
+
+    def _session_id(self, log: str) -> str:
+        return parse_log_metadata(log, "", 2026, timezone.utc)["session_id"]
+
+    def test_lowercase_uuid_from_older_nextflow(self) -> None:
+        self.assertEqual(
+            self._session_id(self.LOG_20_10),
+            "34a93e41-cd57-4edc-ad3e-d2b47cb78f71",
+        )
+
+    def test_uppercase_uuid_from_current_nextflow(self) -> None:
+        self.assertEqual(
+            self._session_id(self.LOG_MODERN),
+            "efd0ee83-ae64-451e-ad2a-efd52b206ad7",
+        )
 
 if __name__ == "__main__":
     unittest.main()
