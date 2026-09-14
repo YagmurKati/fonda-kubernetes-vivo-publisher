@@ -3,7 +3,10 @@
 ## Credentials
 
 - Never commit `config/publisher.env`, passwords, tokens, kubeconfigs, WireGuard
-  files, private keys, or generated TTL/audit/receipt files.
+  files, private keys, or unreviewed generated TTL/audit/receipt files. A
+  generated artifact may be checked in only as a deliberately documented public
+  example after its content has been reviewed for credentials, private data,
+  and internal infrastructure details.
 - Use `scripts/configure-secrets.sh`; it accepts sensitive values through hidden
   prompts and stores them only in the selected Kubernetes namespace.
 - Use a distinct non-admin VIVO publisher account per person or team. Never use

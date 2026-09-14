@@ -3,7 +3,8 @@
 Publish metadata from supported workflow runs on the FONDA Kubernetes cluster
 directly to [FONDA VIVO](https://vivo-fonda.hu-berlin.de/vivo/runs). Tested
 adapters are included for Nextflow and tested Snakemake/Kubernetes
-reproductions.
+reproductions. A published Apache Spark reproduction demonstrates how the same
+RDF publisher can be used with dedicated Spark event-log evidence.
 
 The toolkit collects:
 
@@ -43,6 +44,7 @@ source repository, input data, and VIVO links differ.
 | FORCE2NXF rangeland workflow | Nextflow | [Open in VIVO](https://vivo-fonda.hu-berlin.de/vivo/individual?uri=http%3A%2F%2Fexample.org%2Fvivo-import%2Frun-metadata%2Frun%2Fdefault-long-term-vegetation-dynamics-in-the-mediterranean-force2nxf-e5295c77-62e8-4773-afc5-706750fb1a33-2026-08-25t18-25-43-637000-00-00) | [FORCE2NXF profile](examples/force2nxf/README.md) |
 | nf-core/rangeland Mediterranean vegetation dynamics | Nextflow | [Open in VIVO](https://vivo-fonda.hu-berlin.de/vivo/individual?uri=http%3A%2F%2Fexample.org%2Fvivo-import%2Frun-metadata%2Frun%2Fyagmur-long-term-vegetation-dynamics-in-the-mediterranean-nf-core-efd0ee83-ae64-451e-ad2a-efd52b206ad7-2026-09-07t21-42-29-001000-00-00) | [nf-core/rangeland profile](examples/rangeland-nfcore/README.md) |
 | Synthetic echo workflow for cluster execution testing | Nextflow | [Open in VIVO](https://vivo-fonda.hu-berlin.de/vivo/individual?uri=http%3A%2F%2Fexample.org%2Fvivo-import%2Frun-metadata%2Frun%2Fyagmur-synthetic-echo-workflow-for-cluster-execution-testing-34a93e41-cd57-4edc-ad3e-d2b47cb78f71-2026-09-08t06-31-54-892000-00-00) | [docker-nextflow-node profile](examples/nextflow-node-echo/README.md) |
+| FONDA Spark filesystem word count | Apache Spark | [Open in VIVO](https://vivo-fonda.hu-berlin.de/vivo/individual?uri=http%3A%2F%2Fexample.org%2Fvivo-import%2Frun-metadata%2Frun%2Fspark-wordcount-fs-20260914-01-spark-3bc712cac1f64dc894ea7c4fa5184ff9) | [Spark word-count profile](examples/spark-wordcount-fs/README.md) |
 | Trends in European Grasslands (test-site study) | Nextflow | [Open in VIVO](https://vivo-fonda.hu-berlin.de/vivo/individual?uri=http%3A%2F%2Fexample.org%2Fvivo-import%2Frun-metadata%2Frun%2Fyagmur-trends-in-european-grasslands-test-site-study-2e7a5fcb-44d1-44ea-b3ad-79d2bdab52d8-2026-09-02t20-24-23-057000-00-00) | [FONDA_trends profile](examples/fonda-trends/README.md) |
 | RNA-seq analysis (Salmon, RS1) | Nextflow | [Open in VIVO](https://vivo-fonda.hu-berlin.de/vivo/individual?uri=http%3A%2F%2Fexample.org%2Fvivo-import%2Frun-metadata%2Frun%2Fyagmur-rna-seq-analysis-workflow-salmon-rs1-9347febf-9033-4c8f-8eb2-f699de6b3479-2026-08-28t18-35-04-684000-00-00) | [RNA-seq Salmon RS1 profile](examples/rnaseq-salmon-rs1/README.md) |
 | RNA-seq analysis (Salmon, RS1, ninon experiment configs) | Nextflow | [Open in VIVO](https://vivo-fonda.hu-berlin.de/vivo/individual?uri=http%3A%2F%2Fexample.org%2Fvivo-import%2Frun-metadata%2Frun%2Fyagmur-rna-seq-analysis-workflow-salmon-rs1-889cb6b3-521c-4c5f-9a26-472f77d5ac6a-2026-09-08t17-14-14-359000-00-00) | [RNA-seq Salmon RS1 ninon profile](examples/rnaseq-salmon-rs1-ninon/README.md) |
@@ -193,6 +195,14 @@ verifies `RUN_STATUS`, provenance, checksums, and the final compressed VCF. See
 the [A2 MG-4 profile](examples/a2-mg4/README.md) and
 [PopinSnake profile](examples/popinsnake/README.md).
 
+### Apache Spark published artifact
+
+The [Spark filesystem word-count profile](examples/spark-wordcount-fs/README.md)
+uses a dedicated evidence adapter for a completed native Spark-on-Kubernetes
+run. It validates the output and consumes the Spark JSON Lines event log plus
+Prometheus and Kepler measurements before generating RDF. It is an audited
+published example rather than a selectable `publish-run.sh` engine.
+
 ## Output and verification
 
 For the Nextflow profiles, a successful command prints paths like:
@@ -231,9 +241,10 @@ audit files. See [Remove a published run](docs/USER_GUIDE.md#7-remove-a-publishe
 ## Scope
 
 This release supports Nextflow with the Kubernetes executor and the tested A2
-MG-3, MG-4 and PopinSnake Snakemake/Kubernetes layouts. Other workflow engines or
-Snakemake layouts need an evidence adapter but can reuse the RDF builder and
-`publisher/publish_vivo.py`.
+MG-3, MG-4 and PopinSnake Snakemake/Kubernetes layouts. The repository also
+contains one audited Apache Spark publication produced with a dedicated
+event-log adapter. Other workflow engines or layouts need an evidence adapter
+but can reuse the RDF model and `publisher/publish_vivo.py`.
 
 ## License
 

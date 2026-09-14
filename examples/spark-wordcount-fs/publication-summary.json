@@ -1,0 +1,54 @@
+{
+  "attribution": {
+    "responsible_researcher": {
+      "name": "Soeren Becker",
+      "profile_uri": "https://fonda.hu-berlin.de/?page_id=2066#SoerenBecker"
+    },
+    "run_operator_asserted": false,
+    "subproject": "S1: Testbeds and Repositories"
+  },
+  "carbon_metadata_status": "omitted because the aligned hourly CO2Map value was unavailable at collection time",
+  "execution": {
+    "container_image": "docker.io/srnbckr/spark-wordcount@sha256:d7ec80454e6d5299dc231533b7dec037c8d0b12319cc1fd5e02821bcecac2bff",
+    "driver_count": 1,
+    "duration_seconds": 33.958,
+    "executor_count": 4,
+    "finished_at": "2026-09-14T13:07:24.611Z",
+    "spark_application_id": "spark-3bc712cac1f64dc894ea7c4fa5184ff9",
+    "spark_version": "3.0.1-SNAPSHOT",
+    "started_at": "2026-09-14T13:06:50.653Z",
+    "status": "Succeeded",
+    "task_count": 4
+  },
+  "publication": {
+    "attempts": 1,
+    "http_status": 200,
+    "published_at": "2026-09-14T13:40:00.974465Z",
+    "run_url": "https://vivo-fonda.hu-berlin.de/vivo/individual?uri=http%3A%2F%2Fexample.org%2Fvivo-import%2Frun-metadata%2Frun%2Fspark-wordcount-fs-20260914-01-spark-3bc712cac1f64dc894ea7c4fa5184ff9",
+    "ttl_sha256": "a6c53c04de1797a02f9ff68713c779ec3d18eff274d766185648b4c71161b502",
+    "workflow_url": "https://vivo-fonda.hu-berlin.de/vivo/individual?uri=http%3A%2F%2Fexample.org%2Fvivo-import%2Frun-metadata%2Fworkflow%2Ffonda-spark-filesystem-word-count"
+  },
+  "resources": {
+    "cpu_seconds": 41.00867975,
+    "energy_joules": 1762.9997479,
+    "energy_kwh": 0.0004897221521944444,
+    "memory_average_gb": 0.5450477883,
+    "memory_peak_gb": 0.734633984,
+    "scientific_pod_coverage": 5
+  },
+  "result": {
+    "event_log_sha256": "7dec58b07ff2e4e278967152c89ac36ea45ce112b06afa4cd83031037014afc1",
+    "input_sha256": "217146ab04568bd1a2d67700e9d09a174141fdf5b4e86874ffd07c7b9fe9e1ed",
+    "normalized_output_sha256": "a828b7262afeffa5a1cab1ee36f4062d442ae5109db6b7c39b7b8d6ab42ff10e",
+    "total_tokens": 556,
+    "unique_word_records": 322,
+    "validation_status": "passed"
+  },
+  "run_id": "spark-wordcount-fs-20260914-01",
+  "schema_version": "1.0",
+  "source": {
+    "commit": "98518a04e9b6deb916fefce536f4de67afd5ce7a",
+    "repository": "https://github.com/CRC-FONDA/s1-spark-examples"
+  },
+  "workflow_name": "FONDA Spark filesystem word count"
+}

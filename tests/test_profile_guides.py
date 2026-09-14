@@ -5,7 +5,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 EXAMPLES = ROOT / "examples"
-PROFILE_NAMES = (
+CONFIGURABLE_PROFILE_NAMES = (
     "a2-mg3",
     "a2-mg4",
     "fonda-trends",
@@ -21,6 +21,8 @@ PROFILE_NAMES = (
     "rnaseq-salmon-rs2",
     "rnaseq-star-rs1",
 )
+STANDALONE_PROFILE_NAMES = ("spark-wordcount-fs",)
+PROFILE_NAMES = CONFIGURABLE_PROFILE_NAMES + STANDALONE_PROFILE_NAMES
 
 
 class ProfileGuideTests(unittest.TestCase):
@@ -49,7 +51,7 @@ class ProfileGuideTests(unittest.TestCase):
                 self.assertIsNone(forbidden.search(readme))
 
     def test_profile_templates_do_not_use_one_users_runtime_identity(self) -> None:
-        for profile_name in PROFILE_NAMES:
+        for profile_name in CONFIGURABLE_PROFILE_NAMES:
             with self.subTest(profile=profile_name):
                 env = (
                     EXAMPLES / profile_name / "publisher.env.example"
