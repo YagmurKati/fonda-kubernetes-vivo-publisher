@@ -70,6 +70,10 @@ cp examples/rnaseq-hisat2-rs2/input_datasets.json config/input_datasets.json
 cp examples/a2-mg4/publisher.env.example config/publisher.env
 cp examples/a2-mg4/input_datasets.json config/input_datasets.json
 
+# OR: Event query discovery (Python, one Kubernetes Job per sample)
+cp examples/event-query-discovery/publisher.env.example config/publisher.env
+cp examples/event-query-discovery/input_datasets.json config/input_datasets.json
+
 # OR: PopinSnake (Snakemake)
 cp examples/popinsnake/publisher.env.example config/popinsnake.publisher.env
 cp examples/popinsnake/input_datasets.json config/input_datasets.json
@@ -200,3 +204,12 @@ publishing the run again.
 - A dry run gets a new timestamped TTL and audit but no receipt or VIVO write.
 - A removed publication can be replaced after its receipt has been marked with
   the successful removal.
+
+## Node placement
+
+Every Pod the publisher creates, for publication or removal, carries
+`nodeSelector: usedby=<NODE_USEDBY>`. On the FONDA cluster namespaces are
+kept on their own nodes by affinity rather than by enforcement, so this is
+what keeps the publisher inside your space. The default is `prototyping`;
+set `NODE_USEDBY` in `config/publisher.env` if your nodes carry a
+different value.

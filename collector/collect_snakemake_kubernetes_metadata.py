@@ -42,9 +42,9 @@ def csv_env(name: str) -> List[str]:
 
 def snakemake_profile() -> str:
     profile = required_env("SNAKEMAKE_PROFILE").lower()
-    if profile not in {"mg3", "mg4", "popinsnake"}:
+    if profile not in {"mg3", "mg4", "popinsnake", "eqd"}:
         raise RuntimeError(
-            "SNAKEMAKE_PROFILE must be 'mg3', 'mg4', or 'popinsnake'"
+            "SNAKEMAKE_PROFILE must be 'mg3', 'mg4', 'popinsnake', or 'eqd'"
         )
     return profile
 
@@ -399,6 +399,86 @@ def read_mg3_result_metadata(run_root: Path) -> Dict[str, Any]:
     }
 
 
+def read_eqd_result_metadata(run_root: Path) -> Dict[str, Any]:
+    """Read the per-sample result directories of an event query discovery run.
+
+    The testbench is a plain Python program executed as one Kubernetes Job per
+    sample. Each Job writes a directory under the run root with a provenance
+    folder (upstream commit, pip lockfile, the runtime patch), a log, and the
+    statistics CSV it checkpoints after every discovery. A directory whose log
+    never reached "Simulation finished" belongs to a stopped attempt and is
+    reported as superseded rather than counted.
+    """
+    prefix = required_env("EQD_RUN_DIR_PREFIX")
+    run_dirs = sorted(
+        path for path in run_root.iterdir()
+        if path.is_dir() and path.name.startswith(prefix)
+    )
+    if not run_dirs:
+        raise RuntimeError(
+            f"No result directories under {run_root} start with {prefix!r}"
+        )
+    commits = set()
+    samples: List[Dict[str, Any]] = []
+    output_size = 0
+    row_total = 0
+    completed_at = ""
+    for run_dir in run_dirs:
+        commit_path = run_dir / "provenance/git-commit.txt"
+        if commit_path.is_file():
+            commits.add(commit_path.read_text(encoding="utf-8").strip())
+        log_path = run_dir / "log.txt"
+        log_text = read_optional_text(log_path)
+        finished = "Simulation finished" in log_text
+        csv_path = run_dir / "plots/df_stats_compute_descr_swgquery_multidim"
+        rows = 0
+        if csv_path.is_file():
+            rows = max(0, len(csv_path.read_text(encoding="utf-8").splitlines()) - 1)
+        size = sum(f.stat().st_size for f in run_dir.rglob("*") if f.is_file())
+        sample = {
+            "directory": run_dir.name,
+            "sample": run_dir.name[len(prefix):].lstrip("-"),
+            "finished": finished,
+            "result_rows": rows,
+            "plot_files": len(list((run_dir / "plots").glob("*"))) if (run_dir / "plots").is_dir() else 0,
+            "size_bytes": size,
+            "has_log": log_path.is_file(),
+            "patched": (run_dir / "provenance/patch_testbench.py").is_file(),
+        }
+        samples.append(sample)
+        if finished:
+            row_total += rows
+            output_size += size
+            for line in reversed(log_text.splitlines()):
+                if "Finished testbench" in line:
+                    stamp = line[:19].replace(" ", "T")
+                    completed_at = max(completed_at, stamp)
+                    break
+    if len(commits) != 1:
+        raise RuntimeError(
+            f"Expected one upstream commit across the result directories, found {sorted(commits)}"
+        )
+    if not any(sample["finished"] for sample in samples):
+        raise RuntimeError("No sample directory reached 'Simulation finished'")
+    lock_path = next(
+        (d / "provenance/requirements.lock.txt" for d in run_dirs
+         if (d / "provenance/requirements.lock.txt").is_file()), None
+    )
+    return {
+        "completed_at": completed_at,
+        "provenance": {
+            "workflow_commit": commits.pop(),
+            "requirements_lock": read_optional_text(lock_path) if lock_path else "",
+            "engine_version": os.environ.get("EQD_PYTHON_VERSION", ""),
+        },
+        "samples": samples,
+        "finished_sample_count": sum(1 for s in samples if s["finished"]),
+        "superseded_sample_count": sum(1 for s in samples if not s["finished"]),
+        "result_row_count": row_total,
+        "output_size_bytes": output_size,
+    }
+
+
 def read_result_metadata(run_root: Path, profile: str) -> Dict[str, Any]:
     if profile == "mg3":
         return read_mg3_result_metadata(run_root)
@@ -406,6 +486,8 @@ def read_result_metadata(run_root: Path, profile: str) -> Dict[str, Any]:
         return read_mg4_result_metadata(run_root)
     if profile == "popinsnake":
         return read_popinsnake_result_metadata(run_root)
+    if profile == "eqd":
+        return read_eqd_result_metadata(run_root)
     raise RuntimeError(f"Unsupported Snakemake profile: {profile}")
 
 
@@ -454,6 +536,26 @@ def collector_args(
             "All Kubernetes workflow Pods in the resumable MG-4 session, "
             "including earlier attempts that produced retained intermediates."
         )
+    elif profile == "eqd":
+        finished = result["finished_sample_count"]
+        superseded = result["superseded_sample_count"]
+        superseded_clause = (
+            f" One earlier attempt was stopped and superseded; its {superseded} "
+            "partial result directory is retained but not counted."
+            if superseded else ""
+        )
+        description = (
+            "Event query discovery testbench run as one Kubernetes Job per "
+            f"sample: {attempt_count} Jobs{failed_clause}, {finished} of which "
+            "reached the end of the simulation and together recorded "
+            f"{result['result_row_count']} discovery results."
+            f"{superseded_clause}"
+        )
+        resource_scope = (
+            "All Kubernetes Jobs of this run, one per trace sample. Each Job "
+            "is a single-threaded Python process, so a Job's CPU time is the "
+            "time its discoveries took on one core."
+        )
     else:
         description = (
             "Reproduction of the FONDA PopinSnake genomic-insertion workflow "
@@ -490,15 +592,20 @@ def collector_args(
             "CLUSTER_LABEL", "FONDA Kubernetes Cluster"
         ),
         engine_uri=required_env("ENGINE_URI"),
-        engine_label="Snakemake",
+        engine_label="Python" if profile == "eqd" else "Snakemake",
         trace_types=(
+            "Kubernetes Job and Pod status, container termination metadata, "
+            "testbench log, provenance, and per-discovery statistics CSV"
+            if profile == "eqd" else
             "Kubernetes Job and Pod status, container termination metadata, "
             "Snakemake logs and summary, provenance, and output checksums"
         ),
         trace_data_format=(
+            "Kubernetes JSON, plain-text log, CSV, and pip lockfile"
+            if profile == "eqd" else
             "Kubernetes JSON, Snakemake text/TSV, JSON, and plain text"
         ),
-        workflow_description="",
+        workflow_description=os.environ.get("WORKFLOW_DESCRIPTION", ""),
         run_description=description,
         duration_calculation_method=(
             "Wall-clock time from the first container start to the final "
@@ -614,11 +721,14 @@ def main() -> None:
             "The run provenance has no valid upstream workflow commit"
         )
 
-    stage_prefix = {"mg3": "MG-3", "mg4": "MG-4", "popinsnake": "PopinSnake"}[profile]
+    stage_prefix = {"mg3": "MG-3", "mg4": "MG-4", "popinsnake": "PopinSnake", "eqd": "Query discovery"}[profile]
     stages = []
     for index, task in enumerate(tasks, start=1):
         suffix_match = re.search(r"(?:-v|-)([0-9]+)$", task.name)
         suffix = str(index) if profile == "mg3" else (suffix_match.group(1) if suffix_match else str(index))
+        if profile == "eqd":
+            # one Job per sample: label the stage by the sample it processed
+            suffix = task.name.rsplit("-google-", 1)[-1] if "-google-" in task.name else task.name
         stages.append(
             {
                 "slug": f"kubernetes-attempt-{index}",
@@ -630,7 +740,7 @@ def main() -> None:
         "run_id": cli.run_id,
         "session_id": None,
         "run_name": cli.run_id,
-        "engine_version": result["provenance"].get("snakemake"),
+        "engine_version": result["provenance"].get("snakemake") or result["provenance"].get("engine_version"),
         "nextflow_version": None,
         "failure_reason": (
             f"{len(failed_tasks)} earlier attempts ended non-zero before the "
@@ -674,6 +784,13 @@ def main() -> None:
             "compatibility_patch"
         ),
     }
+    if profile == "eqd":
+        audit["event_query_discovery"] = {
+            "profile": profile,
+            "workflow_commit": workflow_commit,
+            "python": result["provenance"].get("engine_version"),
+            "samples": result["samples"],
+        }
     audit["result"] = result
     audit["kubernetes_attempts"] = [
         {
