@@ -1,0 +1,74 @@
+{
+  "attribution": {
+    "responsible_researchers": [
+      {
+        "name": "Fabian Lehmann",
+        "profile_uri": "https://fonda.hu-berlin.de/?page_id=2066#FabianLehmann"
+      },
+      {
+        "name": "Friedrich Tschirpke",
+        "profile_uri": "http://141.20.184.157:8080/vivo/individual/a1-external-author-friedrich-tschirpke-8f38595d"
+      }
+    ],
+    "run_operator_asserted": false,
+    "subproject": "B5: Transparent Multi-Site Data Analysis Workflows for Earth Observation"
+  },
+  "carbon": {
+    "emissions_basis": "CO2e",
+    "estimated_kg": 0.0000011397173333333335,
+    "fixed_intensity_kg_per_kwh": 0.4,
+    "source": "Fixed configured emissions factor"
+  },
+  "execution": {
+    "duration_seconds": 72,
+    "finished_at": "2026-09-15T08:19:49.911000Z",
+    "nextflow_session_id": "d21b12b9-b53a-491a-99f6-3e9f88e2137b",
+    "nextflow_version": "25.04.8",
+    "started_at": "2026-09-15T08:18:38.764000Z",
+    "status": "Succeeded",
+    "task_count": 5
+  },
+  "placement": {
+    "all_recorded_pods_constrained": true,
+    "allowed_label": "usedby=prototyping",
+    "allowed_node_count": 3,
+    "used_nodes": [
+      "hu-worker-c34",
+      "hu-worker-c39",
+      "hu-worker-c41"
+    ]
+  },
+  "privacy": {
+    "operational_namespace_in_public_ttl": false,
+    "run_operator_asserted": false
+  },
+  "publication": {
+    "attempts": 1,
+    "http_status": 200,
+    "published_at": "2026-09-15T08:44:53.747905Z",
+    "run_url": "https://vivo-fonda.hu-berlin.de/vivo/individual?uri=http%3A%2F%2Fexample.org%2Fvivo-import%2Frun-metadata%2Frun%2Ffonda-nextflow-locality-dsl2-demo-test-workflow-d21b12b9-b53a-491a-99f6-3e9f88e2137b-2026-09-15t08-18-38-764000-00-00",
+    "ttl_sha256": "ab737bbacb3684148c834fb8cb2a8d9dd83e17d66a0063ed5c3b44dd6f20e0e7",
+    "workflow_url": "https://vivo-fonda.hu-berlin.de/vivo/individual?uri=http%3A%2F%2Fexample.org%2Fvivo-import%2Frun-metadata%2Fworkflow%2Fnextflow-locality-dsl2-demo-test"
+  },
+  "resources": {
+    "cpu_seconds": 0.07438700000000001,
+    "energy_kwh": 0.0000028492933333333336,
+    "energy_pod_coverage": 4,
+    "memory_average_gb": 0.0006108644277587009,
+    "memory_peak_gb": 0.0032
+  },
+  "run_id": "NFL-DSL2-DEMO-RUN01",
+  "schema_version": "1.0",
+  "source": {
+    "commit": "4343e333b749b748b57f65290443d2fc61c27b96",
+    "file": "tests/demo-dsl2.nf",
+    "repository": "https://github.com/CRC-FONDA/nextflow_locality",
+    "sha256": "f8e077dadb374bea484564aef5a96b4c7acb1ad2f13ff7b9393ae9a27d0e93c9"
+  },
+  "superseded_publication": {
+    "removal_http_status": 200,
+    "removed_at": "2026-09-15T08:44:24.802021Z",
+    "reason": "Replaced the namespace-scoped generated run IRI with a public fonda-scoped IRI."
+  },
+  "workflow_name": "Nextflow Locality DSL2 Demo Test Workflow"
+}

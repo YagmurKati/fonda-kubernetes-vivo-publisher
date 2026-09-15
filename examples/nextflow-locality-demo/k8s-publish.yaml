@@ -1,0 +1,216 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nextflow-locality-demo-publisher-settings
+  namespace: yagmur
+  labels:
+    app.kubernetes.io/name: nextflow-locality-demo
+    app.kubernetes.io/component: metadata-publisher
+    fonda.hu-berlin.de/run-id: NFL-DSL2-DEMO-RUN01
+data:
+  TRACE_PATH_TEMPLATE: /workspace/nextflow-locality-demo/results/{run_id}/trace-{run_id}.txt
+  CONSOLE_LOG_PATH_TEMPLATE: /workspace/nextflow-locality-demo/results/{run_id}/nextflow-{run_id}.log
+  DEBUG_LOG_PATH: /workspace/nextflow-locality-demo/results/{run_id}/nextflow-debug-{run_id}.log
+  CODE_PATH: /workspace/nextflow-locality-demo/source
+  TRACE_TIMEZONE: UTC
+  WORKFLOW_NAME: Nextflow Locality DSL2 Demo Test Workflow
+  WORKFLOW_DESCRIPTION: A compact Nextflow DSL2 test workflow that fans five greeting values into independent sayHello process executions. It is published as an executable workflow test fixture from the CRC-FONDA nextflow_locality repository.
+  WORKFLOW_URI: http://example.org/vivo-import/run-metadata/workflow/nextflow-locality-dsl2-demo-test
+  WORKFLOW_REPO_URL: https://github.com/CRC-FONDA/nextflow_locality
+  CODE_URI: https://github.com/CRC-FONDA/nextflow_locality/blob/4343e333b749b748b57f65290443d2fc61c27b96/tests/demo-dsl2.nf
+  GIT_COMMIT: 4343e333b749b748b57f65290443d2fc61c27b96
+  DECLARED_CONTAINER_IMAGES: docker.io/nextflow/nextflow@sha256:b035b9fa7243ed09b9896c2b752d9e399f337827932bd45495efb0aed8e1dca1
+  PUBLICATION_URI: ""
+  TRACE_ARCHIVE: ""
+  RESPONSIBLE_RESEARCHER_URIS: https://fonda.hu-berlin.de/?page_id=2066#FabianLehmann,http://141.20.184.157:8080/vivo/individual/a1-external-author-friedrich-tschirpke-8f38595d
+  SUBPROJECT_URIS: http://141.20.184.157:8080/vivo/individual/fonda-group-b5-transparent-multi-site-data-analysis-workflows-for-earth-observation
+  LANGUAGE_URIS: http://example.org/vivo-import/run-metadata/language/shell
+  APPLICATION_DOMAIN_URI: ""
+  RUN_OPERATOR_URI: ""
+  RUN_IDENTITY_SCOPE: fonda
+  BACKEND_URI: http://172.28.33.178:8080/vivo/individual/n5703
+  CLUSTER_URI: http://example.org/vivo-import/run-metadata/cluster/fonda-cluster
+  CLUSTER_LABEL: FONDA Kubernetes Cluster
+  ENGINE_URI: http://example.org/vivo-import/run-metadata/engine/nextflow
+  PROM_URL: http://prometheus-kube-prometheus-prometheus.monitoring.svc.fonda:9090
+  CARBON_SOURCE: fixed
+  CARBON_INTENSITY: "0.4"
+  ELECTRICITY_MAPS_ZONE: DE
+  CO2MAP_STATE: DE
+  CO2MAP_COUNTRY: DE
+  CO2MAP_DATA_STATUS: preliminary
+  ALLOW_MISSING_METRICS: "1"
+  REQUIRE_SUCCEEDED: "1"
+  BASE_URI: http://example.org/vivo-import/run-metadata/
+  ONTOLOGY_URI: http://example.org/ontology/run-metadata#
+  VIVO_ENDPOINT: https://vivo-fonda.hu-berlin.de/vivo/api/sparqlUpdate
+  VIVO_GRAPH: http://vitro.mannlib.cornell.edu/default/vitro-kb-2
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: nextflow-locality-demo-publish-run01
+  namespace: yagmur
+  labels:
+    app.kubernetes.io/name: nextflow-locality-demo
+    app.kubernetes.io/component: metadata-publisher
+    fonda.hu-berlin.de/run-id: NFL-DSL2-DEMO-RUN01
+spec:
+  backoffLimit: 0
+  activeDeadlineSeconds: 1800
+  ttlSecondsAfterFinished: 604800
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: nextflow-locality-demo
+        app.kubernetes.io/component: metadata-publisher
+        fonda.hu-berlin.de/run-id: NFL-DSL2-DEMO-RUN01
+    spec:
+      serviceAccountName: nextflow-sa
+      restartPolicy: Never
+      nodeSelector:
+        usedby: prototyping
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: usedby
+                    operator: In
+                    values:
+                      - prototyping
+      containers:
+        - name: collect-and-publish
+          image: nextflow/nextflow@sha256:b035b9fa7243ed09b9896c2b752d9e399f337827932bd45495efb0aed8e1dca1
+          imagePullPolicy: IfNotPresent
+          command:
+            - /bin/bash
+            - -lc
+          args:
+            - |
+              set -euo pipefail
+              run_id=NFL-DSL2-DEMO-RUN01
+              output_dir=/workspace/nextflow-locality-demo/vivo-outbox
+              output_stamp="$(date -u +%Y%m%dT%H%M%SZ)"
+              artifact_base="$run_id-$output_stamp"
+              ttl_file="$output_dir/$artifact_base.ttl"
+              receipt_file="$output_dir/$artifact_base.published.json"
+              trace_file="${TRACE_PATH_TEMPLATE//\{run_id\}/$run_id}"
+              console_log="${CONSOLE_LOG_PATH_TEMPLATE//\{run_id\}/$run_id}"
+              debug_log="${DEBUG_LOG_PATH//\{run_id\}/$run_id}"
+              mkdir -p "$output_dir"
+              shopt -s nullglob
+              prior_receipts=("$output_dir/$run_id-"*.published.json)
+              for prior_receipt in "${prior_receipts[@]}"; do
+                if ! grep -Eq '"removed_at"[[:space:]]*:' "$prior_receipt"; then
+                  printf 'Refusing duplicate publication; receipt exists: %s\n' "$prior_receipt" >&2
+                  exit 4
+                fi
+              done
+              test -r "$trace_file"
+              test -r "$console_log"
+              test -r "$debug_log"
+              test -d "$CODE_PATH"
+
+              collector_args=(
+                python3 /opt/fonda-vivo/collector.py
+                --namespace yagmur
+                --run-identity-scope "$RUN_IDENTITY_SCOPE"
+                --trace-file "$trace_file"
+                --console-log-file "$console_log"
+                --debug-log-file "$debug_log"
+                --trace-timezone "$TRACE_TIMEZONE"
+                --code-path "$CODE_PATH"
+                --workflow-name "$WORKFLOW_NAME"
+                --workflow-description "$WORKFLOW_DESCRIPTION"
+                --workflow-uri "$WORKFLOW_URI"
+                --workflow-repo-url "$WORKFLOW_REPO_URL"
+                --code-uri "$CODE_URI"
+                --git-commit "$GIT_COMMIT"
+                --publication-uri "$PUBLICATION_URI"
+                --trace-archive "$TRACE_ARCHIVE"
+                --application-domain-uri "$APPLICATION_DOMAIN_URI"
+                --run-operator-uri "$RUN_OPERATOR_URI"
+                --backend-uri "$BACKEND_URI"
+                --cluster-uri "$CLUSTER_URI"
+                --cluster-label "$CLUSTER_LABEL"
+                --engine-uri "$ENGINE_URI"
+                --prom-url "$PROM_URL"
+                --carbon-intensity-source "$CARBON_SOURCE"
+                --carbon-intensity "$CARBON_INTENSITY"
+                --electricity-maps-zone "$ELECTRICITY_MAPS_ZONE"
+                --co2map-state "$CO2MAP_STATE"
+                --co2map-country "$CO2MAP_COUNTRY"
+                --co2map-data-status "$CO2MAP_DATA_STATUS"
+                --input-metadata-file /opt/fonda-vivo/input_datasets.json
+                --base-uri "$BASE_URI"
+                --ontology-uri "$ONTOLOGY_URI"
+                --output-file "$ttl_file"
+                --allow-missing-metrics
+                --require-succeeded
+              )
+              IFS=',' read -r -a declared_images <<< "$DECLARED_CONTAINER_IMAGES"
+              for image in "${declared_images[@]}"; do
+                [[ -n "$image" ]] && collector_args+=(--container-image "$image")
+              done
+              IFS=',' read -r -a researcher_uris <<< "$RESPONSIBLE_RESEARCHER_URIS"
+              for uri in "${researcher_uris[@]}"; do
+                [[ -n "$uri" ]] && collector_args+=(--responsible-researcher-uri "$uri")
+              done
+              IFS=',' read -r -a subproject_uris <<< "$SUBPROJECT_URIS"
+              for uri in "${subproject_uris[@]}"; do
+                [[ -n "$uri" ]] && collector_args+=(--subproject-uri "$uri")
+              done
+              IFS=',' read -r -a language_uris <<< "$LANGUAGE_URIS"
+              for uri in "${language_uris[@]}"; do
+                [[ -n "$uri" ]] && collector_args+=(--language-uri "$uri")
+              done
+              "${collector_args[@]}"
+
+              printf '\n<http://141.20.184.157:8080/vivo/individual/a1-external-author-friedrich-tschirpke-8f38595d> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://xmlns.com/foaf/0.1/Person> ;\n  <http://www.w3.org/2000/01/rdf-schema#label> "Friedrich Tschirpke" .\n' >> "$ttl_file"
+              [[ "$(grep -c 'rm:responsibleResearcher' "$ttl_file")" == "2" ]]
+              ! grep -Eiq 'rm:runOperator|yagmur' "$ttl_file"
+
+              python3 /opt/fonda-vivo/publisher.py \
+                "$ttl_file" \
+                --endpoint "$VIVO_ENDPOINT" \
+                --graph "$VIVO_GRAPH" \
+                --email-file /var/run/secrets/fonda-vivo/email \
+                --password-file /var/run/secrets/fonda-vivo/password \
+                --receipt-file "$receipt_file"
+              printf 'ARTIFACT_BASE=%s\n' "$artifact_base"
+          envFrom:
+            - configMapRef:
+                name: nextflow-locality-demo-publisher-settings
+          env:
+            - name: PYTHONDONTWRITEBYTECODE
+              value: "1"
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: "1"
+              memory: 2Gi
+          securityContext:
+            runAsUser: 0
+          volumeMounts:
+            - name: workspace
+              mountPath: /workspace
+            - name: publisher-code
+              mountPath: /opt/fonda-vivo
+              readOnly: true
+            - name: vivo-credentials
+              mountPath: /var/run/secrets/fonda-vivo
+              readOnly: true
+      volumes:
+        - name: workspace
+          persistentVolumeClaim:
+            claimName: nextflow-locality-demo-workspace
+        - name: publisher-code
+          configMap:
+            name: nextflow-locality-demo-publisher-code
+        - name: vivo-credentials
+          secret:
+            secretName: vivo-publisher-credentials
+            defaultMode: 0400

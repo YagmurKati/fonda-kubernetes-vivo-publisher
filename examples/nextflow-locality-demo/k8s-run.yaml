@@ -1,0 +1,170 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: nextflow-locality-demo-workspace
+  namespace: yagmur
+  labels:
+    app.kubernetes.io/name: nextflow-locality-demo
+    fonda.hu-berlin.de/run-id: NFL-DSL2-DEMO-RUN01
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 1Gi
+  storageClassName: cephfs
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nextflow-locality-demo-run01
+  namespace: yagmur
+  labels:
+    app.kubernetes.io/name: nextflow-locality-demo
+    fonda.hu-berlin.de/run-id: NFL-DSL2-DEMO-RUN01
+data:
+  demo-dsl2.nf: |
+    #!/usr/bin/env nextflow
+
+    process sayHello {
+      debug true
+      input:
+      val x
+
+      """
+      echo '$x world!'
+      """
+    }
+
+    workflow {
+      Channel.of('Bojour', 'Ciao', 'Hello', 'Hola', 'Γεια σου') | sayHello
+    }
+  nextflow.config: |
+    workDir = '/workspace/work/NFL-DSL2-DEMO-RUN01'
+
+    process {
+        executor = 'k8s'
+        shell = ['/bin/bash', '-ue']
+        container = 'nextflow/nextflow@sha256:b035b9fa7243ed09b9896c2b752d9e399f337827932bd45495efb0aed8e1dca1'
+        cpus = 1
+        memory = '128 MB'
+        maxForks = 1
+        pod = [
+            [label: 'fonda.hu-berlin.de/run-id', value: 'NFL-DSL2-DEMO-RUN01'],
+            [label: 'app.kubernetes.io/name', value: 'nextflow-locality-demo'],
+            [nodeSelector: 'usedby=prototyping'],
+            [affinity: [
+                nodeAffinity: [
+                    requiredDuringSchedulingIgnoredDuringExecution: [
+                        nodeSelectorTerms: [[
+                            matchExpressions: [[
+                                key: 'usedby',
+                                operator: 'In',
+                                values: ['prototyping']
+                            ]]
+                        ]]
+                    ]
+                ]
+            ]]
+        ]
+    }
+
+    k8s {
+        namespace = 'yagmur'
+        serviceAccount = 'nextflow-sa'
+        storageClaimName = 'nextflow-locality-demo-workspace'
+        storageMountPath = '/workspace'
+        workDir = '/workspace/work/NFL-DSL2-DEMO-RUN01'
+        cleanup = false
+    }
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: nextflow-locality-demo-run01
+  namespace: yagmur
+  labels:
+    app.kubernetes.io/name: nextflow-locality-demo
+    app.kubernetes.io/component: workflow-driver
+    fonda.hu-berlin.de/run-id: NFL-DSL2-DEMO-RUN01
+spec:
+  backoffLimit: 0
+  activeDeadlineSeconds: 1200
+  ttlSecondsAfterFinished: 604800
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: nextflow-locality-demo
+        app.kubernetes.io/component: workflow-driver
+        fonda.hu-berlin.de/run-id: NFL-DSL2-DEMO-RUN01
+    spec:
+      serviceAccountName: nextflow-sa
+      restartPolicy: Never
+      nodeSelector:
+        usedby: prototyping
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: usedby
+                    operator: In
+                    values:
+                      - prototyping
+      containers:
+        - name: nextflow
+          image: nextflow/nextflow@sha256:b035b9fa7243ed09b9896c2b752d9e399f337827932bd45495efb0aed8e1dca1
+          imagePullPolicy: IfNotPresent
+          command:
+            - /bin/bash
+            - -lc
+          args:
+            - |
+              set -euo pipefail
+              run_id=NFL-DSL2-DEMO-RUN01
+              project_dir=/workspace/nextflow-locality-demo
+              source_dir="$project_dir/source"
+              run_dir="$project_dir/results/$run_id"
+              mkdir -p "$source_dir" "$run_dir" "/workspace/work/$run_id"
+              cp /run-config/demo-dsl2.nf "$source_dir/demo-dsl2.nf"
+              cp /run-config/nextflow.config "$project_dir/nextflow.config"
+              test "$(sha256sum "$source_dir/demo-dsl2.nf" | cut -d' ' -f1)" = "f8e077dadb374bea484564aef5a96b4c7acb1ad2f13ff7b9393ae9a27d0e93c9"
+              printf '%s\n' '4343e333b749b748b57f65290443d2fc61c27b96' > "$project_dir/WORKFLOW_COMMIT"
+              sha256sum "$source_dir/demo-dsl2.nf" > "$project_dir/WORKFLOW_SOURCE.sha256"
+              cd "$source_dir"
+              trap 'cp "$source_dir/.nextflow.log" "$run_dir/nextflow-debug-NFL-DSL2-DEMO-RUN01.log" 2>/dev/null || true' EXIT
+              nextflow run demo-dsl2.nf \
+                -c "$project_dir/nextflow.config" \
+                -name nfl_dsl2_demo_run01 \
+                -with-trace "$run_dir/trace-$run_id.txt" \
+                -with-report "$run_dir/report-$run_id.html" \
+                -with-timeline "$run_dir/timeline-$run_id.html" \
+                -with-dag "$run_dir/dag-$run_id.html" \
+                2>&1 | tee "$run_dir/nextflow-$run_id.log"
+          env:
+            - name: NXF_HOME
+              value: /workspace/.nextflow
+            - name: NXF_ANSI_LOG
+              value: "false"
+            - name: NXF_OPTS
+              value: -Xms128M -Xmx768M
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi
+          volumeMounts:
+            - name: workspace
+              mountPath: /workspace
+            - name: run-config
+              mountPath: /run-config
+              readOnly: true
+      volumes:
+        - name: workspace
+          persistentVolumeClaim:
+            claimName: nextflow-locality-demo-workspace
+        - name: run-config
+          configMap:
+            name: nextflow-locality-demo-run01

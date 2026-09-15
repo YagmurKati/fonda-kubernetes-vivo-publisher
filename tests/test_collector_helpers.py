@@ -236,6 +236,7 @@ class InputDatasetTests(unittest.TestCase):
             ontology_uri="http://example.org/ontology/run-metadata#",
             prom_url="http://127.0.0.1:19090",
             publication_uri="",
+            run_identity_scope="fonda",
             run_operator_uri="",
             trace_archive="https://example.org/traces",
             trace_data_format="TSV",
@@ -287,6 +288,8 @@ class InputDatasetTests(unittest.TestCase):
         self.assertNotIn("rm:nodeName", ttl_text)
         self.assertNotIn("rm:carbonIntensityKgCO2ePerKWh", ttl_text)
         self.assertNotIn("rm:codeModified", ttl_text)
+        self.assertIn("/run/fonda-", audit["run_uri"])
+        self.assertNotIn("/run/test-", audit["run_uri"])
         self.assertEqual(len(audit["input_datasets"]), 1)
         # The on-disk audit must remain JSON serializable when TaskRecord gains
         # datetime fields.

@@ -57,6 +57,7 @@ spec:
               collector_args=(
                 python3 /opt/fonda-vivo/collector.py
                 --namespace "$NAMESPACE"
+                --run-identity-scope "$RUN_IDENTITY_SCOPE"
                 --trace-file "$trace_file"
                 --console-log-file "$console_log"
                 --debug-log-file "$debug_log"

@@ -1980,8 +1980,12 @@ def build_ttl(
         or log_metadata.get("session_id")
         or f"{run_start.isoformat()}-{run_end.isoformat()}"
     )
+    run_identity_scope = (
+        getattr(args, "run_identity_scope", "") or args.namespace
+    )
     run_slug = slugify(
-        f"{args.namespace}-{args.workflow_name}-{session_key}-{run_start.isoformat()}"
+        f"{run_identity_scope}-{args.workflow_name}-"
+        f"{session_key}-{run_start.isoformat()}"
     )
     run_uri = f"{base_uri}run/{run_slug}"
     datetime_uri = f"{base_uri}datetime/{run_slug}"
@@ -2790,6 +2794,14 @@ def build_args() -> argparse.Namespace:
         )
     )
     parser.add_argument("--namespace", default=DEFAULT_NAMESPACE)
+    parser.add_argument(
+        "--run-identity-scope",
+        default="",
+        help=(
+            "Public scope used at the start of generated run and datetime "
+            "IRIs. Defaults to --namespace when omitted."
+        ),
+    )
     parser.add_argument("--driver-pod", default=DEFAULT_DRIVER_POD)
     parser.add_argument(
         "--trace-file",
