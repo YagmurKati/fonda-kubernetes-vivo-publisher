@@ -42,6 +42,11 @@ class PublisherJobTemplateTests(unittest.TestCase):
         self.assertIn("--remove", template)
         self.assertIn("--confirm-removal", template)
 
+    def test_every_job_template_pins_pods_to_the_configured_nodes(self) -> None:
+        for name in ("publisher-job.yaml", "snakemake-publisher-job.yaml", "remove-run-job.yaml"):
+            template = (Path(__file__).resolve().parents[1] / "k8s" / name).read_text(encoding="utf-8")
+            with self.subTest(template=name):
+                self.assertIn('usedby: "__NODE_USEDBY__"', template)
 
 if __name__ == "__main__":
     unittest.main()

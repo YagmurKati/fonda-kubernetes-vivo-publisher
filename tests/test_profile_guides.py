@@ -8,6 +8,7 @@ EXAMPLES = ROOT / "examples"
 CONFIGURABLE_PROFILE_NAMES = (
     "a2-mg3",
     "a2-mg4",
+    "event-query-discovery",
     "fonda-trends",
     "force2nxf",
     "geoflow",

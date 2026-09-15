@@ -60,6 +60,7 @@ sed \
   -e "s/__PVC_NAME__/$PVC_NAME/g" \
   -e "s/__SERVICE_ACCOUNT__/$SERVICE_ACCOUNT/g" \
   -e "s/__VIVO_SECRET__/$VIVO_CREDENTIALS_SECRET/g" \
+  -e "s/__NODE_USEDBY__/$NODE_USEDBY/g" \
   -e "s/__OUTPUT_STAMP__/$output_stamp/g" \
   -e "s/__INCLUDE_CACHED_ORIGIN_METRICS__/$include_cached/g" \
   -e "s/__DRY_RUN__/$dry_run/g" \

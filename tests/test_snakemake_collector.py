@@ -227,5 +227,62 @@ class AdapterTests(unittest.TestCase):
         self.assertEqual(core.derive_status([failed], True, False), "Failed")
 
 
+
+class EventQueryDiscoveryResultTests(unittest.TestCase):
+    COMMIT = "c898ae4fda50a3463e992344c946f9b983fae7e7"
+
+    def _write_run(self, root, name, rows, finished, commit=None):
+        run_dir = root / name
+        (run_dir / "provenance").mkdir(parents=True)
+        (run_dir / "plots").mkdir()
+        (run_dir / "provenance/git-commit.txt").write_text(
+            (commit or self.COMMIT) + "\n", encoding="utf-8"
+        )
+        (run_dir / "provenance/requirements.lock.txt").write_text(
+            "pandas==1.5.3\n", encoding="utf-8"
+        )
+        (run_dir / "provenance/patch_testbench.py").write_text("# patch\n", encoding="utf-8")
+        csv = "\n".join(["col"] + ["x"] * rows) + "\n"
+        (run_dir / "plots/df_stats_compute_descr_swgquery_multidim").write_text(csv, encoding="utf-8")
+        log = "2026-09-14 21:18:01,311 - __main__ - INFO - Checkpointed 1 result rows to plots/\n"
+        if finished:
+            log += (
+                "2026-09-14 21:33:08,083 - __main__ - INFO - Simulation finished\n"
+                "2026-09-14 21:33:51,587 - __main__ - INFO - Finished testbench for compute_descr_swgquery_multidim\n"
+            )
+        (run_dir / "log.txt").write_text(log, encoding="utf-8")
+
+    def test_counts_finished_samples_and_reports_stopped_attempts(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self._write_run(root, "google-btw23-c898ae4f-20260915-google-query1", 27, True)
+            self._write_run(root, "google-btw23-c898ae4f-20260915-google-query2", 7, False)
+            self._write_run(root, "google-btw23-c898ae4f-20260915-google-query2-no-rtl", 18, True)
+            with mock.patch.dict(
+                "os.environ",
+                {"EQD_RUN_DIR_PREFIX": "google-btw23-c898ae4f-20260915", "EQD_PYTHON_VERSION": "3.10"},
+            ):
+                result = adapter.read_eqd_result_metadata(root)
+            self.assertEqual(result["provenance"]["workflow_commit"], self.COMMIT)
+            self.assertEqual(result["provenance"]["engine_version"], "3.10")
+            self.assertEqual(result["finished_sample_count"], 2)
+            self.assertEqual(result["superseded_sample_count"], 1)
+            # the stopped attempt's 7 rows are reported but not counted as results
+            self.assertEqual(result["result_row_count"], 45)
+            stopped = [s for s in result["samples"] if not s["finished"]][0]
+            self.assertEqual(stopped["result_rows"], 7)
+            self.assertTrue(all(s["patched"] for s in result["samples"]))
+            self.assertEqual(result["completed_at"], "2026-09-14T21:33:51")
+
+    def test_rejects_mixed_upstream_commits(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self._write_run(root, "google-btw23-c898ae4f-20260915-google-query1", 27, True)
+            self._write_run(root, "google-btw23-c898ae4f-20260915-google-query3", 27, True,
+                            commit="0" * 40)
+            with mock.patch.dict("os.environ", {"EQD_RUN_DIR_PREFIX": "google-btw23-c898ae4f-20260915"}):
+                with self.assertRaises(RuntimeError):
+                    adapter.read_eqd_result_metadata(root)
+
 if __name__ == "__main__":
     unittest.main()
