@@ -20,6 +20,8 @@ spec:
     spec:
       serviceAccountName: __SERVICE_ACCOUNT__
       restartPolicy: Never
+      nodeSelector:
+        usedby: "__NODE_USEDBY__"
       containers:
         - name: collect-and-publish
           image: nextflow/nextflow@sha256:b035b9fa7243ed09b9896c2b752d9e399f337827932bd45495efb0aed8e1dca1

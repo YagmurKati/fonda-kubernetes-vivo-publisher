@@ -103,6 +103,11 @@ load_config() {
   TRACE_TIMEZONE="${TRACE_TIMEZONE:-UTC}"
   VIVO_CREDENTIALS_SECRET="${VIVO_CREDENTIALS_SECRET:-fonda-vivo-credentials}"
   WORKFLOW_DESCRIPTION="${WORKFLOW_DESCRIPTION:-}"
+  EQD_RUN_DIR_PREFIX="${EQD_RUN_DIR_PREFIX:-}"
+  EQD_PYTHON_VERSION="${EQD_PYTHON_VERSION:-}"
+  # Every publisher-side Pod is pinned to nodes carrying usedby=<NODE_USEDBY>;
+  # on the FONDA cluster namespaces are kept on their own nodes by affinity.
+  NODE_USEDBY="${NODE_USEDBY:-prototyping}"
   WORKFLOW_REPO_URL="${WORKFLOW_REPO_URL:-}"
   CODE_URI="${CODE_URI:-}"
   GIT_COMMIT="${GIT_COMMIT:-}"
@@ -128,8 +133,9 @@ load_config() {
   if is_snakemake_engine; then
     [[ "$SNAKEMAKE_PROFILE" == "mg3" ||
        "$SNAKEMAKE_PROFILE" == "mg4" ||
-       "$SNAKEMAKE_PROFILE" == "popinsnake" ]] ||
-      die "SNAKEMAKE_PROFILE must be mg3, mg4 or popinsnake"
+       "$SNAKEMAKE_PROFILE" == "popinsnake" ||
+       "$SNAKEMAKE_PROFILE" == "eqd" ]] ||
+      die "SNAKEMAKE_PROFILE must be mg3, mg4, popinsnake or eqd"
   fi
 
   validate_dns_name "$NS" "NS"
