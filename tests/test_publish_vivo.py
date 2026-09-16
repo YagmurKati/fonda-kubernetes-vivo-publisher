@@ -98,6 +98,59 @@ class TurtleUpdateTests(unittest.TestCase):
             )
 
 
+class RunReplaceUpdateTests(unittest.TestCase):
+    def build(self, turtle=RUN_TTL):
+        return publish_vivo.turtle_to_run_replace_update(
+            turtle, publish_vivo.DEFAULT_GRAPH
+        )
+
+    def test_deletes_the_earlier_run_record_before_inserting_in_one_request(self):
+        update, run_iri, resource_count = self.build()
+
+        self.assertEqual(run_iri, "urn:fonda:run-1")
+        self.assertEqual(resource_count, 3)
+        self.assertTrue(update.startswith("PREFIX rdf: "))
+        self.assertEqual(update.count("PREFIX rm: "), 1)
+        delete_part, insert_part = update.split(" ;\n\nINSERT DATA {\n")
+        self.assertIn(f"GRAPH <{publish_vivo.DEFAULT_GRAPH}>", delete_part)
+        self.assertIn(f"GRAPH <{publish_vivo.DEFAULT_GRAPH}>", insert_part)
+        for iri in ("urn:fonda:run-1", "urn:fonda:date-1", "urn:fonda:process-1"):
+            self.assertIn(f"{{ <{iri}> ?predicate ?object .", delete_part)
+            self.assertIn(f"{{ ?subject ?predicate <{iri}> .", delete_part)
+        self.assertIn("rm:hasWorkflowProcess <urn:fonda:process-1>", insert_part)
+
+    def test_also_clears_date_and_process_nodes_from_an_earlier_collection(self):
+        delete_part = self.build()[0].split(" ;\n\nINSERT DATA")[0]
+
+        self.assertIn("<urn:fonda:run-1> vivo:dateTimeValue ?subject", delete_part)
+        self.assertIn("<urn:fonda:run-1> rm:hasWorkflowProcess ?subject", delete_part)
+        self.assertIn("?subject rm:isWorkflowProcessOf <urn:fonda:run-1>", delete_part)
+        self.assertEqual(delete_part.count("FILTER NOT EXISTS"), 2)
+
+    def test_keeps_statements_of_shared_resources(self):
+        delete_part, insert_part = self.build()[0].split(" ;\n\nINSERT DATA")
+
+        self.assertNotIn("<urn:fonda:shared-workflow>", delete_part)
+        self.assertIn(
+            "<urn:fonda:shared-workflow>\n  rm:hasRun <urn:fonda:run-1> .",
+            insert_part,
+        )
+
+    def test_requires_the_prefixes_used_by_the_delete(self):
+        turtle = RUN_TTL.replace(
+            "@prefix vivo: <http://vivoweb.org/ontology/core#> .\n", ""
+        )
+        with self.assertRaisesRegex(publish_vivo.PublishError, "vivo: prefix"):
+            self.build(turtle)
+
+    def test_rejects_turtle_without_one_run(self):
+        turtle = RUN_TTL.replace("rdf:type rm:RunMetadata ;", "rdf:type rm:Other ;")
+        with self.assertRaisesRegex(
+            publish_vivo.PublishError, "exactly one rm:RunMetadata"
+        ):
+            self.build(turtle)
+
+
 class ReceiptTests(unittest.TestCase):
     def test_removed_receipt_does_not_block_republication(self):
         with tempfile.TemporaryDirectory() as directory:

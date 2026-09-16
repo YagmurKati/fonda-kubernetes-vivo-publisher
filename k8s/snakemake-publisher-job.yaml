@@ -45,7 +45,7 @@ spec:
                     printf 'A publication receipt already exists for %s: %s\n' \
                       "$RUN_ID" "$receipt" >&2
                     printf '%s\n' \
-                      'Set FORCE_REPUBLISH=1 only after reviewing the existing VIVO record.' >&2
+                      'Set FORCE_REPUBLISH=1 to collect it again and replace the existing VIVO record.' >&2
                     exit 4
                   fi
                 done

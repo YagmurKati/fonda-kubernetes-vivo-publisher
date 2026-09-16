@@ -50,6 +50,21 @@ def validate_absolute_iri(value: str, label: str) -> None:
 def turtle_to_insert_update(turtle: str, graph: str) -> str:
     """Convert the collector's named-resource Turtle to SPARQL INSERT DATA."""
     validate_absolute_iri(graph, "graph")
+    prefixes, body = turtle_prefixes_and_body(turtle)
+    return "\n".join(prefixes) + "\n\n" + insert_data_operation(body, graph)
+
+
+def insert_data_operation(body: str, graph: str) -> str:
+    return (
+        "INSERT DATA {\n"
+        + f"  GRAPH <{graph}> {{\n"
+        + body
+        + "\n  }\n}\n"
+    )
+
+
+def turtle_prefixes_and_body(turtle: str) -> Tuple[List[str], str]:
+    """Split collector Turtle into SPARQL PREFIX lines and its statements."""
     prefixes = []
     body_lines = []
     body_started = False
@@ -81,14 +96,7 @@ def turtle_to_insert_update(turtle: str, graph: str) -> str:
         raise PublishError(
             "blank nodes are not allowed because retries would create new identities"
         )
-
-    return (
-        "\n".join(prefixes)
-        + "\n\nINSERT DATA {\n"
-        + f"  GRAPH <{graph}> {{\n"
-        + body
-        + "\n  }\n}\n"
-    )
+    return prefixes, body
 
 
 def run_owned_resource_iris(turtle: str) -> List[str]:
@@ -168,6 +176,87 @@ def turtle_to_run_delete_update(turtle: str, graph: str) -> Tuple[str, str, int]
         "}\n"
     )
     return update, owned_iris[0], len(owned_iris)
+
+
+def turtle_to_run_replace_update(turtle: str, graph: str) -> Tuple[str, str, int]:
+    """Build one request that replaces a run's VIVO record with this TTL.
+
+    INSERT DATA on its own keeps whatever an earlier publication of the same
+    run wrote, so every value that differs between two collections ends up
+    listed twice. The carbon intensity is fetched when metadata is collected,
+    which is how runs published again with FORCE_REPUBLISH=1 came to show two
+    or three carbon emission, intensity and method values (dcterms:created
+    changes on every collection too).
+
+    The DELETE clears what --remove clears for the run-owned resources in this
+    TTL (the run, its date node and its workflow processes, as subject or
+    object), plus date and process nodes that VIVO still links to the run from
+    an earlier collection, so a stage that is no longer collected does not
+    linger. Those older nodes are skipped if another run also uses them.
+    Shared resources (workflow, cluster, engine, languages, input datasets)
+    only lose statements that point at the run, and the INSERT restores the
+    current ones. VIVO parses the whole request before applying either
+    operation, so a malformed update changes nothing.
+    """
+    validate_absolute_iri(graph, "graph")
+    prefixes, body = turtle_prefixes_and_body(turtle)
+    declared = {line.split()[1] for line in prefixes}
+    for prefix_name in ("rm:", "vivo:"):
+        if prefix_name not in declared:
+            raise PublishError(
+                f"the Turtle file must declare the {prefix_name} prefix"
+            )
+
+    owned_iris = run_owned_resource_iris(turtle)
+    run_iri = owned_iris[0]
+    branches = []
+    for iri in owned_iris:
+        branches.append(
+            f"    {{ <{iri}> ?predicate ?object . BIND (<{iri}> AS ?subject) }}"
+        )
+        branches.append(
+            f"    {{ ?subject ?predicate <{iri}> . BIND (<{iri}> AS ?object) }}"
+        )
+    branches.append(
+        "    {\n"
+        f"      <{run_iri}> vivo:dateTimeValue ?subject .\n"
+        "      ?subject ?predicate ?object .\n"
+        "      FILTER NOT EXISTS {\n"
+        "        ?otherRun vivo:dateTimeValue ?subject .\n"
+        f"        FILTER (?otherRun != <{run_iri}>)\n"
+        "      }\n"
+        "    }"
+    )
+    branches.append(
+        "    {\n"
+        f"      {{ <{run_iri}> rm:hasWorkflowProcess ?subject }}\n"
+        "      UNION\n"
+        f"      {{ ?subject rm:isWorkflowProcessOf <{run_iri}> }}\n"
+        "      ?subject ?predicate ?object .\n"
+        "      FILTER NOT EXISTS {\n"
+        "        ?subject rm:isWorkflowProcessOf ?otherRun .\n"
+        f"        FILTER (?otherRun != <{run_iri}>)\n"
+        "      }\n"
+        "    }"
+    )
+    delete_operation = (
+        "DELETE {\n"
+        f"  GRAPH <{graph}> {{ ?subject ?predicate ?object }}\n"
+        "}\n"
+        "WHERE {\n"
+        f"  GRAPH <{graph}> {{\n"
+        + "\n    UNION\n".join(branches)
+        + "\n  }\n"
+        "}"
+    )
+    update = (
+        "\n".join(prefixes)
+        + "\n\n"
+        + delete_operation
+        + " ;\n\n"
+        + insert_data_operation(body, graph)
+    )
+    return update, run_iri, len(owned_iris)
 
 
 def read_secret_file(path: Path, label: str) -> str:
@@ -419,11 +508,15 @@ def main() -> None:
         print(f"Receipt updated: {receipt_path}")
         return
 
-    update = turtle_to_insert_update(turtle, args.graph)
+    update, run_iri, owned_resource_count = turtle_to_run_replace_update(
+        turtle, args.graph
+    )
 
     if args.dry_run:
         print(f"TTL validated: {args.ttl_file}")
         print(f"TTL SHA-256: {ttl_sha256}")
+        print(f"Run: {run_iri}")
+        print(f"Run-owned resources replaced on publication: {owned_resource_count}")
         print(f"Target graph: {args.graph}")
         return
 
@@ -459,11 +552,13 @@ def main() -> None:
         "http_status": status,
         "published_at": datetime.now(timezone.utc).isoformat(),
         "response_excerpt": response_text.strip()[:500],
+        "run_uri": run_iri,
         "ttl_file": str(args.ttl_file),
         "ttl_sha256": ttl_sha256,
     }
     write_receipt_atomic(receipt_path, receipt)
     print(f"Published TTL to VIVO: {args.ttl_file}")
+    print(f"Run record replaced: {run_iri}")
     print(f"HTTP {status}")
     print(f"Receipt: {receipt_path}")
 

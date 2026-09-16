@@ -150,8 +150,10 @@ Validate collection and RDF generation without contacting VIVO:
 
 Publication is idempotency-guarded by receipts on the PVC. A repeated
 non-dry-run publication for the same run ID is refused unless
-`FORCE_REPUBLISH=1` is deliberately set after reviewing the existing VIVO
-record.
+`FORCE_REPUBLISH=1` is deliberately set. A forced publication collects the run
+again and replaces its existing VIVO record (the run, its date node and its
+workflow processes) in the same update, so values that change between
+collections, such as the live carbon intensity, are not listed twice.
 
 For a resumed Nextflow run, include metrics from the original pods of cached
 tasks when those metrics are still retained:

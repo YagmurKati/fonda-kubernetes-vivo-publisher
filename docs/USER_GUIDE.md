@@ -200,7 +200,8 @@ publishing the run again.
   `publish-run.sh`.
 - VIVO or network failure: rerun `publish-run.sh`; do not rerun the workflow.
 - A run ID with an existing successful receipt is not sent twice unless
-  `FORCE_REPUBLISH=1` is deliberately set after reviewing the VIVO record.
+  `FORCE_REPUBLISH=1` is deliberately set. The forced publication replaces the
+  run's existing VIVO record instead of adding a second set of values.
 - A dry run gets a new timestamped TTL and audit but no receipt or VIVO write.
 - A removed publication can be replaced after its receipt has been marked with
   the successful removal.
