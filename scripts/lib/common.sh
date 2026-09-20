@@ -134,8 +134,9 @@ load_config() {
     [[ "$SNAKEMAKE_PROFILE" == "mg3" ||
        "$SNAKEMAKE_PROFILE" == "mg4" ||
        "$SNAKEMAKE_PROFILE" == "popinsnake" ||
-       "$SNAKEMAKE_PROFILE" == "eqd" ]] ||
-      die "SNAKEMAKE_PROFILE must be mg3, mg4, popinsnake or eqd"
+       "$SNAKEMAKE_PROFILE" == "eqd" ||
+       "$SNAKEMAKE_PROFILE" == "lotaru" ]] ||
+      die "SNAKEMAKE_PROFILE must be mg3, mg4, popinsnake, eqd or lotaru"
   fi
 
   validate_dns_name "$NS" "NS"
@@ -162,7 +163,7 @@ load_config() {
   require_http_uri "$VIVO_GRAPH" "VIVO_GRAPH"
   optional_http_uri "$WORKFLOW_REPO_URL" "WORKFLOW_REPO_URL"
   optional_http_uri "$CODE_URI" "CODE_URI"
-  optional_http_uri "$PUBLICATION_URI" "PUBLICATION_URI"
+  validate_uri_list "$PUBLICATION_URI" "PUBLICATION_URI"
   optional_http_uri "$TRACE_ARCHIVE" "TRACE_ARCHIVE"
   optional_http_uri "$APPLICATION_DOMAIN_URI" "APPLICATION_DOMAIN_URI"
   optional_http_uri "$RUN_OPERATOR_URI" "RUN_OPERATOR_URI"

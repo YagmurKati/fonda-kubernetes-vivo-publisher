@@ -42,9 +42,10 @@ def csv_env(name: str) -> List[str]:
 
 def snakemake_profile() -> str:
     profile = required_env("SNAKEMAKE_PROFILE").lower()
-    if profile not in {"mg3", "mg4", "popinsnake", "eqd"}:
+    if profile not in {"mg3", "mg4", "popinsnake", "eqd", "lotaru"}:
         raise RuntimeError(
-            "SNAKEMAKE_PROFILE must be 'mg3', 'mg4', 'popinsnake', or 'eqd'"
+            "SNAKEMAKE_PROFILE must be 'mg3', 'mg4', 'popinsnake', 'eqd', "
+            "or 'lotaru'"
         )
     return profile
 
@@ -399,6 +400,84 @@ def read_mg3_result_metadata(run_root: Path) -> Dict[str, Any]:
     }
 
 
+def read_lotaru_result_metadata(run_root: Path) -> Dict[str, Any]:
+    """Read the prediction results of a Lotaru run.
+
+    Lotaru is not a workflow-engine run: it is the Java program behind the
+    Lotaru papers, executed as a single Kubernetes Job. It reads the workflow
+    execution traces bundled in its own repository and writes one CSV per
+    target machine, each row pairing a predicted task runtime with the measured
+    one. There is no single final artifact, so the per-file digests recorded by
+    the runner are hashed together to identify the result set.
+    """
+    provenance_dir = run_root / "provenance"
+    results_dir = run_root / "results"
+    if read_optional_text(run_root / "RUN_STATUS") != "COMPLETED":
+        raise RuntimeError("The Lotaru RUN_STATUS marker is not COMPLETED")
+    result_paths = sorted(path for path in results_dir.glob("*.csv") if path.is_file())
+    if not result_paths:
+        raise RuntimeError(f"The Lotaru run wrote no prediction CSVs under {results_dir}")
+
+    machines: List[str] = []
+    result_files: List[Dict[str, Any]] = []
+    row_total = 0
+    total_bytes = 0
+    for path in result_paths:
+        with path.open(encoding="utf-8") as handle:
+            rows = max(0, sum(1 for _ in handle) - 1)  # discount the header
+        size = path.stat().st_size
+        row_total += rows
+        total_bytes += size
+        machines.append(path.stem.rsplit("_", 1)[-1])
+        result_files.append(
+            {"name": path.name, "size_bytes": size, "prediction_rows": rows}
+        )
+    if not row_total:
+        raise RuntimeError("The Lotaru prediction CSVs contain no data rows")
+
+    workflow_commit = read_optional_text(provenance_dir / "workflow-commit.txt")
+    if not re.fullmatch(r"[0-9a-f]{40}", workflow_commit):
+        raise RuntimeError("Lotaru provenance has no valid upstream commit")
+
+    manifest_path = provenance_dir / "result-SHA256SUMS"
+    if not manifest_path.is_file():
+        raise RuntimeError(f"Checksum manifest is missing: {manifest_path}")
+    digests = sorted(
+        line.split(maxsplit=1)[0].lower()
+        for line in manifest_path.read_text(encoding="utf-8").splitlines()
+        if line.strip()
+    )
+    if not digests:
+        raise RuntimeError("The Lotaru checksum manifest is empty")
+    output_sha = hashlib.sha256("\n".join(digests).encode("utf-8")).hexdigest()
+
+    java_version = read_optional_text(provenance_dir / "java-version.txt")
+    provenance = {
+        "workflow_commit": workflow_commit,
+        "engine_version": java_version.splitlines()[0] if java_version else "",
+        "maven": read_optional_text(provenance_dir / "maven-version.txt"),
+        "python_libraries": read_optional_text(
+            provenance_dir / "python-libraries.txt"
+        ),
+        "build_duration_seconds": read_optional_text(
+            provenance_dir / "build-duration-seconds.txt"
+        ),
+        "run_duration_seconds": read_optional_text(
+            provenance_dir / "run-duration-seconds.txt"
+        ),
+    }
+    return {
+        "completed_at": read_optional_text(provenance_dir / "completed-at.txt"),
+        "provenance": provenance,
+        "prediction_row_count": row_total,
+        "target_machines": sorted(set(machines)),
+        "output_path": str(results_dir),
+        "output_size_bytes": total_bytes,
+        "output_sha256": output_sha,
+        "result_files": result_files,
+    }
+
+
 def read_eqd_result_metadata(run_root: Path) -> Dict[str, Any]:
     """Read the per-sample result directories of an event query discovery run.
 
@@ -488,6 +567,8 @@ def read_result_metadata(run_root: Path, profile: str) -> Dict[str, Any]:
         return read_popinsnake_result_metadata(run_root)
     if profile == "eqd":
         return read_eqd_result_metadata(run_root)
+    if profile == "lotaru":
+        return read_lotaru_result_metadata(run_root)
     raise RuntimeError(f"Unsupported Snakemake profile: {profile}")
 
 
@@ -556,6 +637,27 @@ def collector_args(
             "is a single-threaded Python process, so a Job's CPU time is the "
             "time its discoveries took on one core."
         )
+    elif profile == "lotaru":
+        machines = result["target_machines"]
+        build_seconds = result["provenance"].get("build_duration_seconds") or "?"
+        description = (
+            "Execution of the Lotaru task-runtime prediction code from "
+            "CRC-FONDA/Lotaru as a single Kubernetes Job. From the workflow "
+            "execution traces bundled with the repository it produced "
+            f"{result['prediction_row_count']} runtime predictions, each paired "
+            "with the measured runtime, across the "
+            f"{len(machines)} target machines ({', '.join(machines)}). The "
+            "dependency build is timed separately and took "
+            f"{build_seconds} s; the prediction program itself took "
+            f"{result['provenance'].get('run_duration_seconds') or '?'} s. "
+            f"Result-set SHA-256: {result['output_sha256']}."
+        )
+        resource_scope = (
+            "The single Kubernetes Job that built and ran the prediction "
+            "program. The Java process drives short python subprocesses for "
+            "the Bayesian ridge regression, so its CPU time includes those "
+            "children."
+        )
     else:
         description = (
             "Reproduction of the FONDA PopinSnake genomic-insertion workflow "
@@ -592,22 +694,36 @@ def collector_args(
             "CLUSTER_LABEL", "FONDA Kubernetes Cluster"
         ),
         engine_uri=required_env("ENGINE_URI"),
-        engine_label="Python" if profile == "eqd" else "Snakemake",
-        trace_types=(
+        engine_label={"eqd": "Python", "lotaru": "Java"}.get(profile, "Snakemake"),
+        trace_types={
+            "eqd": (
+                "Kubernetes Job and Pod status, container termination metadata, "
+                "testbench log, provenance, and per-discovery statistics CSV"
+            ),
+            "lotaru": (
+                "Kubernetes Job and Pod status, container termination metadata, "
+                "program log, provenance, and per-machine prediction CSVs"
+            ),
+        }.get(
+            profile,
             "Kubernetes Job and Pod status, container termination metadata, "
-            "testbench log, provenance, and per-discovery statistics CSV"
-            if profile == "eqd" else
-            "Kubernetes Job and Pod status, container termination metadata, "
-            "Snakemake logs and summary, provenance, and output checksums"
+            "Snakemake logs and summary, provenance, and output checksums",
         ),
-        trace_data_format=(
-            "Kubernetes JSON, plain-text log, CSV, and pip lockfile"
-            if profile == "eqd" else
-            "Kubernetes JSON, Snakemake text/TSV, JSON, and plain text"
+        trace_data_format={
+            "eqd": "Kubernetes JSON, plain-text log, CSV, and pip lockfile",
+            "lotaru": (
+                "Kubernetes JSON, plain-text log, CSV, and conda package list"
+            ),
+        }.get(
+            profile, "Kubernetes JSON, Snakemake text/TSV, JSON, and plain text"
         ),
         workflow_description=os.environ.get("WORKFLOW_DESCRIPTION", ""),
         run_description=description,
         duration_calculation_method=(
+            "Wall-clock time of the single Kubernetes Job, which includes the "
+            "dependency build; the prediction program's own duration is "
+            "recorded separately in the run provenance."
+            if profile == "lotaru" else
             "Wall-clock time from the first container start to the final "
             "container completion across the resumable Kubernetes Job session."
         ),
@@ -721,7 +837,7 @@ def main() -> None:
             "The run provenance has no valid upstream workflow commit"
         )
 
-    stage_prefix = {"mg3": "MG-3", "mg4": "MG-4", "popinsnake": "PopinSnake", "eqd": "Query discovery"}[profile]
+    stage_prefix = {"mg3": "MG-3", "mg4": "MG-4", "popinsnake": "PopinSnake", "eqd": "Query discovery", "lotaru": "Lotaru"}[profile]
     stages = []
     for index, task in enumerate(tasks, start=1):
         suffix_match = re.search(r"(?:-v|-)([0-9]+)$", task.name)

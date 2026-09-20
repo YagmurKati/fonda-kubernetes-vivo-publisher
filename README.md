@@ -56,6 +56,7 @@ source repository, input data, and VIVO links differ.
 | A2 MG-4 metagenomic read mapping | Snakemake | [Open in VIVO](https://vivo-fonda.hu-berlin.de/vivo/individual?uri=http%3A%2F%2Fexample.org%2Fvivo-import%2Frun-metadata%2Frun%2Fyagmur-metagenomic-read-mapping-with-customizable-job-granularity-a2-mg4-smoke-20260826-2026-08-26t11-10-52-00-00) | [A2 MG-4 profile](examples/a2-mg4/README.md) |
 | PopinSnake genomic insertion detection | Snakemake | [Open in VIVO](https://vivo-fonda.hu-berlin.de/vivo/individual?uri=http%3A%2F%2Fexample.org%2Fvivo-import%2Frun-metadata%2Frun%2Fyagmur-popinsnake-exploratory-workflow-for-genomic-insertion-detection-popinsnake-example-20260828-02-2026-08-28t08-03-05-00-00) | [PopinSnake profile](examples/popinsnake/README.md) |
 | Event query discovery from Google cluster traces | Python (Kubernetes Jobs) | [Open in VIVO](https://vivo-fonda.hu-berlin.de/vivo/individual?uri=http%3A%2F%2Fexample.org%2Fvivo-import%2Frun-metadata%2Frun%2Fyagmur-event-query-discovery-from-google-cluster-traces-btw23-20260915-2026-09-14t21-17-54-00-00) | [Event query discovery profile](examples/event-query-discovery/README.md) |
+| Lotaru runtime prediction for scientific workflow tasks | Java (Kubernetes Job) | [Open in VIVO](https://vivo-fonda.hu-berlin.de/vivo/individual?uri=http%3A%2F%2Fexample.org%2Fvivo-import%2Frun-metadata%2Frun%2Fyagmur-lotaru-local-runtime-prediction-for-scientific-workflow-tasks-lotaru-2b07b18-20260920-2026-09-20t12-36-28-00-00) | [Lotaru profile](examples/lotaru/README.md) |
 
 For the Nextflow profiles, task tags such as tile or sample identifiers are
 aggregated under the real process name. This keeps large FORCE2NXF RDF files
@@ -110,6 +111,10 @@ cp examples/a2-mg4/input_datasets.json config/input_datasets.json
 # OR: PopinSnake (Snakemake)
 cp examples/popinsnake/publisher.env.example config/popinsnake.publisher.env
 cp examples/popinsnake/input_datasets.json config/input_datasets.json
+
+# OR: Lotaru (Java, one Kubernetes Job)
+cp examples/lotaru/publisher.env.example config/lotaru.publisher.env
+cp examples/lotaru/input_datasets.json config/input_datasets.json
 ```
 
 Edit `config/publisher.env` and replace every `REPLACE_ME` value. At minimum

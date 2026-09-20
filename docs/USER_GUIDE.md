@@ -77,6 +77,10 @@ cp examples/event-query-discovery/input_datasets.json config/input_datasets.json
 # OR: PopinSnake (Snakemake)
 cp examples/popinsnake/publisher.env.example config/popinsnake.publisher.env
 cp examples/popinsnake/input_datasets.json config/input_datasets.json
+
+# OR: Lotaru (Java, one Kubernetes Job)
+cp examples/lotaru/publisher.env.example config/lotaru.publisher.env
+cp examples/lotaru/input_datasets.json config/input_datasets.json
 ```
 
 Edit `config/publisher.env` and replace every `REPLACE_ME` value. Values ending

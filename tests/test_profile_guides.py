@@ -12,6 +12,7 @@ CONFIGURABLE_PROFILE_NAMES = (
     "fonda-trends",
     "force2nxf",
     "geoflow",
+    "lotaru",
     "nextflow-node-echo",
     "popinsnake",
     "rangeland-nfcore",

@@ -1992,7 +1992,11 @@ def build_ttl(
     workflow_uri = args.workflow_uri
     engine_uri = args.engine_uri
     cluster_uri = args.cluster_uri
-    publication_uri = args.publication_uri
+    publication_uris = [
+        value.strip()
+        for value in (args.publication_uri or "").split(",")
+        if value.strip()
+    ]
     run_title = (
         f"{args.workflow_name} \N{MIDDLE DOT} "
         f"{format_run_title(run_start, run_end)}"
@@ -2209,7 +2213,7 @@ def build_ttl(
         workflow_predicates.append(
             ("rm:applicationDomain", ttl_uri(args.application_domain_uri))
         )
-    if publication_uri:
+    for publication_uri in publication_uris:
         workflow_predicates.append(
             ("rm:describesSoftwareExecution", ttl_uri(publication_uri))
         )
@@ -2387,7 +2391,7 @@ def build_ttl(
         run_predicates.append(
             ("rm:traceArchive", ttl_literal(args.trace_archive, "xsd:anyURI"))
         )
-    if publication_uri:
+    for publication_uri in publication_uris:
         run_predicates.append(
             ("rm:describesSoftwareExecution", ttl_uri(publication_uri))
         )
@@ -2536,7 +2540,7 @@ def build_ttl(
             )
         add_resource(lines, ttl_uri(dataset.uri), dataset_predicates)
 
-    if publication_uri:
+    for publication_uri in publication_uris:
         add_resource(
             lines,
             ttl_uri(publication_uri),
