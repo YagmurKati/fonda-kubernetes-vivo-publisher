@@ -7,7 +7,7 @@ revision in
 and the upstream revision in
 [`github.com/kehrlab/PopinSnake`](https://github.com/kehrlab/PopinSnake).
 
-Published examples in FONDA VIVO, all three on the same three example samples:
+Each published example in FONDA VIVO below uses the same three example samples:
 
 | Run | Source | Shape |
 | --- | --- | --- |
@@ -15,7 +15,7 @@ Published examples in FONDA VIVO, all three on the same three example samples:
 | [2026-09-18 (GitLab)](https://vivo-fonda.hu-berlin.de/vivo/individual?uri=http%3A%2F%2Fexample.org%2Fvivo-import%2Frun-metadata%2Frun%2Fyagmur-popinsnake-exploratory-workflow-for-genomic-insertion-detection-popinsnake-gl-359d941-20260918-2026-09-18t19-57-50-00-00) | GitLab `359d941` | single timed run |
 | [2026-09-18 (GitHub)](https://vivo-fonda.hu-berlin.de/vivo/individual?uri=http%3A%2F%2Fexample.org%2Fvivo-import%2Frun-metadata%2Frun%2Fyagmur-popinsnake-exploratory-workflow-for-genomic-insertion-detection-popinsnake-gh-dc940de-20260918-2026-09-18t15-37-14-00-00) | GitHub `dc940de` | single timed run |
 
-## 1. Decide what the published duration should measure
+## What the published duration measures
 
 The collector derives a run's duration from the first container start to the
 last container completion across **every Pod carrying the run's
@@ -39,7 +39,7 @@ instead is a legitimate choice — it is the cost of reproducing the run from
 nothing — but state which one you meant, because the two differ by a factor of
 tens.
 
-## 2. Configure
+## 1. Configure
 
 ```bash
 cp examples/popinsnake/publisher.env.example config/popinsnake.publisher.env
@@ -58,7 +58,7 @@ Store the VIVO credentials:
 CONFIG_FILE=config/popinsnake.publisher.env ./scripts/configure-secrets.sh
 ```
 
-## 3. Keep the run evidence
+## 2. Keep the run evidence
 
 Keep `RUN_STATUS` (which must read `COMPLETED`), the provenance directory, the
 checksums, the final compressed VCF, and the Pods labelled with the run id
@@ -76,13 +76,13 @@ find "$RUN_ROOT/results" -maxdepth 1 -type f -print0 | sort -z | xargs -0 -r sha
 A manifest written with relative paths is rejected with
 "Could not identify the SHA-256".
 
-## 4. Validate
+## 3. Validate
 
 ```bash
 ./scripts/collect-and-publish-popinsnake.sh RUN_ID --dry-run
 ```
 
-## 5. Publish
+## 4. Publish
 
 ```bash
 ./scripts/collect-and-publish-popinsnake.sh RUN_ID
@@ -92,7 +92,7 @@ Open the [FONDA VIVO Runs page](https://vivo-fonda.hu-berlin.de/vivo/runs) and
 check the new record. The TTL, metrics audit, and receipt are stored under
 `RUN_ROOT/vivo-outbox`.
 
-## 6. Remove a publication
+## 5. Remove a publication
 
 Use the publication ID from the `.published.json` filename:
 
