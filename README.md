@@ -57,6 +57,7 @@ source repository, input data, and VIVO links differ.
 | PopinSnake genomic insertion detection | Snakemake | [Open in VIVO](https://vivo-fonda.hu-berlin.de/vivo/individual?uri=http%3A%2F%2Fexample.org%2Fvivo-import%2Frun-metadata%2Frun%2Fyagmur-popinsnake-exploratory-workflow-for-genomic-insertion-detection-popinsnake-example-20260828-02-2026-08-28t08-03-05-00-00) | [PopinSnake profile](examples/popinsnake/README.md) |
 | Event query discovery from Google cluster traces | Python (Kubernetes Jobs) | [Open in VIVO](https://vivo-fonda.hu-berlin.de/vivo/individual?uri=http%3A%2F%2Fexample.org%2Fvivo-import%2Frun-metadata%2Frun%2Fyagmur-event-query-discovery-from-google-cluster-traces-btw23-20260915-2026-09-14t21-17-54-00-00) | [Event query discovery profile](examples/event-query-discovery/README.md) |
 | Lotaru runtime prediction for scientific workflow tasks | Java (Kubernetes Job) | [Open in VIVO](https://vivo-fonda.hu-berlin.de/vivo/individual?uri=http%3A%2F%2Fexample.org%2Fvivo-import%2Frun-metadata%2Frun%2Fyagmur-lotaru-local-runtime-prediction-for-scientific-workflow-tasks-lotaru-2b07b18-20260920-2026-09-20t12-36-28-00-00) | [Lotaru profile](examples/lotaru/README.md) |
+| Long-term vegetation dynamics in the Mediterranean (Airflow) | Apache Airflow | [Open in VIVO](https://vivo-fonda.hu-berlin.de/vivo/individual?uri=http%3A%2F%2Fexample.org%2Fvivo-import%2Frun-metadata%2Frun%2Fdefault-long-term-vegetation-dynamics-in-the-mediterranean-manual-2026-05-06t08-55-57-785616-00-00-2026-05-06t09-38-03-582823-00-00) | [FORCE on Airflow profile](examples/force-airflow/README.md) |
 
 For the Nextflow profiles, task tags such as tile or sample identifiers are
 aggregated under the real process name. This keeps large FORCE2NXF RDF files
@@ -210,6 +211,15 @@ uses a dedicated evidence adapter for a completed native Spark-on-Kubernetes
 run. It validates the output and consumes the Spark JSON Lines event log plus
 Prometheus and Kepler measurements before generating RDF. It is an audited
 published example rather than a selectable `publish-run.sh` engine.
+
+### Apache Airflow published artifact
+
+The [FORCE on Airflow profile](examples/force-airflow/README.md) uses a
+dedicated collector for DAG runs whose tasks are `KubernetesPodOperator`
+pods. It reads the run and task history from the Airflow scheduler, the task
+logs, and the pods those tasks created, then generates RDF. Like the Spark
+profile it is an audited published example rather than a selectable
+`publish-run.sh` engine.
 
 ## Output and verification
 
