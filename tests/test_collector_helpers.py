@@ -77,11 +77,31 @@ class WorkflowStatusAndGroupingTests(unittest.TestCase):
         ]
         self.assertEqual(
             classify_stage(tasks[0].name),
-            ("higherlevel-processpyramid", "HigherLevel / processPyramid"),
+            ("higherlevel-processpyramid", "ProcessPyramid"),
         )
         groups = group_tasks(tasks)
         self.assertEqual(len(groups), 1)
         self.assertEqual(len(groups[0]["tasks"]), 2)
+
+    def test_stage_label_drops_the_enclosing_workflow_prefix(self) -> None:
+        name = "NFCORE_RANGELAND:RANGELAND:HIGHER_LEVEL:FORCE_MOSAIC (tile)"
+        self.assertEqual(classify_stage(name)[1], "FORCE MOSAIC")
+
+    def test_stage_slug_keeps_the_full_path(self) -> None:
+        a = classify_stage("A:SUB_ONE:FASTQC (x)")[0]
+        b = classify_stage("B:SUB_TWO:FASTQC (y)")[0]
+        self.assertNotEqual(a, b)
+
+    def test_colliding_short_labels_are_lengthened(self) -> None:
+        tasks = [
+            task_record("A:SUB_ONE:FASTQC (x)", "COMPLETED", 1),
+            task_record("B:SUB_TWO:FASTQC (y)", "COMPLETED", 2),
+            task_record("B:SUB_TWO:MULTIQC (z)", "COMPLETED", 3),
+        ]
+        labels = sorted(group["label"] for group in group_tasks(tasks))
+        self.assertEqual(
+            labels, ["MULTIQC", "SUB ONE / FASTQC", "SUB TWO / FASTQC"]
+        )
 
 
 class CommitUrlTests(unittest.TestCase):

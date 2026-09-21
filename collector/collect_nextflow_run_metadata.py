@@ -1325,19 +1325,69 @@ def classify_stage(task_name: str) -> Tuple[str, str]:
     if task_name.startswith("build_vrt_stack:"):
         return "vrt-stack-construction", "VRT stack construction"
     base_name = canonical_task_name(task_name)
-    label = base_name.replace(":", " / ").replace("_", " ")
-    label = label[:1].upper() + label[1:] if label else "Workflow process"
-    return slugify(base_name), label
+    return slugify(base_name), stage_label(base_name)
+
+
+def stage_label(base_name: str, depth: int = 1) -> str:
+    """Name a stage by the last `depth` segments of its qualified process name.
+
+    Nextflow qualifies a process with every enclosing workflow, so the full
+    name reads "NFCORE_RANGELAND:RANGELAND:HIGHER_LEVEL:FORCE_MOSAIC". Only the
+    final segment names the step; the prefix repeats on every stage of the run.
+    The slug keeps the full path, so shortening the label does not change any
+    URI. `group_tasks` raises `depth` for the few stages whose short names would
+    otherwise collide.
+    """
+    segments = [s for s in base_name.split(":") if s]
+    if not segments:
+        return "Workflow process"
+    label = " / ".join(segments[-depth:]).replace("_", " ")
+    return label[:1].upper() + label[1:]
+
+
+def lengthen_colliding_labels(groups: Iterable[Dict[str, Any]]) -> None:
+    """Re-label stages whose short names are not unique within the run."""
+    groups = list(groups)
+    for _ in range(8):
+        seen: Dict[str, List[Dict[str, Any]]] = {}
+        for group in groups:
+            seen.setdefault(group["label"], []).append(group)
+        clashing = [
+            g
+            for sharers in seen.values()
+            if len(sharers) > 1
+            for g in sharers
+            if g.get("base_name")
+        ]
+        if not clashing:
+            return
+        progressed = False
+        for group in clashing:
+            depth = len(group["label"].split(" / ")) + 1
+            longer = stage_label(group["base_name"], depth)
+            if longer != group["label"]:
+                group["label"] = longer
+                progressed = True
+        if not progressed:
+            return
 
 
 def group_tasks(tasks: Sequence[TaskRecord]) -> List[Dict[str, Any]]:
     groups: Dict[str, Dict[str, Any]] = {}
     for task in tasks:
         slug, label = classify_stage(task.name)
+        base_name = canonical_task_name(task.name)
         group = groups.setdefault(
-            slug, {"slug": slug, "label": label, "tasks": []}
+            slug,
+            {
+                "slug": slug,
+                "label": label,
+                "tasks": [],
+                "base_name": base_name if ":" in base_name else None,
+            },
         )
         group["tasks"].append(task)
+    lengthen_colliding_labels(groups.values())
     order = [
         "spectral-index-calculation",
         "base-band-extraction",
