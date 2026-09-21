@@ -6,6 +6,7 @@
       "label": "Google cluster trace samples (BTW 2023)",
       "description": "Three preprocessed event-trace samples derived from the Google cluster traces and shipped with the prototype as datasets/google_query1.txt.gz, google_query2.txt.gz and google_query3.txt.gz. Each line is one trace of whitespace-separated event types; the testbench converts them to multidimensional samples (558, 679 and 84 traces) before discovery.",
       "storage_location": "https://gitlab.com/kleemeis95/sfb-1404-fonda-querydiscovery-prototype/-/tree/main/datasets",
+      "upstream_source_url": "https://github.com/google/cluster-data",
       "access_statement": "Included in the public prototype repository.",
       "link_to_workflow": true,
       "link_to_run": true
