@@ -58,6 +58,10 @@ cp examples/rnaseq-salmon-rs2/input_datasets.json config/input_datasets.json
 cp examples/rnaseq-star-rs1/publisher.env.example config/publisher.env
 cp examples/rnaseq-star-rs1/input_datasets.json config/input_datasets.json
 
+# OR: RNA-seq STAR RS2
+cp examples/rnaseq-star-rs2/publisher.env.example config/publisher.env
+cp examples/rnaseq-star-rs2/input_datasets.json config/input_datasets.json
+
 # OR: RNA-seq HISAT2 RS1
 cp examples/rnaseq-hisat2-rs1/publisher.env.example config/publisher.env
 cp examples/rnaseq-hisat2-rs1/input_datasets.json config/input_datasets.json

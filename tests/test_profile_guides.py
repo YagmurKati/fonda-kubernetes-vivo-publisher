@@ -22,6 +22,7 @@ CONFIGURABLE_PROFILE_NAMES = (
     "rnaseq-salmon-rs1-ninon",
     "rnaseq-salmon-rs2",
     "rnaseq-star-rs1",
+    "rnaseq-star-rs2",
 )
 STANDALONE_PROFILE_NAMES = ("spark-wordcount-fs", "force-airflow")
 PROFILE_NAMES = CONFIGURABLE_PROFILE_NAMES + STANDALONE_PROFILE_NAMES
