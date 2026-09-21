@@ -4,8 +4,9 @@
     {
       "uri": "http://example.org/vivo-import/run-metadata/dataset/lotaru-workflow-execution-traces",
       "label": "Lotaru workflow execution traces and machine microbenchmarks",
-      "description": "Execution traces of five nf-core workflows (eager, bacass, chipseq, atacseq, methylseq) recorded on six machines (local, n1, n2, c2, asok01, asok02), together with the microbenchmark results characterising each machine. Every trace row records a task, its input size and its measured runtime, which Lotaru uses as training data on the local machine and as ground truth on the target machines.",
+      "description": "Execution traces of five nf-core workflows (eager, bacass, chipseq, atacseq, methylseq) recorded on six machines (local, n1, n2, c2, asok01, asok02), with the local machine additionally measured under reduced CPU, together with the microbenchmark results characterising each machine. Every trace row records a task, its input size and its measured runtime, which Lotaru uses as training data on the local machine and as ground truth on the target machines.",
       "storage_location": "https://github.com/CRC-FONDA/Lotaru/tree/main/execution_reports",
+      "upstream_source_url": "https://github.com/CRC-FONDA/Lotaru-traces",
       "access_statement": "Included in the public Lotaru repository.",
       "link_to_workflow": true,
       "link_to_run": true
