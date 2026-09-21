@@ -5,14 +5,16 @@ Profile for
 the FONDA-maintained fork of
 [`nf-core/rangeland`](https://github.com/nf-core/rangeland).
 
-This is the same science as the [nf-core/rangeland
-profile](../rangeland-nfcore/README.md) under a different code lineage. The
-upstream profile publishes release `1.0.0` at commit `7c5cb959`; this one
-publishes the fork at `bbb3da8d`, version `1.1.0dev`. Each has its own workflow
-record in VIVO, so the two can be compared without overwriting one another.
+This is the same workflow as the [nf-core/rangeland
+profile](../rangeland-nfcore/README.md), run from a different code lineage: the
+upstream profile runs release `1.0.0` at commit `7c5cb959`, this one the fork at
+`bbb3da8d`, version `1.1.0dev`.
 
-Publication of the first run is still pending; the profile table in the
-repository README is updated once the record exists.
+Both publish against the **same** workflow record in VIVO. A workflow record
+names the pipeline, not one revision of it; which code a given execution used is
+carried on the run through `CODE_URI` and `GIT_COMMIT`. The PopinSnake profile
+records three revisions this way. Giving a revision its own workflow record
+splits one pipeline's history across several pages for no gain.
 
 ## 1. Configure
 
