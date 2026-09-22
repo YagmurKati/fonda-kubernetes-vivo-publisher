@@ -56,9 +56,15 @@ source repository, input data, and VIVO links differ.
 | A2 MG-3 metagenomic read mapping | Snakemake | [Open in VIVO](https://vivo-fonda.hu-berlin.de/vivo/individual?uri=http%3A%2F%2Fexample.org%2Fvivo-import%2Frun-metadata%2Frun%2Fyagmur-metagenomic-read-mapping-across-computational-architectures-a2-mg3-20260908-2026-09-08t06-34-48-00-00) | [A2 MG-3 profile](examples/a2-mg3/README.md) |
 | A2 MG-4 metagenomic read mapping | Snakemake | [Open in VIVO](https://vivo-fonda.hu-berlin.de/vivo/individual?uri=http%3A%2F%2Fexample.org%2Fvivo-import%2Frun-metadata%2Frun%2Fyagmur-metagenomic-read-mapping-with-customizable-job-granularity-a2-mg4-smoke-20260826-2026-08-26t11-10-52-00-00) | [A2 MG-4 profile](examples/a2-mg4/README.md) |
 | PopinSnake genomic insertion detection | Snakemake | [Open in VIVO](https://vivo-fonda.hu-berlin.de/vivo/individual?uri=http%3A%2F%2Fexample.org%2Fvivo-import%2Frun-metadata%2Frun%2Fyagmur-popinsnake-exploratory-workflow-for-genomic-insertion-detection-popinsnake-example-20260828-02-2026-08-28t08-03-05-00-00) | [PopinSnake profile](examples/popinsnake/README.md) |
+| RNA-seq with RAPL CPU energy measurement (SRR16287545) | Nextflow + RAPL | [Open in VIVO](https://vivo-fonda.hu-berlin.de/vivo/individual?uri=http%3A%2F%2Fexample.org%2Fvivo-import%2Frun-metadata%2Frun%2Ffonda-rnaseq-rapl-srr16287545-20260922-074112) | [RNA-seq/RAPL run, collect and publish guide](examples/rnaseq-rapl/README.md) |
 | Event query discovery from Google cluster traces | Python (Kubernetes Jobs) | [Open in VIVO](https://vivo-fonda.hu-berlin.de/vivo/individual?uri=http%3A%2F%2Fexample.org%2Fvivo-import%2Frun-metadata%2Frun%2Fyagmur-event-query-discovery-from-google-cluster-traces-btw23-20260915-2026-09-14t21-17-54-00-00) | [Event query discovery profile](examples/event-query-discovery/README.md) |
 | Lotaru runtime prediction for scientific workflow tasks | Java (Kubernetes Job) | [Open in VIVO](https://vivo-fonda.hu-berlin.de/vivo/individual?uri=http%3A%2F%2Fexample.org%2Fvivo-import%2Frun-metadata%2Frun%2Fyagmur-lotaru-local-runtime-prediction-for-scientific-workflow-tasks-lotaru-2b07b18-20260920-2026-09-20t12-36-28-00-00) | [Lotaru profile](examples/lotaru/README.md) |
 | Long-term vegetation dynamics in the Mediterranean (Airflow) | Apache Airflow | [Open in VIVO](https://vivo-fonda.hu-berlin.de/vivo/individual?uri=http%3A%2F%2Fexample.org%2Fvivo-import%2Frun-metadata%2Frun%2Fdefault-long-term-vegetation-dynamics-in-the-mediterranean-manual-2026-05-06t08-55-57-785616-00-00-2026-05-06t09-38-03-582823-00-00) | [FORCE on Airflow profile](examples/force-airflow/README.md) |
+
+The [RNA-seq/RAPL profile](examples/rnaseq-rapl/README.md) includes a dedicated
+launcher and collector for direct CPU-package/DRAM counters. Follow its run,
+collect and publish commands; its energy measurements do not use Kepler and
+it does not estimate carbon emissions.
 
 For the Nextflow profiles, task tags such as tile or sample identifiers are
 aggregated under the real process name. This keeps large FORCE2NXF RDF files

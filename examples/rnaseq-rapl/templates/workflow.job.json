@@ -1,0 +1,220 @@
+{
+  "apiVersion": "batch/v1",
+  "kind": "Job",
+  "metadata": {
+    "name": "__RUN_ID__",
+    "namespace": "__NAMESPACE__",
+    "labels": {
+      "app.kubernetes.io/name": "rapl-measurement",
+      "fonda.hu-berlin.de/run-id": "__RUN_ID__"
+    }
+  },
+  "spec": {
+    "backoffLimit": 0,
+    "activeDeadlineSeconds": 14400,
+    "template": {
+      "metadata": {
+        "labels": {
+          "app.kubernetes.io/name": "rapl-measurement",
+          "fonda.hu-berlin.de/run-id": "__RUN_ID__"
+        }
+      },
+      "spec": {
+        "restartPolicy": "Never",
+        "serviceAccountName": "__RUN_ID__-runner",
+        "nodeSelector": {
+          "usedby": "prototyping",
+          "kubernetes.io/hostname": "__NODE__"
+        },
+        "securityContext": {
+          "runAsUser": 57439,
+          "runAsGroup": 57439,
+          "fsGroup": 57439,
+          "fsGroupChangePolicy": "OnRootMismatch",
+          "seccompProfile": {
+            "type": "RuntimeDefault"
+          }
+        },
+        "initContainers": [
+          {
+            "name": "prepare",
+            "image": "docker.io/library/python@sha256:a36c24f9cbdf4fd0f52d67f0823eeac19c2028c637cecc392d97f980d4fec56b",
+            "command": [
+              "python3",
+              "/config/prepare_large_inputs.py"
+            ],
+            "volumeMounts": [
+              {
+                "name": "work",
+                "mountPath": "/workspace"
+              },
+              {
+                "name": "config",
+                "mountPath": "/config",
+                "readOnly": true
+              }
+            ],
+            "resources": {
+              "requests": {
+                "cpu": "100m",
+                "memory": "128Mi"
+              },
+              "limits": {
+                "cpu": "1",
+                "memory": "512Mi"
+              }
+            },
+            "securityContext": {
+              "allowPrivilegeEscalation": false,
+              "capabilities": {
+                "drop": [
+                  "ALL"
+                ]
+              }
+            }
+          }
+        ],
+        "containers": [
+          {
+            "name": "nextflow",
+            "image": "docker.io/nextflow/nextflow@sha256:485a3cdf1ce4781266147c005e56847f06f326fe4f128afc8cdd8b735c3f58e2",
+            "command": [
+              "bash",
+              "/config/driver.sh"
+            ],
+            "env": [
+              {
+                "name": "NXF_HOME",
+                "value": "/workspace/nextflow-home"
+              },
+              {
+                "name": "NXF_OPTS",
+                "value": "-Xms128M -Xmx768M"
+              },
+              {
+                "name": "NXF_ANSI_LOG",
+                "value": "false"
+              },
+              {
+                "name": "NXF_SYNTAX_PARSER",
+                "value": "v1"
+              },
+              {
+                "name": "TZ",
+                "value": "UTC"
+              }
+            ],
+            "volumeMounts": [
+              {
+                "name": "work",
+                "mountPath": "/workspace"
+              },
+              {
+                "name": "config",
+                "mountPath": "/config",
+                "readOnly": true
+              }
+            ],
+            "resources": {
+              "requests": {
+                "cpu": "250m",
+                "memory": "1Gi"
+              },
+              "limits": {
+                "cpu": "1",
+                "memory": "1536Mi"
+              }
+            },
+            "securityContext": {
+              "allowPrivilegeEscalation": false,
+              "capabilities": {
+                "drop": [
+                  "ALL"
+                ]
+              }
+            }
+          },
+          {
+            "name": "rapl-monitor",
+            "image": "docker.io/library/python@sha256:a36c24f9cbdf4fd0f52d67f0823eeac19c2028c637cecc392d97f980d4fec56b",
+            "command": [
+              "python3",
+              "/config/monitor.py"
+            ],
+            "env": [
+              {
+                "name": "NODE_NAME",
+                "valueFrom": {
+                  "fieldRef": {
+                    "fieldPath": "spec.nodeName"
+                  }
+                }
+              },
+              {
+                "name": "TZ",
+                "value": "UTC"
+              }
+            ],
+            "volumeMounts": [
+              {
+                "name": "work",
+                "mountPath": "/workspace"
+              },
+              {
+                "name": "config",
+                "mountPath": "/config",
+                "readOnly": true
+              },
+              {
+                "name": "rapl",
+                "mountPath": "/host-powercap",
+                "readOnly": true
+              }
+            ],
+            "resources": {
+              "requests": {
+                "cpu": "25m",
+                "memory": "32Mi"
+              },
+              "limits": {
+                "cpu": "100m",
+                "memory": "128Mi"
+              }
+            },
+            "securityContext": {
+              "allowPrivilegeEscalation": false,
+              "capabilities": {
+                "drop": [
+                  "ALL"
+                ]
+              },
+              "runAsUser": 0,
+              "readOnlyRootFilesystem": true
+            }
+          }
+        ],
+        "volumes": [
+          {
+            "name": "work",
+            "persistentVolumeClaim": {
+              "claimName": "__RUN_ID__-work"
+            }
+          },
+          {
+            "name": "config",
+            "configMap": {
+              "name": "__RUN_ID__-config"
+            }
+          },
+          {
+            "name": "rapl",
+            "hostPath": {
+              "path": "/sys/devices/virtual/powercap",
+              "type": "Directory"
+            }
+          }
+        ]
+      }
+    }
+  }
+}

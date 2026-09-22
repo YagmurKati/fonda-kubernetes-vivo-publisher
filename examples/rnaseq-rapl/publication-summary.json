@@ -1,0 +1,51 @@
+{
+  "status": "validated",
+  "start_utc": "2026-09-22T07:41:12.822189+00:00",
+  "end_utc": "2026-09-22T07:49:55.541146+00:00",
+  "duration_seconds": 522.7189569473267,
+  "completed_task_count": 4,
+  "processed_fragments": 25024930,
+  "mapped_fragments": 21941036,
+  "mapping_percent": 87.67671278201378,
+  "quantified_transcripts": 30215,
+  "cpu_seconds": 738.678852,
+  "observed_task_peak_memory_gb": 0.485605376,
+  "cpu_package_energy_kwh": 0.010840733644145627,
+  "rapl": {
+    "package": {
+      "energy_joules": 39026.64111892426,
+      "average_power_watts": 74.66084900926387,
+      "sample_count": 529,
+      "counter_wraps": 1,
+      "max_sample_gap_seconds": 1.0339999198913574,
+      "max_energy_range_uj": 262143328850
+    },
+    "dram": {
+      "energy_joules": 5760.1548636796415,
+      "average_power_watts": 11.0196020005069,
+      "sample_count": 529,
+      "counter_wraps": 0,
+      "max_sample_gap_seconds": 1.0320000648498535,
+      "max_energy_range_uj": 65712999613
+    }
+  },
+  "measurement_scope": "Whole-node CPU-package and DRAM energy during workflow execution, including other activity, driver, and monitoring overhead. Not exclusive workflow or task energy.",
+  "workflow_uri": "http://example.org/vivo-import/run-metadata/workflow/small-rna-seq-rapl-energy-measurement",
+  "run_uri": "http://example.org/vivo-import/run-metadata/run/fonda-rnaseq-rapl-srr16287545-20260922-074112",
+  "researcher_uri": "https://fonda.hu-berlin.de/?page_id=2066#PhilippThamm",
+  "source": {
+    "workflow_repository": "https://github.com/nextflow-io/rnaseq-nf",
+    "workflow_commit": "5c89d3859abbe54893d4e1ae0f21115dcebd9d1d",
+    "measurement_repository": "https://github.com/CRC-FONDA/RAPL_measurement_workflows",
+    "measurement_commit": "8786ab77fe4761fefb150957050d862c02c3dde8"
+  },
+  "trace_archive": {
+    "sha256": "e25833d327902927b784050e8635e04856895b96f5aa9ce368e9935d53f4e5d0",
+    "public_url": null
+  },
+  "publication": {
+    "http_status": 200,
+    "ttl_sha256": "af951a5f8f177e4b4114558a0c3f4e6b4696e7a192338166ee2a5bf92a248695"
+  },
+  "nextflow_session_id": "f01838a2-b98c-4255-8a6e-012598bb0e3b"
+}

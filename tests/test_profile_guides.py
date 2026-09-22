@@ -26,6 +26,8 @@ CONFIGURABLE_PROFILE_NAMES = (
 )
 STANDALONE_PROFILE_NAMES = ("spark-wordcount-fs", "force-airflow")
 PROFILE_NAMES = CONFIGURABLE_PROFILE_NAMES + STANDALONE_PROFILE_NAMES
+# Dedicated launch/collection guides have their own behavioral tests.
+DEDICATED_PROFILE_NAMES = ("rnaseq-rapl",)
 
 
 class ProfileGuideTests(unittest.TestCase):
@@ -64,7 +66,10 @@ class ProfileGuideTests(unittest.TestCase):
 
     def test_main_table_links_all_published_examples(self) -> None:
         readme = (ROOT / "README.md").read_text(encoding="utf-8")
-        self.assertEqual(readme.count("[Open in VIVO]"), len(PROFILE_NAMES))
+        self.assertEqual(
+            readme.count("[Open in VIVO]"),
+            len(PROFILE_NAMES) + len(DEDICATED_PROFILE_NAMES),
+        )
 
 
 if __name__ == "__main__":

@@ -1,0 +1,88 @@
+{
+  "apiVersion": "batch/v1",
+  "kind": "Job",
+  "metadata": {
+    "name": "__RUN_ID__-evidence",
+    "namespace": "__NAMESPACE__",
+    "labels": {
+      "app.kubernetes.io/name": "rapl-measurement",
+      "fonda.hu-berlin.de/run-id": "__RUN_ID__",
+      "component": "evidence-reader"
+    }
+  },
+  "spec": {
+    "backoffLimit": 0,
+    "activeDeadlineSeconds": 1500,
+    "template": {
+      "metadata": {
+        "labels": {
+          "app.kubernetes.io/name": "rapl-measurement",
+          "fonda.hu-berlin.de/run-id": "__RUN_ID__",
+          "component": "evidence-reader"
+        }
+      },
+      "spec": {
+        "restartPolicy": "Never",
+        "automountServiceAccountToken": false,
+        "nodeSelector": {
+          "usedby": "prototyping",
+          "kubernetes.io/hostname": "__NODE__"
+        },
+        "securityContext": {
+          "runAsNonRoot": true,
+          "runAsUser": 57439,
+          "runAsGroup": 57439,
+          "seccompProfile": {
+            "type": "RuntimeDefault"
+          }
+        },
+        "containers": [
+          {
+            "name": "reader",
+            "image": "docker.io/library/python@sha256:a36c24f9cbdf4fd0f52d67f0823eeac19c2028c637cecc392d97f980d4fec56b",
+            "command": [
+              "python3",
+              "-c",
+              "import time; time.sleep(1200)"
+            ],
+            "volumeMounts": [
+              {
+                "name": "work",
+                "mountPath": "/workspace",
+                "readOnly": true
+              }
+            ],
+            "resources": {
+              "requests": {
+                "cpu": "10m",
+                "memory": "32Mi"
+              },
+              "limits": {
+                "cpu": "100m",
+                "memory": "128Mi"
+              }
+            },
+            "securityContext": {
+              "allowPrivilegeEscalation": false,
+              "readOnlyRootFilesystem": true,
+              "capabilities": {
+                "drop": [
+                  "ALL"
+                ]
+              }
+            }
+          }
+        ],
+        "volumes": [
+          {
+            "name": "work",
+            "persistentVolumeClaim": {
+              "claimName": "__RUN_ID__-work",
+              "readOnly": true
+            }
+          }
+        ]
+      }
+    }
+  }
+}

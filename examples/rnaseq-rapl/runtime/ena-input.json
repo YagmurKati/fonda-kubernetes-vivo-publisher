@@ -1,0 +1,3 @@
+[
+{"run_accession":"SRR16287545","study_accession":"PRJNA770108","sample_accession":"SAMN22208866","scientific_name":"Drosophila melanogaster","library_strategy":"RNA-Seq","library_source":"TRANSCRIPTOMIC","library_selection":"cDNA","library_layout":"PAIRED","read_count":"25024930","base_count":"4029555857","experiment_title":"NextSeq 500 sequencing: GSM5620871: Control_sample_rep1 Drosophila melanogaster RNA-Seq","fastq_ftp":"ftp.sra.ebi.ac.uk/vol1/fastq/SRR162/045/SRR16287545/SRR16287545_1.fastq.gz;ftp.sra.ebi.ac.uk/vol1/fastq/SRR162/045/SRR16287545/SRR16287545_2.fastq.gz","fastq_md5":"ca516408de480463f9b4c2825766a4a2;7a3e4b1258a4170e1fa8a8d0dd714aff","fastq_bytes":"1172239021;1198117461"}
+]

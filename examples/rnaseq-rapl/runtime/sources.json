@@ -1,0 +1,5 @@
+{
+  "ena_url": "https://www.ebi.ac.uk/ena/portal/api/filereport?accession=SRR16287545&result=read_run&fields=run_accession%2Cstudy_accession%2Csample_accession%2Cscientific_name%2Clibrary_strategy%2Clibrary_source%2Clibrary_selection%2Clibrary_layout%2Cread_count%2Cbase_count%2Cexperiment_title%2Cfastq_ftp%2Cfastq_md5%2Cfastq_bytes&format=json",
+  "ensembl_checksums_url": "https://ftp.ensembl.org/pub/release-106/fasta/drosophila_melanogaster/cdna/CHECKSUMS",
+  "ensembl_transcriptome_url": "https://ftp.ensembl.org/pub/release-106/fasta/drosophila_melanogaster/cdna/Drosophila_melanogaster.BDGP6.32.cdna.all.fa.gz"
+}
