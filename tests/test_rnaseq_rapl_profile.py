@@ -151,6 +151,11 @@ class RaplMetadataTests(unittest.TestCase):
         summary = dict(public, session_id=public["nextflow_session_id"], memory_peak_gb=.486,
                        energy_kwh=public["cpu_package_energy_kwh"], node="hu-worker-c34", job="test",
                        image_ids=[], source_change={"new_sha256": "a" * 64})
+        summary["carbon"] = dict(status="time-matched", start_utc=summary["start_utc"], end_utc=summary["end_utc"],
+            package_kg=.004, dram_kg=.0005, intensity_kg_per_kwh=.37, source="Test hourly fixture",
+            source_url="https://example.com/test-hourly", zone="DE", intervals=[{}],
+            source_window_start="2026-09-22T07:00:00+00:00", source_window_end="2026-09-22T08:00:00+00:00",
+            includes_estimates=False, basis="lifecycle CO2e")
         rows = [dict(process=n, realtime="1000", **{"%cpu": "100"}, peak_rss="1024",
                      submit="1790062873000", complete="1790062874000") for n in ("FASTQC", "INDEX", "QUANT", "MULTIQC")]
         ttl, run = collector.build_ttl(summary, rows, [], "b" * 64)
@@ -160,7 +165,8 @@ class RaplMetadataTests(unittest.TestCase):
         self.assertNotIn("DELETE", update)
         self.assertNotIn("rm:traceArchive", ttl)
         self.assertNotIn("rm:memoryAvgGB", ttl)
-        self.assertNotIn("rm:carbonEmission", ttl)
+        self.assertIn("rm:carbonEmissionKgCO2e", ttl)
+        self.assertIn("rm:carbonIntensityWindowStart", ttl)
         workflow_block = next(b for b in ttl.split("\n\n") if b.startswith("<" + collector.WORKFLOW + ">"))
         self.assertNotIn("rm:traceTypes", workflow_block)
         self.assertNotIn("rdfs:label", workflow_block)

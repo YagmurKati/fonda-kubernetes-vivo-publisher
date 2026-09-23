@@ -20,6 +20,7 @@ from zoneinfo import ZoneInfo
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from collect_nextflow_run_metadata import add_resource, ttl_literal as literal, ttl_uri as uri, ttl_label as label
+from rapl_carbon import CarbonUnavailable, fetch_carbon, require_carbon
 
 UTC = timezone.utc
 BASE = "http://example.org/vivo-import/run-metadata/"
@@ -266,6 +267,24 @@ def build_ttl(summary, rows, inputs, archive_sha, backend_uri=None):
              ("rm:traceTypes", literal("Nextflow task trace, commands, logs, report and timeline; RAPL CPU-package and DRAM counters; Kubernetes status, logs and image identifiers; input provenance, checksums and source diff; FastQC, Salmon and MultiQC outputs")),
              ("rm:traceDataFormat", literal("TSV, JSON, plain text, HTML, shell and Python scripts, unified diff, ZIP, and TAR.GZ")),
              ("dcterms:description", label(f"Complete SRR16287545 paired-end RNA-seq and Ensembl 106 Drosophila cDNA reference. Mapped {summary['mapped_fragments']} of {summary['processed_fragments']} fragments. Sequential tasks, two CPUs and 8 GiB per task. Energy method adapted from CRC-FONDA/RAPL_measurement_workflows; workflow implementation nextflow-io/rnaseq-nf. Does not reproduce the original paper experiment. Verified local evidence archive SHA-256: {archive_sha}. No public archive URL assigned."))]
+    carbon = require_carbon(summary)
+    carbon_method = ("Sum of measured CPU-package kWh in each covered hour multiplied by that hour's Germany grid intensity. "
+                     "RAPL boundaries are interpolated; no annual-average or collection-time proxy is used. "
+                     f"DRAM is separate: {carbon['dram_kg']:.9f} kg {carbon['basis']}. "
+                     "The displayed emissions field covers CPU-package energy only, including other node activity. "
+                     "Cooling and other hardware are excluded. Emissions basis: " + carbon['basis'] + ".")
+    props += [("rm:carbonEmissionKgCO2e", literal(carbon["package_kg"])),
+              ("rm:carbonIntensityAssumptionKgCO2ePerKWh", literal(carbon["intensity_kg_per_kwh"])),
+              ("rm:carbonIntensitySource", literal(carbon["source"])),
+              ("rm:carbonIntensitySourceLink", literal(carbon["source_url"], "xsd:anyURI")),
+              ("rm:carbonIntensityZone", literal(carbon["zone"])),
+              ("rm:carbonIntensityDataPointCount", literal(len(carbon["intervals"]))),
+              ("rm:carbonIntensityWindowStart", literal(carbon["source_window_start"], "xsd:dateTime")),
+              ("rm:carbonIntensityWindowEnd", literal(carbon["source_window_end"], "xsd:dateTime")),
+              ("rm:carbonIntensityIncludesEstimatedData", literal(carbon["includes_estimates"])),
+              ("rm:carbonIntensityEmissionsBasis", literal(carbon["basis"])),
+              ("rm:carbonIntensityTemporalGranularity", literal("hourly")),
+              ("rm:carbonCalculationMethod", literal(carbon_method))]
     if backend_uri:
         sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "publisher"))
         from publish_vivo import validate_absolute_iri
@@ -306,10 +325,33 @@ def main():
     args = parser.parse_args()
     require(not args.output.exists(), "Output directory already exists; preserve it and choose a fresh path")
     summary, rows, inputs = validate(args.evidence, args.cluster)
+    meta = read_json(args.evidence / "rapl/metadata.json")
+    collector_start = timestamp((args.evidence / "rapl/collector-start.txt").read_text())
+
+    def energy_between(start, end):
+        energies = {}
+        for domain in meta["domains"]:
+            key = {"package-0": "package", "dram": "dram"}[domain["name"]]
+            energies[key] = integrate_counter(args.evidence / "rapl" / (key + "-energy.txt"),
+                domain["max_energy_range_uj"], collector_start, start, end)["energy_joules"]
+        return energies
+
+    try:
+        summary["carbon"] = fetch_carbon(summary, energy_between)
+    except CarbonUnavailable as exc:
+        args.output.mkdir(parents=True)
+        with (args.output / "carbon-unavailable.json").open("x") as stream:
+            json.dump(dict(status="unavailable", start_utc=summary["start_utc"], end_utc=summary["end_utc"],
+                           reason=str(exc), attempts=exc.attempts), stream, indent=2)
+        raise SystemExit(str(exc) + " Keep the evidence and choose a new publication directory for the retry.")
     args.output.mkdir(parents=True)
-    checksums = {}
+    carbon_file = args.output / "carbon-accounting.json"
+    with carbon_file.open("x") as stream:
+        json.dump(summary["carbon"], stream, indent=2)
+    checksums = {"carbon-accounting.json": sha(carbon_file)}
     archive_path = args.output / "trace-archive.tar.gz"
     with tarfile.open(archive_path, "x:gz") as archive:
+        archive.add(carbon_file, arcname="carbon-accounting.json", recursive=False)
         for directory, prefix in ((args.evidence, "evidence"), (args.cluster, "kubernetes")):
             for path in sorted(directory.rglob("*")):
                 if path.is_file():

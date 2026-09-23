@@ -53,38 +53,42 @@ kubectl -n "$NS" wait --for=condition=Ready pod \
 READER_POD=$(kubectl -n "$NS" get pods -l "job-name=$RUN_ID-evidence" \
   -o jsonpath='{.items[0].metadata.name}')
 python3 examples/rnaseq-rapl/run.py capture "$RUN_DIR" --reader-pod "$READER_POD"
-
-python3 collector/collect_rnaseq_rapl_metadata.py \
-  "$RUN_DIR/evidence/completed-run" --cluster "$RUN_DIR/evidence/cluster" \
-  --output "$RUN_DIR/publication"
 ```
 
-The collector checks task completion, outputs, node placement and RAPL coverage.
-It writes `run.ttl`, `validation.json`, `checksums.json` and
-`trace-archive.tar.gz` to the publication directory.
-
-Review the metadata before publishing:
+Collect the metadata and check it without uploading:
 
 ```bash
-python3 examples/rnaseq-rapl/publish.py "$RUN_DIR/publication"
+./scripts/collect-and-publish-rnaseq-rapl.sh "$RUN_DIR" --dry-run
 ```
+
+The collector validates the run, fetches hourly carbon intensity for its execution
+period, and calculates emissions from the measured energy in each hour. It uses
+Germany data from Electricity Maps, then CO₂Map if matching data is unavailable.
+The existing `electricity-maps-api-token` namespace Secret is read automatically;
+`ELECTRICITY_MAPS_API_TOKEN` can also supply the token.
+
+If no source covers the complete run, collection stops and saves the reason.
+Retry the command when matching data becomes available; keep the run evidence.
+Annual averages and values from a different time are never substituted.
 
 ## 4. Publish
 
 ```bash
-python3 examples/rnaseq-rapl/publish.py "$RUN_DIR/publication" --publish
+./scripts/collect-and-publish-rnaseq-rapl.sh "$RUN_DIR"
 ```
 
-Enter your VIVO publisher credentials when prompted, or add
-`--credentials-secret vivo-publisher-credentials` to use an existing namespace
-Secret. The command uploads the Turtle, saves a receipt and prints the VIVO link.
-If publication fails, check the receipt and VIVO page before retrying.
+This command collects, calculates and publishes the metadata. Enter your VIVO
+publisher credentials when prompted, or set
+`VIVO_CREDENTIALS_SECRET=vivo-publisher-credentials` to use the existing Secret.
+It saves the Turtle, carbon source data, trace archive, validation and receipt in
+a new publication directory and prints the VIVO link.
 
 ## Notes
 
 - RAPL measures **whole-node energy**, including other activity. CPU-package
-  energy is published in kWh; DRAM is reported separately. No carbon estimate
-  or average memory value is added.
+  energy and its calculated emissions are published; DRAM is reported separately.
+  Electricity Maps supplies lifecycle CO₂e; CO₂Map supplies direct CO₂. The source,
+  emissions basis and time coverage are recorded. Average memory is omitted.
 - Trace types and formats describe the collected run records. The trace archive
   stays local, so no public archive URL is assigned.
 - Sources and images are pinned. Salmon uses `--libType=A` for library detection;

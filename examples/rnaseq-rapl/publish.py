@@ -15,6 +15,9 @@ import urllib.request
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE.parents[1] / "publisher"))
+sys.path.insert(0, str(HERE.parents[1] / "collector"))
+from rapl_carbon import require_carbon
+
 from publish_vivo import (DEFAULT_ENDPOINT, DEFAULT_GRAPH, run_owned_resource_iris,
                           turtle_to_insert_update, post_update_once)
 
@@ -37,6 +40,7 @@ def main():
     parser.add_argument("--credentials-secret", help="Optional Kubernetes secret with email/password keys")
     args = parser.parse_args()
     summary = json.loads((args.directory / "validation.json").read_text())
+    require_carbon(summary)
     ttl = (args.directory / "run.ttl").read_text()
     digest = hashlib.sha256(ttl.encode()).hexdigest()
     if summary["status"] != "validated" or summary.get("ttl_sha256") != digest:

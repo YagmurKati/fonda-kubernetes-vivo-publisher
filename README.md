@@ -63,8 +63,8 @@ source repository, input data, and VIVO links differ.
 
 The [RNA-seq/RAPL profile](examples/rnaseq-rapl/README.md) includes a dedicated
 launcher and collector for direct CPU-package/DRAM counters. Follow its run,
-collect and publish commands; its energy measurements do not use Kepler and
-it does not estimate carbon emissions.
+collect and publish commands. Carbon estimates use hourly grid data matched to
+the measured execution interval; publication stops if that data is unavailable.
 
 For the Nextflow profiles, task tags such as tile or sample identifiers are
 aggregated under the real process name. This keeps large FORCE2NXF RDF files
