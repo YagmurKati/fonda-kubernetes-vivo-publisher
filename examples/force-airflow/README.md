@@ -80,7 +80,9 @@ export OUTPUT_TTL="$PWD/force-airflow-${RUN_ID}-$(date -u +%Y%m%dT%H%M%SZ).ttl"
 
 `CODE_PATH` is the path to the workflow code on the computer where the
 collector runs. `TASK_POD_NAMESPACE` is the Kubernetes namespace where the
-Airflow task pods ran.
+Airflow task pods ran. Because these commands run from the publisher repository
+root, `OUTPUT_TTL` points to a timestamped TTL in that root directory. Keep
+this terminal open; no path needs to be copied or entered again.
 
 ### 4.2 Collect the metadata and optional carbon information
 
