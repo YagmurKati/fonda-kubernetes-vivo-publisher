@@ -46,47 +46,84 @@ Keep the Airflow metadata database, the task logs, and the task pods available
 until collection finishes. Once Airflow rotates its logs or the pods are
 cleaned up, the run can no longer be collected.
 
-## 3. Validate
+Before starting, install `git`, `python3`, and `kubectl`; connect `kubectl` to
+the FONDA cluster; and obtain a non-admin VIVO publisher email and password
+from the VIVO administrator. Prometheus must be reachable at the collector's
+`--prom-url` (default: `http://localhost:9090`).
 
-Confirm the collector and its helper module are importable, and run the
-repository test suite:
+## 3. Start from the repository root
+
+Complete [Step 1 in the main publishing guide](../../README.md#1-download-this-repository).
+Run every command below from that repository root. The relevant files are:
+
+- `collector/collect_airflow_kubernetes_metadata.py`
+- `publisher/publish_vivo.py`
+- `scripts/publish-local.sh`
+
+Do not change into the `publisher` directory before using these paths.
+
+## 4. Collect and publish a run
+
+### 4.1 Set the run information
+
+Replace every example value with the information for the completed run:
 
 ```bash
-python3 -m py_compile collector/collect_airflow_kubernetes_metadata.py \
-  collector/collect_public_metadata.py
-python3 -m unittest discover -s tests
+export AIRFLOW_NAMESPACE="airflow"
+export TASK_POD_NAMESPACE="YOUR_NAMESPACE"
+export DAG_ID="YOUR_DAG_ID"
+export RUN_ID="YOUR_AIRFLOW_RUN_ID"
+export CODE_NAME="workflow.py"
+export CODE_PATH="/absolute/path/to/your/workflow.py"
+export OUTPUT_TTL="$PWD/force-airflow-${RUN_ID}-$(date -u +%Y%m%dT%H%M%SZ).ttl"
 ```
 
-Generate the Turtle for a run and inspect it before sending anything to VIVO:
+`CODE_PATH` is the path to the workflow code on the computer where the
+collector runs. `TASK_POD_NAMESPACE` is the Kubernetes namespace where the
+Airflow task pods ran.
+
+### 4.2 Collect the metadata and optional carbon information
 
 ```bash
 python3 collector/collect_airflow_kubernetes_metadata.py \
-  --airflow-namespace AIRFLOW_NAMESPACE \
-  --namespace TASK_POD_NAMESPACE \
-  --dag-id DAG_ID \
-  --run-id RUN_ID \
-  --code-name CODE_NAME \
-  --code-path CODE_PATH \
-  --output-file OUTPUT.ttl
+  --airflow-namespace "$AIRFLOW_NAMESPACE" \
+  --namespace "$TASK_POD_NAMESPACE" \
+  --dag-id "$DAG_ID" \
+  --run-id "$RUN_ID" \
+  --code-name "$CODE_NAME" \
+  --code-path "$CODE_PATH" \
+  --output-file "$OUTPUT_TTL"
 ```
 
-`--airflow-namespace` defaults to the namespace used for the published run;
-pass your own. `--run-id` may be omitted to take the most recent run of the
-DAG. `python3 collector/collect_airflow_kubernetes_metadata.py --help` lists
-the remaining options, including the publication link, responsible researcher,
-application domain, and input dataset file.
+The collector automatically looks for the Kubernetes Secret
+`electricity-maps-api-token` in `TASK_POD_NAMESPACE`. It never prints or saves
+the token. When the token provides usable data, the collector writes the
+carbon intensity and calculated carbon emissions into the TTL.
 
-## 4. Publish
+If the Secret is absent, unreadable, or the API returns no usable value,
+collection still succeeds. In that case the TTL omits carbon intensity,
+carbon-emission, and carbon-calculation properties; all other available run
+metadata is kept. No invented fallback carbon value is published.
 
-Send the generated Turtle with the repository publisher:
+The collector first requests an average for the execution interval. If the
+account cannot access historical data, it requests the latest available value
+as a collection-time proxy.
+
+Confirm the unique, timestamped TTL was created:
 
 ```bash
-python3 publisher/publish_vivo.py OUTPUT.ttl --dry-run
-python3 publisher/publish_vivo.py OUTPUT.ttl
+ls -lh "$OUTPUT_TTL"
 ```
 
-Open the [FONDA VIVO Runs page](https://vivo-fonda.hu-berlin.de/vivo/runs) and
-check the new record.
+`--run-id` may be omitted to select the newest run for the DAG.
+`python3 collector/collect_airflow_kubernetes_metadata.py --help` lists the
+remaining options.
+
+### 4.3 Validate and publish
+
+Continue with [Steps 3–5 in the main publishing guide](../../README.md#3-validate-the-ttl).
+Those steps validate this TTL, publish it with the generic
+`scripts/publish-local.sh` wrapper, and show where to check the VIVO record.
 
 ## 5. Remove a publication
 

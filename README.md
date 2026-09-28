@@ -70,12 +70,65 @@ For the Nextflow profiles, task tags such as tile or sample identifiers are
 aggregated under the real process name. This keeps large FORCE2NXF RDF files
 compact while the metrics audit retains the task-level evidence.
 
-## Five-minute setup
+## Publish a workflow run
+
+### 1. Download this repository
 
 ```bash
 git clone https://github.com/YagmurKati/fonda-kubernetes-vivo-publisher.git
 cd fonda-kubernetes-vivo-publisher
 ```
+
+Run the remaining commands from this directory.
+
+### 2. Create the TTL file
+
+Find your workflow in the [profile table above](#tested-workflow-profiles) and
+open its **Profile** link. For example, Airflow users open the
+[FORCE on Airflow profile](examples/force-airflow/README.md).
+
+- If the profile uses `scripts/publish-run.sh`, go to
+  [Automatic collection and publication](#automatic-collection-and-publication).
+- If the profile creates a local `.ttl` file, follow its collection steps and
+  then continue with Step 3 below.
+
+Carbon information is optional. A collector can add it when an Electricity
+Maps token is available. A TTL without carbon information can still be
+validated and published.
+
+Set the path of the TTL produced by your collector:
+
+```bash
+export OUTPUT_TTL="/absolute/path/to/your-output.ttl"
+```
+
+### 3. Validate the TTL
+
+```bash
+./scripts/publish-local.sh "$OUTPUT_TTL" --dry-run
+```
+
+This does not contact VIVO.
+
+### 4. Publish to VIVO
+
+```bash
+./scripts/publish-local.sh "$OUTPUT_TTL"
+```
+
+Enter the non-admin VIVO publisher email and password supplied by the VIVO
+administrator. The password is hidden and is not saved to a file. The wrapper
+calls `publisher/publish_vivo.py` from its correct repository location.
+
+### 5. Check the result
+
+Success is reported as `HTTP 200`. Open the
+[VIVO Runs page](https://vivo-fonda.hu-berlin.de/vivo/runs) and check the new
+record. Keep the TTL and the `.published.json` receipt created beside it.
+
+## Automatic collection and publication
+
+Use this section only when your selected profile uses `scripts/publish-run.sh`.
 
 Choose one profile:
 

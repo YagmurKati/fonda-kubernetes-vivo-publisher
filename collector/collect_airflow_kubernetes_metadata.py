@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 import argparse
+import base64
 import json
+import math
 import os
 import re
 import shlex
@@ -16,7 +18,6 @@ from zoneinfo import ZoneInfo
 
 from collect_public_metadata import (
     BASE_URI_DEFAULT,
-    CARBON_INTENSITY_DEFAULT,
     ONTOLOGY_URI_DEFAULT,
     PROM_URL_DEFAULT,
     as_ttl_uri,
@@ -347,7 +348,12 @@ def summarize_energy_method(
     return method, used_fallback
 
 
-def summarize_carbon_method(carbon_intensity: float, has_energy_value: bool) -> str:
+def summarize_carbon_method(
+    carbon_intensity: Optional[float],
+    has_energy_value: bool,
+) -> Optional[str]:
+    if carbon_intensity is None:
+        return None
     if has_energy_value:
         return (
             "Carbon emissions were calculated using the emissions factor method: "
@@ -454,8 +460,8 @@ def format_run_title_label(start_local: datetime, end_local: datetime) -> str:
     )
 
 
-ELECTRICITYMAP_API_PAST_RANGE = "https://api.electricitymap.org/v3/carbon-intensity/past-range"
-ELECTRICITYMAP_API_LATEST    = "https://api.electricitymap.org/v3/carbon-intensity/latest"
+ELECTRICITYMAP_API_PAST_RANGE = "https://api.electricitymaps.com/v4/carbon-intensity/past-range"
+ELECTRICITYMAP_API_LATEST = "https://api.electricitymaps.com/v4/carbon-intensity/latest"
 
 
 def _em_request(url: str, token: str) -> Dict[str, Any]:
@@ -478,17 +484,23 @@ def fetch_carbon_intensity_kg(
     history endpoint returns a 4xx (plan restriction).
 
     Returns (intensity_kg_per_kwh, source_label) where source_label is one of:
-      "electricitymap-history-average"  – past-range succeeded
-      "electricitymap-latest"           – fell back to latest value
+      a historical source description   – past-range succeeded
+      a latest-value source description – fell back to latest value
       "electricitymap-error:<msg>"      – API reachable but bad data
       "electricitymap-unavailable:<msg>"– network / auth failure
     """
     start_str = start_utc.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.000Z")
     end_str   = end_utc.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.000Z")
-    history_url = (
-        f"{ELECTRICITYMAP_API_PAST_RANGE}?"
-        f"{urlencode({'zone': zone, 'start': start_str, 'end': end_str})}"
-    )
+    history_params = {
+        "zone": zone,
+        "start": start_str,
+        "end": end_str,
+        "emissionFactorType": "lifecycle",
+        "temporalGranularity": "5_minutes",
+        "flowTraced": "true",
+        "disableEstimations": "false",
+    }
+    history_url = f"{ELECTRICITYMAP_API_PAST_RANGE}?{urlencode(history_params)}"
     latest_url = f"{ELECTRICITYMAP_API_LATEST}?{urlencode({'zone': zone})}"
 
     # --- attempt 1: past-range (average over execution window) ---
@@ -497,15 +509,20 @@ def fetch_carbon_intensity_kg(
         points = data.get("data", [])
         intensities = []
         for point in points:
-            val = point.get("carbonIntensity")
+            val = point.get("value", point.get("carbonIntensity"))
             if val is not None:
                 try:
-                    intensities.append(float(val))
+                    intensity = float(val)
+                    if math.isfinite(intensity):
+                        intensities.append(intensity)
                 except (TypeError, ValueError):
                     pass
         if intensities:
             avg_kg = sum(intensities) / len(intensities) / 1000.0
-            return avg_kg, "electricitymap-history-average"
+            return (
+                avg_kg,
+                "Electricity Maps historical flow-traced lifecycle carbon intensity",
+            )
         # got a response but no usable data – fall through to latest
     except urllib.error.HTTPError as exc:
         if exc.code not in (401, 403, 404):
@@ -517,12 +534,40 @@ def fetch_carbon_intensity_kg(
     # --- attempt 2: latest (free tier) ---
     try:
         data = _em_request(latest_url, token)
-        val = data.get("carbonIntensity")
+        val = data.get("carbonIntensity", data.get("value"))
         if val is not None:
-            return float(val) / 1000.0, "electricitymap-latest"
+            intensity = float(val)
+            if math.isfinite(intensity):
+                return (
+                    intensity / 1000.0,
+                    "Electricity Maps latest available flow-traced carbon intensity "
+                    "(collection-time proxy)",
+                )
         return None, "electricitymap-error:no-carbonIntensity-in-latest"
     except Exception as exc:
         return None, f"electricitymap-unavailable:{exc}"
+
+
+def electricitymap_token_from_secret(
+    namespace: str,
+    secret_name: str,
+) -> Optional[str]:
+    """Read the token from a namespace-local Secret without printing it."""
+    try:
+        secret = kubectl_json(
+            ["get", "secret", secret_name, "-n", namespace]
+        )
+    except RuntimeError:
+        return None
+
+    encoded = secret.get("data", {}).get("token")
+    if not encoded:
+        return None
+    try:
+        token = base64.b64decode(encoded, validate=True).decode("utf-8").strip()
+    except (ValueError, UnicodeDecodeError):
+        return None
+    return token or None
 
 
 def prom_query_range(prom_url: str, query: str, start: datetime, end: datetime, step_seconds: int) -> Any:
@@ -1163,14 +1208,31 @@ def build_args() -> argparse.Namespace:
         help="Existing VIVO publication URI to link the workflow run to, using the same pattern as the publication-oriented metadata script",
     )
     parser.add_argument("--software-title", default=None)
-    parser.add_argument("--carbon-intensity", type=float, default=CARBON_INTENSITY_DEFAULT)
+    parser.add_argument(
+        "--carbon-intensity",
+        type=float,
+        default=None,
+        help=(
+            "Optional fixed carbon intensity in kg CO2e/kWh. If neither this "
+            "option nor usable Electricity Maps data is available, carbon "
+            "properties are omitted from the TTL."
+        ),
+    )
     parser.add_argument(
         "--electricitymap-token",
         default=os.environ.get("ELECTRICITYMAP_TOKEN"),
-        help="ElectricityMaps API token (overrides ELECTRICITYMAP_TOKEN env var). "
+        help="Electricity Maps API token (overrides ELECTRICITYMAP_TOKEN and the Kubernetes Secret). "
              "When set, the actual carbon intensity over the workflow execution window "
              "is fetched from the ElectricityMaps history API and used instead of "
              "--carbon-intensity.",
+    )
+    parser.add_argument(
+        "--electricitymap-token-secret",
+        default="electricity-maps-api-token",
+        help=(
+            "Kubernetes Secret in --namespace containing the token under key 'token' "
+            "(default: electricity-maps-api-token). Pass an empty string to disable."
+        ),
     )
     parser.add_argument(
         "--electricitymap-zone",
@@ -1266,7 +1328,18 @@ def main() -> None:
         run_end = max(included_ends)
 
     # --- Live carbon intensity (ElectricityMaps) ---
-    carbon_intensity_source = "fallback-default"
+    carbon_intensity_source: Optional[str] = None
+    if not args.electricitymap_token and args.electricitymap_token_secret:
+        args.electricitymap_token = electricitymap_token_from_secret(
+            args.namespace,
+            args.electricitymap_token_secret,
+        )
+        if args.electricitymap_token:
+            print(
+                "Electricity Maps token loaded from Kubernetes Secret "
+                f"{args.namespace}/{args.electricitymap_token_secret}.",
+                file=sys.stderr,
+            )
     if args.electricitymap_token:
         live_intensity, carbon_intensity_source = fetch_carbon_intensity_kg(
             zone=args.electricitymap_zone,
@@ -1278,15 +1351,27 @@ def main() -> None:
             args.carbon_intensity = live_intensity
             print(
                 f"carbon_intensity={live_intensity:.6f} kg CO2e/kWh "
-                f"(live average for zone {args.electricitymap_zone})",
+                f"for zone {args.electricitymap_zone}; "
+                f"source={carbon_intensity_source}",
                 file=sys.stderr,
             )
         else:
             print(
                 f"WARNING: ElectricityMaps fetch failed ({carbon_intensity_source}), "
-                f"falling back to --carbon-intensity={args.carbon_intensity}",
+                "so carbon properties will be omitted from the TTL.",
                 file=sys.stderr,
             )
+            args.carbon_intensity = None
+            carbon_intensity_source = None
+    elif args.carbon_intensity is not None:
+        carbon_intensity_source = "user-supplied fixed carbon intensity"
+    else:
+        print(
+            "WARNING: no usable Electricity Maps token or --carbon-intensity was "
+            "provided; collection will continue and carbon properties will be "
+            "omitted from the TTL.",
+            file=sys.stderr,
+        )
 
     pod_records = build_pod_records(args.airflow_namespace, scheduler_pod, args.dag_id, run_record["run_id"], tasks)
     pod_names = stringify_unique(record["pod_name"] for record in pod_records)
@@ -1394,7 +1479,11 @@ def main() -> None:
 
     duration_s = seconds_between(run_start, run_end)
     energy_kwh = joules_to_kwh(total_energy_joules) if total_energy_joules else None
-    carbon_kg = energy_kwh * args.carbon_intensity if energy_kwh is not None else None
+    carbon_kg = (
+        energy_kwh * args.carbon_intensity
+        if energy_kwh is not None and args.carbon_intensity is not None
+        else None
+    )
     memory_avg_gb = bytes_to_gb(memory["avg"])
     memory_peak_gb = bytes_to_gb(memory["peak"])
     energy_method, energy_method_uses_fallback = summarize_energy_method(detected_energy_metric, energy_queries)
@@ -1523,7 +1612,11 @@ def main() -> None:
             else {"avg": None, "peak": None}
         )
         process_energy_kwh = joules_to_kwh(process_energy_joules) if process_energy_joules else None
-        process_carbon = process_energy_kwh * args.carbon_intensity if process_energy_kwh is not None else None
+        process_carbon = (
+            process_energy_kwh * args.carbon_intensity
+            if process_energy_kwh is not None and args.carbon_intensity is not None
+            else None
+        )
         process_carbon_method = summarize_carbon_method(args.carbon_intensity, process_energy_kwh is not None)
         process_energy_method, _ = summarize_energy_method(
             detected_energy_metric, process_energy_queries,
@@ -1711,12 +1804,15 @@ def main() -> None:
     if carbon_kg is not None:
         ttl_lines.append(f"  rm:carbonEmissionKgCO2e {ttl_literal(carbon_kg)} ;")
 
-    ttl_lines.append(f"  rm:carbonIntensityAssumptionKgCO2ePerKWh {ttl_literal(args.carbon_intensity)} ;")
-    ttl_lines.append(f"  rm:carbonIntensitySource {ttl_literal(carbon_intensity_source)} ;")
+    if args.carbon_intensity is not None:
+        ttl_lines.append(f"  rm:carbonIntensityAssumptionKgCO2ePerKWh {ttl_literal(args.carbon_intensity)} ;")
+    if carbon_intensity_source is not None:
+        ttl_lines.append(f"  rm:carbonIntensitySource {ttl_literal(carbon_intensity_source)} ;")
     ttl_lines.append(f"  rm:energyMetricSource {ttl_literal(detected_energy_metric or 'none')} ;")
     ttl_lines.append(f"  rm:energyCalculationMethod {ttl_literal(energy_method)} ;")
     ttl_lines.append(f"  rm:energyCalculationUsesFallbackEstimate {ttl_bool(energy_method_uses_fallback)} ;")
-    ttl_lines.append(f"  rm:carbonCalculationMethod {ttl_literal(carbon_method)} ;")
+    if carbon_method is not None:
+        ttl_lines.append(f"  rm:carbonCalculationMethod {ttl_literal(carbon_method)} ;")
     ttl_lines.append(f"  rm:gpuRequested {ttl_bool(gpu_requested)} ;")
     # rm:gpuMetricsAvailable / rm:gpuCapableNodeUsed dropped 2026-08-06:
     # collector diagnostics, never declared in VIVO. The values still feed
@@ -1795,9 +1891,11 @@ def main() -> None:
             ttl_lines.append(f"  rm:energyKWh {ttl_literal(process['energy_kwh'])} ;")
         if process["carbon_kg"] is not None:
             ttl_lines.append(f"  rm:carbonEmissionKgCO2e {ttl_literal(process['carbon_kg'])} ;")
-        ttl_lines.append(f"  rm:carbonCalculationMethod {ttl_literal(process['carbon_method'])} ;")
+        if process["carbon_method"] is not None:
+            ttl_lines.append(f"  rm:carbonCalculationMethod {ttl_literal(process['carbon_method'])} ;")
         ttl_lines.append(f"  rm:energyCalculationMethod {ttl_literal(process['energy_method'])} ;")
-        ttl_lines.append(f"  rm:carbonIntensityAssumptionKgCO2ePerKWh {ttl_literal(args.carbon_intensity)} ;")
+        if args.carbon_intensity is not None:
+            ttl_lines.append(f"  rm:carbonIntensityAssumptionKgCO2ePerKWh {ttl_literal(args.carbon_intensity)} ;")
         ttl_lines.append(f"  rm:cpuTimeCalculationMethod {ttl_literal(process['cpu_method'])} ;")
         ttl_lines.append(f"  rm:durationCalculationMethod {ttl_literal(process['duration_method'])} ;")
         ttl_lines.append(f"  rm:parallelismNote {ttl_literal(process['parallelism_note'])} .")
@@ -1830,6 +1928,9 @@ def main() -> None:
     print(f"energy_calculation_uses_fallback_estimate={energy_method_uses_fallback}")
     print(f"energy_calculation_method={energy_method}")
     print(f"carbon_calculation_method={carbon_method}")
+    print(f"carbon_intensity_source={carbon_intensity_source}")
+    print(f"carbon_intensity_kg_per_kwh={args.carbon_intensity}")
+    print(f"carbon_kg_co2e={carbon_kg}")
     print(f"energy_kwh={energy_kwh}")
 
 
