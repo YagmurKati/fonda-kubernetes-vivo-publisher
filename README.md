@@ -89,17 +89,19 @@ open its **Profile** link. For example, Airflow users open the
 
 - If the profile uses `scripts/publish-run.sh`, go to
   [Automatic collection and publication](#automatic-collection-and-publication).
-- If the profile creates a local `.ttl` file, follow its collection steps and
-  then continue with Step 3 below.
+- If the profile creates a local `.ttl` file, its collection command sets
+  `OUTPUT_TTL` to the exact timestamped file it creates. Complete those steps
+  in the same terminal, then continue with Step 3 below.
 
 Carbon information is optional. A collector can add it when an Electricity
 Maps token is available. A TTL without carbon information can still be
 validated and published.
 
-Set the path of the TTL produced by your collector:
+Confirm the exact path supplied by the profile:
 
 ```bash
-export OUTPUT_TTL="/absolute/path/to/your-output.ttl"
+printf 'TTL file: %s\n' "$OUTPUT_TTL"
+ls -lh "$OUTPUT_TTL"
 ```
 
 ### 3. Validate the TTL
