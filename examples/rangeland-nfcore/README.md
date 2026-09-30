@@ -68,19 +68,32 @@ timeline, DAG, the generated `.metrics.json`, `.ttl`, and `.published.json`,
 plus `SHA256SUMS`. Review it for credentials, private paths, IP addresses, and
 personal data before making it public.
 
-Upload the bundle to HU-Box (or another durable public repository), copy the
-exact public download URL, and replace only that run's VIVO record:
+Configure HU-Box once. The command stores the API token in a private file and
+prints the available library names and ids:
 
 ```bash
-FORCE_REPUBLISH=1 ./scripts/publish-run.sh RUN_ID \
-  --run-trace-archive "https://box.hu-berlin.de/d/REPLACE_WITH_PUBLIC_SHARE_TOKEN/"
+./scripts/configure-hu-box.sh
 ```
 
-This does not rerun nf-core/rangeland. `WORKFLOW_TRACE_REPOSITORY` is separate:
-use it only for a workflow-wide collection page, such as the eventual Workflow
-Trace Archive collection. A future WTA deposit should retain the DAG and the
-task-to-resource and energy relationships; the native bundle is evidence for
-that conversion, not itself a claim of WTA-format conformance.
+Set `HU_BOX_REPOSITORY_ID` in `config/publisher.env` to the selected id. Then
+archive and publish one selected run end to end:
+
+```bash
+./scripts/archive-publish-run.sh RUN_ID
+```
+
+The command mounts the existing PVC read-only, packages only that run and its
+VIVO audit files, writes a manifest and checksums, scans for credential-shaped
+values, uploads the archive to HU-Box, creates a public download link, and
+replaces only that run's VIVO record with the link. It does not rerun
+nf-core/rangeland or change the other runs. `--package-only` stops before
+uploading; `--no-vivo` uploads and shares the bundle without changing VIVO.
+
+`WORKFLOW_TRACE_REPOSITORY` is separate: use it only for a workflow-wide
+collection page, such as the eventual Workflow Trace Archive collection. A
+future WTA deposit should retain the DAG and the task-to-resource and energy
+relationships; the native bundle is evidence for that conversion, not itself
+a claim of WTA-format conformance.
 
 ## 5. Remove a publication
 

@@ -230,6 +230,26 @@ download URL only to that run:
 `TRACE_ARCHIVE` remains a compatibility fallback for older profiles, but it
 assigns the same URL to both scopes and should not be used for new profiles.
 
+For automatic HU-Box archival, configure the account once:
+
+```bash
+./scripts/configure-hu-box.sh
+```
+
+Put the selected library id printed by that command in
+`HU_BOX_REPOSITORY_ID`. For any run selected for preservation, one command then
+packages its retained evidence from the PVC, uploads it, creates a public
+download link, and replaces that run's VIVO record with the link:
+
+```bash
+./scripts/archive-publish-run.sh my-run-01
+```
+
+The temporary reader Pod mounts the PVC read-only and is removed after the
+copy. The local bundle and checksum remain below `artifacts/trace-archives`.
+Use `--package-only` to stop before HU-Box and VIVO, or `--no-vivo` to upload
+and create the public link without updating VIVO.
+
 Validate collection and RDF generation without contacting VIVO:
 
 ```bash
