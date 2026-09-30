@@ -1,11 +1,11 @@
-# Optional HU-Box trace archive and VIVO link
+# HU-Box trace archive and VIVO link
 
-This procedure preserves the raw execution evidence for **one selected run** in
+This procedure preserves the raw execution evidence for **a selected run** in
 HU-Box and adds the resulting public download link to that run's FONDA VIVO
-page. It is optional. Normal VIVO publication stores searchable metadata but
+page. Normal VIVO publication stores searchable metadata but
 does not upload the raw Nextflow trace, logs, report, timeline, or DAG.
 
-Do not run the archive command for every execution. Run it only for traces that
+It is not recommended to run the archive command for every execution. Run it only for traces that
 have been selected for long-term preservation.
 
 The end-to-end command currently supports Nextflow profiles whose evidence is
@@ -102,7 +102,7 @@ code changed, run:
 
 Deployment does not run a workflow or publish a VIVO record.
 
-## Step 2: Choose exactly one run
+## Step 2: Choose one run
 
 Copy the exact run ID used during workflow execution and VIVO publication:
 
