@@ -43,8 +43,12 @@ trace_file="${TRACE_PATH_TEMPLATE//\{run_id\}/$RUN_ID}"
 console_log="${CONSOLE_LOG_PATH_TEMPLATE//\{run_id\}/$RUN_ID}"
 debug_log="${DEBUG_LOG_PATH//\{run_id\}/$RUN_ID}"
 run_dir="$(dirname "$trace_file")"
-[[ "$run_dir" == /workspace/results/* ]] ||
-  die "The run directory must be below /workspace/results: $run_dir"
+normalized_run_dir="$(
+  python3 -c 'import posixpath,sys; print(posixpath.normpath(sys.argv[1]))' \
+    "$run_dir"
+)"
+[[ "$run_dir" == "$normalized_run_dir" && "$run_dir" == /workspace/* ]] ||
+  die "The run directory must be a normalized path below /workspace: $run_dir"
 
 stamp="$(date -u +%Y%m%dT%H%M%SZ)"
 safe_id="$(

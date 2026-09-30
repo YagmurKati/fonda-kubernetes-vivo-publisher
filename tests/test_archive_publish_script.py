@@ -16,6 +16,11 @@ class ArchivePublishScriptTests(unittest.TestCase):
         self.assertIn("readOnly: true", self.script)
         self.assertIn("claimName: $PVC_NAME", self.script)
 
+    def test_archive_accepts_established_workspace_layouts_safely(self) -> None:
+        self.assertIn("posixpath.normpath", self.script)
+        self.assertIn('"$run_dir" == /workspace/*', self.script)
+        self.assertNotIn("below /workspace/results", self.script)
+
     def test_upload_creates_public_link_then_republishes_run(self) -> None:
         self.assertIn("/api/v2.1/share-links/", self.script)
         self.assertIn('--run-trace-archive "$share_url"', self.script)
