@@ -27,7 +27,8 @@ You do **not** need to be a VIVO administrator. You need:
 2. a completed supported workflow run whose evidence is on a shared PVC;
 3. a personal or team **non-admin VIVO publisher account** provisioned by the
    VIVO administrator;
-4. optionally, an Electricity Maps token for a latest-available carbon proxy.
+4. optionally, an Electricity Maps token for a latest-available carbon proxy;
+5. optionally, a HU-Box account when preserving selected raw traces.
 
 Do not use or share the VIVO administrator account. See
 [Administrator onboarding](docs/ADMIN_SETUP.md).
@@ -230,7 +231,9 @@ download URL only to that run:
 `TRACE_ARCHIVE` remains a compatibility fallback for older profiles, but it
 assigns the same URL to both scopes and should not be used for new profiles.
 
-For automatic HU-Box archival, configure the account once:
+Raw trace preservation is optional and per run. VIVO stores the searchable
+metadata and public archive URL; HU-Box stores the archive bytes. Configure the
+HU-Box account once:
 
 ```bash
 ./scripts/configure-hu-box.sh
@@ -248,8 +251,11 @@ run's VIVO record with the link:
 
 The temporary reader Pod mounts the PVC read-only and is removed after the
 copy. The local bundle and checksum remain below `artifacts/trace-archives`.
-Use `--package-only` to stop before HU-Box and VIVO, or `--no-vivo` to upload
-and create the public link without updating VIVO.
+Use `--package-only` to review the bundle before HU-Box and VIVO, or
+`--no-vivo` to upload and create the public link without updating VIVO. Follow
+the complete [optional HU-Box trace archive procedure](docs/OPTIONAL_HU_BOX_TRACE_ARCHIVE.md),
+including its password, library selection, privacy review, verification, and
+safe retry steps. Do not archive every run by default.
 
 Validate collection and RDF generation without contacting VIVO:
 
@@ -350,7 +356,7 @@ To remove a published run, use the publication ID from the receipt filename:
 
 The second command asks for confirmation and uses the same non-admin VIVO
 account. It removes only that run's metadata and keeps the local workflow and
-audit files. See [Remove a published run](docs/USER_GUIDE.md#7-remove-a-published-run).
+audit files. See [Remove a published run](docs/USER_GUIDE.md#8-remove-a-published-run).
 
 ## Documentation
 

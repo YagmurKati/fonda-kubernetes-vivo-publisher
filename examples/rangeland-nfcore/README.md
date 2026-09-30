@@ -68,6 +68,12 @@ timeline, DAG, the generated `.metrics.json`, `.ttl`, and `.published.json`,
 plus `SHA256SUMS`. Review it for credentials, private paths, IP addresses, and
 personal data before making it public.
 
+Before continuing, follow the complete
+[optional HU-Box trace archive procedure](../../docs/OPTIONAL_HU_BOX_TRACE_ARCHIVE.md).
+It covers the required working `config/publisher.env`, separate HU-Box/WebDAV
+password, authorized library and path selection, package-only privacy review,
+upload, VIVO replacement publication, verification, and safe retries.
+
 Configure HU-Box once. The command stores the API token in a private file and
 prints the available library names and ids:
 
@@ -75,9 +81,10 @@ prints the available library names and ids:
 ./scripts/configure-hu-box.sh
 ```
 
-Select the destination library by number when prompted. The token and selected
-library are stored in private, Git-ignored local files. Then archive and
-publish one selected run end to end:
+Select only a library you are authorized to use. The token and selected library
+are stored in private, Git-ignored local files. Run `--package-only` and inspect
+the bundle as described in the full guide. Then archive and publish one
+selected run end to end:
 
 ```bash
 ./scripts/archive-publish-run.sh RUN_ID
