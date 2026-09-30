@@ -184,7 +184,7 @@ that run's VIVO record with the exact link. The workflow is not rerun, and the
 PVC is mounted read-only.
 
 Follow every step in the
-[optional HU-Box trace archive and VIVO link guide](OPTIONAL_HU_BOX_TRACE_ARCHIVE.md).
+[optional HU-Box trace archive and VIVO link guide](HU_BOX_TRACE_ARCHIVE.md).
 In particular, reuse the working `config/publisher.env`, use a separate
 HU-Box/WebDAV password, select only an authorized library, run
 `--package-only` and review the bundle first, and verify both the public HU-Box

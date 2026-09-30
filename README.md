@@ -151,7 +151,7 @@ replace `RUN_ID` and run these commands from the repository directory:
 The first command is needed only once per computer. Review the package-only
 bundle before running the final command, which uploads the archive and adds its
 public link to the run's VIVO page. For setup, privacy checks, verification, and
-error recovery, follow the [HU-Box trace archive guide](docs/OPTIONAL_HU_BOX_TRACE_ARCHIVE.md).
+error recovery, follow the [HU-Box trace archive guide](docs/HU_BOX_TRACE_ARCHIVE.md).
 
 ## Automatic collection and publication
 

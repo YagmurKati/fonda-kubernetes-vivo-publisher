@@ -69,7 +69,7 @@ plus `SHA256SUMS`. Review it for credentials, private paths, IP addresses, and
 personal data before making it public.
 
 Before continuing, follow the complete
-[optional HU-Box trace archive procedure](../../docs/OPTIONAL_HU_BOX_TRACE_ARCHIVE.md).
+[optional HU-Box trace archive procedure](../../docs/HU_BOX_TRACE_ARCHIVE.md).
 It covers the required working `config/publisher.env`, separate HU-Box/WebDAV
 password, authorized library and path selection, package-only privacy review,
 upload, VIVO replacement publication, verification, and safe retries.
