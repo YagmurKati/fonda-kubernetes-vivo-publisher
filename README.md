@@ -28,7 +28,7 @@ You do **not** need to be a VIVO administrator. You need:
 3. a personal or team **non-admin VIVO publisher account** provisioned by the
    VIVO administrator;
 4. optionally, an Electricity Maps token for a latest-available carbon proxy;
-5. optionally, a HU-Box account when preserving selected raw traces.
+5. a HU-Box account only when preserving selected raw traces.
 
 Do not use or share the VIVO administrator account. See
 [Administrator onboarding](docs/ADMIN_SETUP.md).
@@ -135,6 +135,24 @@ Success is reported as `HTTP 200`. Open the
 [VIVO Runs page](https://vivo-fonda.hu-berlin.de/vivo/runs) and check the new
 record. Keep the TTL and the `.published.json` receipt created beside it.
 
+If you want to preserve this run's trace files in HU-Box, continue to Step 6.
+
+### 6. Publish the trace archive to HU-Box (optional)
+
+For a supported Nextflow profile whose trace files remain on the shared PVC,
+replace `RUN_ID` and run these commands from the repository directory:
+
+```bash
+./scripts/configure-hu-box.sh
+./scripts/archive-publish-run.sh RUN_ID --package-only
+./scripts/archive-publish-run.sh RUN_ID
+```
+
+The first command is needed only once per computer. Review the package-only
+bundle before running the final command, which uploads the archive and adds its
+public link to the run's VIVO page. For setup, privacy checks, verification, and
+error recovery, follow the [HU-Box trace archive guide](docs/OPTIONAL_HU_BOX_TRACE_ARCHIVE.md).
+
 ## Automatic collection and publication
 
 Use this section only when your selected profile uses `scripts/publish-run.sh`.
@@ -216,46 +234,6 @@ After run `my-run-01` has finished successfully:
 
 The last command collects the metadata and uploads it to VIVO automatically.
 No browser upload and no second command are required.
-
-Trace links have two different scopes. Set `WORKFLOW_TRACE_REPOSITORY` in the
-profile only for a collection or repository page that applies to the workflow
-as a whole. After uploading one run's evidence bundle, attach its exact public
-download URL only to that run:
-
-```bash
-./scripts/publish-run.sh my-run-01 \
-  --run-trace-archive "https://example.org/traces/my-run-01.tar.gz"
-```
-
-`RUN_TRACE_ARCHIVE` provides an optional profile-wide default. The deprecated
-`TRACE_ARCHIVE` remains a compatibility fallback for older profiles, but it
-assigns the same URL to both scopes and should not be used for new profiles.
-
-Raw trace preservation is optional and per run. VIVO stores the searchable
-metadata and public archive URL; HU-Box stores the archive bytes. Configure the
-HU-Box account once:
-
-```bash
-./scripts/configure-hu-box.sh
-```
-
-Select the destination library by number when prompted. The command stores the
-token and selected library in private, Git-ignored local files. For any run
-selected for preservation, one command then packages its retained evidence
-from the PVC, uploads it, creates a public download link, and replaces that
-run's VIVO record with the link:
-
-```bash
-./scripts/archive-publish-run.sh my-run-01
-```
-
-The temporary reader Pod mounts the PVC read-only and is removed after the
-copy. The local bundle and checksum remain below `artifacts/trace-archives`.
-Use `--package-only` to review the bundle before HU-Box and VIVO, or
-`--no-vivo` to upload and create the public link without updating VIVO. Follow
-the complete [optional HU-Box trace archive procedure](docs/OPTIONAL_HU_BOX_TRACE_ARCHIVE.md),
-including its password, library selection, privacy review, verification, and
-safe retry steps. Do not archive every run by default.
 
 Validate collection and RDF generation without contacting VIVO:
 
