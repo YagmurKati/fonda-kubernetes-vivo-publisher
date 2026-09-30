@@ -2,15 +2,14 @@
 
 ## 1. Request VIVO publishing access
 
-Send the VIVO administrator:
+Send the VIVO administrator (yagmur.kati@hu-berlin.de):
 
 - your name and institutional email;
 - your FONDA Kubernetes namespace;
 - your workflow title and repository URL;
 - the VIVO person and FONDA subproject pages that should be linked.
 
-The administrator provides or enables a non-admin publisher account. Never ask
-for the site administrator password.
+The administrator provides or enables a non-admin publisher account. 
 
 ## 2. Clone and configure
 
