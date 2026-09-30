@@ -174,7 +174,24 @@ Open <https://vivo-fonda.hu-berlin.de/vivo/runs>, wait several seconds, and
 search for the workflow title and run time. Keep the three timestamped files on
 the PVC together.
 
-## 7. Remove a published run
+## 7. Optionally archive one selected trace
+
+This step is optional. VIVO already contains the searchable run metadata; it
+does not contain the raw trace files. Do not upload every run by default.
+
+For a selected Nextflow run, the repository can package the retained evidence,
+scan it, upload it to HU-Box, create a public download link, and replace only
+that run's VIVO record with the exact link. The workflow is not rerun, and the
+PVC is mounted read-only.
+
+Follow every step in the
+[optional HU-Box trace archive and VIVO link guide](OPTIONAL_HU_BOX_TRACE_ARCHIVE.md).
+In particular, reuse the working `config/publisher.env`, use a separate
+HU-Box/WebDAV password, select only an authorized library, run
+`--package-only` and review the bundle first, and verify both the public HU-Box
+link and the run page afterward.
+
+## 8. Remove a published run
 
 Copy the publication ID from the receipt filename. For
 `my-run-01-20260825T144622Z.published.json`, the publication ID is

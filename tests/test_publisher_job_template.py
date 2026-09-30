@@ -30,6 +30,23 @@ class PublisherJobTemplateTests(unittest.TestCase):
         self.assertIn('<<< "$DECLARED_CONTAINER_IMAGES"', template)
         self.assertIn('--container-image "$image"', template)
 
+    def test_workflow_and_run_trace_links_are_separate(self) -> None:
+        template = (
+            Path(__file__).resolve().parents[1]
+            / "k8s"
+            / "publisher-job.yaml"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn(
+            '--workflow-trace-repository "$WORKFLOW_TRACE_REPOSITORY"',
+            template,
+        )
+        self.assertIn(
+            '--run-trace-archive "$effective_run_trace_archive"',
+            template,
+        )
+        self.assertIn('value: "__RUN_TRACE_ARCHIVE__"', template)
+
     def test_removal_job_uses_preserved_ttl_and_receipt(self) -> None:
         template = (
             Path(__file__).resolve().parents[1]

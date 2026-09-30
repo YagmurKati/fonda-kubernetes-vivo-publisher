@@ -27,7 +27,8 @@ You do **not** need to be a VIVO administrator. You need:
 2. a completed supported workflow run whose evidence is on a shared PVC;
 3. a personal or team **non-admin VIVO publisher account** provisioned by the
    VIVO administrator;
-4. optionally, an Electricity Maps token for a latest-available carbon proxy.
+4. optionally, an Electricity Maps token for a latest-available carbon proxy;
+5. optionally, a HU-Box account when preserving selected raw traces.
 
 Do not use or share the VIVO administrator account. See
 [Administrator onboarding](docs/ADMIN_SETUP.md).
@@ -216,6 +217,46 @@ After run `my-run-01` has finished successfully:
 The last command collects the metadata and uploads it to VIVO automatically.
 No browser upload and no second command are required.
 
+Trace links have two different scopes. Set `WORKFLOW_TRACE_REPOSITORY` in the
+profile only for a collection or repository page that applies to the workflow
+as a whole. After uploading one run's evidence bundle, attach its exact public
+download URL only to that run:
+
+```bash
+./scripts/publish-run.sh my-run-01 \
+  --run-trace-archive "https://example.org/traces/my-run-01.tar.gz"
+```
+
+`RUN_TRACE_ARCHIVE` provides an optional profile-wide default. The deprecated
+`TRACE_ARCHIVE` remains a compatibility fallback for older profiles, but it
+assigns the same URL to both scopes and should not be used for new profiles.
+
+Raw trace preservation is optional and per run. VIVO stores the searchable
+metadata and public archive URL; HU-Box stores the archive bytes. Configure the
+HU-Box account once:
+
+```bash
+./scripts/configure-hu-box.sh
+```
+
+Select the destination library by number when prompted. The command stores the
+token and selected library in private, Git-ignored local files. For any run
+selected for preservation, one command then packages its retained evidence
+from the PVC, uploads it, creates a public download link, and replaces that
+run's VIVO record with the link:
+
+```bash
+./scripts/archive-publish-run.sh my-run-01
+```
+
+The temporary reader Pod mounts the PVC read-only and is removed after the
+copy. The local bundle and checksum remain below `artifacts/trace-archives`.
+Use `--package-only` to review the bundle before HU-Box and VIVO, or
+`--no-vivo` to upload and create the public link without updating VIVO. Follow
+the complete [optional HU-Box trace archive procedure](docs/OPTIONAL_HU_BOX_TRACE_ARCHIVE.md),
+including its password, library selection, privacy review, verification, and
+safe retry steps. Do not archive every run by default.
+
 Validate collection and RDF generation without contacting VIVO:
 
 ```bash
@@ -315,7 +356,7 @@ To remove a published run, use the publication ID from the receipt filename:
 
 The second command asks for confirmation and uses the same non-admin VIVO
 account. It removes only that run's metadata and keeps the local workflow and
-audit files. See [Remove a published run](docs/USER_GUIDE.md#7-remove-a-published-run).
+audit files. See [Remove a published run](docs/USER_GUIDE.md#8-remove-a-published-run).
 
 ## Documentation
 

@@ -35,6 +35,7 @@ spec:
               artifact_base="${RUN_ID}-${OUTPUT_STAMP}"
               ttl_file="$output_dir/${artifact_base}.ttl"
               receipt_file="$output_dir/${artifact_base}.published.json"
+              effective_run_trace_archive="${RUN_TRACE_ARCHIVE_OVERRIDE:-$RUN_TRACE_ARCHIVE}"
               mkdir -p "$output_dir"
 
               if [[ "$DRY_RUN" != "1" && "$FORCE_REPUBLISH" != "1" ]]; then
@@ -71,6 +72,8 @@ spec:
                 --workflow-repo-url "$WORKFLOW_REPO_URL"
                 --code-uri "$CODE_URI"
                 --publication-uri "$PUBLICATION_URI"
+                --workflow-trace-repository "$WORKFLOW_TRACE_REPOSITORY"
+                --run-trace-archive "$effective_run_trace_archive"
                 --trace-archive "$TRACE_ARCHIVE"
                 --application-domain-uri "$APPLICATION_DOMAIN_URI"
                 --run-operator-uri "$RUN_OPERATOR_URI"
@@ -151,6 +154,8 @@ spec:
               value: "__DRY_RUN__"
             - name: FORCE_REPUBLISH
               value: "__FORCE_REPUBLISH__"
+            - name: RUN_TRACE_ARCHIVE_OVERRIDE
+              value: "__RUN_TRACE_ARCHIVE__"
             - name: ELECTRICITY_MAPS_API_TOKEN
               valueFrom:
                 secretKeyRef:

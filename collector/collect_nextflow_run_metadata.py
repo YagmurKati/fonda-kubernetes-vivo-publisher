@@ -43,6 +43,8 @@ DEFAULT_CODE_URI = ""
 # which points at this metadata-collector repo.
 DEFAULT_WORKFLOW_REPO_URL = ""
 DEFAULT_TRACE_ARCHIVE = ""
+DEFAULT_WORKFLOW_TRACE_REPOSITORY = ""
+DEFAULT_RUN_TRACE_ARCHIVE = ""
 DEFAULT_APPLICATION_DOMAIN_URI = ""
 DEFAULT_RUN_OPERATOR_URI = ""
 # Emptied 2026-07-30: literal researcher names are no longer emitted (see the
@@ -2255,9 +2257,21 @@ def build_ttl(
         workflow_predicates.append(
             ("rm:workflowCodeLink", ttl_literal(args.code_uri, "xsd:anyURI"))
         )
-    if args.trace_archive:
+    legacy_trace_archive = getattr(args, "trace_archive", "")
+    workflow_trace_repository = (
+        getattr(args, "workflow_trace_repository", "")
+        or legacy_trace_archive
+    )
+    run_trace_archive = (
+        getattr(args, "run_trace_archive", "")
+        or legacy_trace_archive
+    )
+    if workflow_trace_repository:
         workflow_predicates.append(
-            ("rm:traceArchive", ttl_literal(args.trace_archive, "xsd:anyURI"))
+            (
+                "rm:traceArchive",
+                ttl_literal(workflow_trace_repository, "xsd:anyURI"),
+            )
         )
     if args.application_domain_uri:
         workflow_predicates.append(
@@ -2437,9 +2451,9 @@ def build_ttl(
         )
     if args.backend_uri:
         run_predicates.append(("rm:backend", ttl_uri(args.backend_uri)))
-    if args.trace_archive:
+    if run_trace_archive:
         run_predicates.append(
-            ("rm:traceArchive", ttl_literal(args.trace_archive, "xsd:anyURI"))
+            ("rm:traceArchive", ttl_literal(run_trace_archive, "xsd:anyURI"))
         )
     for publication_uri in publication_uris:
         run_predicates.append(
@@ -2926,7 +2940,30 @@ def build_args() -> argparse.Namespace:
             "workflow and run. Pass an empty string to omit input metadata."
         ),
     )
-    parser.add_argument("--trace-archive", default=DEFAULT_TRACE_ARCHIVE)
+    parser.add_argument(
+        "--workflow-trace-repository",
+        default=DEFAULT_WORKFLOW_TRACE_REPOSITORY,
+        help=(
+            "General trace collection or repository linked from the workflow. "
+            "Pass an empty string to omit."
+        ),
+    )
+    parser.add_argument(
+        "--run-trace-archive",
+        default=DEFAULT_RUN_TRACE_ARCHIVE,
+        help=(
+            "Download URL for the exact trace bundle produced by this run. "
+            "Pass an empty string to omit."
+        ),
+    )
+    parser.add_argument(
+        "--trace-archive",
+        default=DEFAULT_TRACE_ARCHIVE,
+        help=(
+            "Deprecated compatibility setting used for both workflow and run "
+            "when their specific trace URL is empty."
+        ),
+    )
     parser.add_argument("--trace-types", default=DEFAULT_TRACE_TYPES)
     parser.add_argument("--trace-data-format", default=DEFAULT_TRACE_DATA_FORMAT)
     parser.add_argument(

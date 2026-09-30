@@ -28,6 +28,9 @@ The profile expects:
 /workspace/results/RUN_ID/trace-RUN_ID.txt
 /workspace/results/RUN_ID/nextflow-RUN_ID.log
 /workspace/results/RUN_ID/nextflow-debug-RUN_ID.log
+/workspace/results/RUN_ID/report-RUN_ID.html
+/workspace/results/RUN_ID/timeline-RUN_ID.html
+/workspace/results/RUN_ID/dag-RUN_ID.html
 /workspace/.nextflow/assets/nf-core/rangeland
 ```
 
@@ -55,6 +58,50 @@ release `1.0.0`; re-resolve them for a different revision.
 Open the [FONDA VIVO Runs page](https://vivo-fonda.hu-berlin.de/vivo/runs) and
 check the new record. The TTL, metrics audit, and receipt are written to
 `/workspace/vivo-outbox`.
+
+### Optional trace archive
+
+VIVO stores searchable metadata derived from the execution evidence; it does
+not store the raw trace files. Archive only selected runs when required. A
+useful run bundle contains the Nextflow trace, console and debug logs, report,
+timeline, DAG, the generated `.metrics.json`, `.ttl`, and `.published.json`,
+plus `SHA256SUMS`. Review it for credentials, private paths, IP addresses, and
+personal data before making it public.
+
+Before continuing, follow the complete
+[optional HU-Box trace archive procedure](../../docs/OPTIONAL_HU_BOX_TRACE_ARCHIVE.md).
+It covers the required working `config/publisher.env`, separate HU-Box/WebDAV
+password, authorized library and path selection, package-only privacy review,
+upload, VIVO replacement publication, verification, and safe retries.
+
+Configure HU-Box once. The command stores the API token in a private file and
+prints the available library names and ids:
+
+```bash
+./scripts/configure-hu-box.sh
+```
+
+Select only a library you are authorized to use. The token and selected library
+are stored in private, Git-ignored local files. Run `--package-only` and inspect
+the bundle as described in the full guide. Then archive and publish one
+selected run end to end:
+
+```bash
+./scripts/archive-publish-run.sh RUN_ID
+```
+
+The command mounts the existing PVC read-only, packages only that run and its
+VIVO audit files, writes a manifest and checksums, scans for credential-shaped
+values, uploads the archive to HU-Box, creates a public download link, and
+replaces only that run's VIVO record with the link. It does not rerun
+nf-core/rangeland or change the other runs. `--package-only` stops before
+uploading; `--no-vivo` uploads and shares the bundle without changing VIVO.
+
+`WORKFLOW_TRACE_REPOSITORY` is separate: use it only for a workflow-wide
+collection page, such as the eventual Workflow Trace Archive collection. A
+future WTA deposit should retain the DAG and the task-to-resource and energy
+relationships; the native bundle is evidence for that conversion, not itself
+a claim of WTA-format conformance.
 
 ## 5. Remove a publication
 

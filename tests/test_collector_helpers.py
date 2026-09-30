@@ -258,7 +258,11 @@ class InputDatasetTests(unittest.TestCase):
             publication_uri="",
             run_identity_scope="fonda",
             run_operator_uri="",
-            trace_archive="https://example.org/traces",
+            trace_archive="",
+            workflow_trace_repository=(
+                "https://example.org/traces/geoflow-collection"
+            ),
+            run_trace_archive="https://example.org/traces/geoflow-run-1.zip",
             trace_data_format="TSV",
             trace_types="Nextflow trace",
             workflow_name="Geoflow test",
@@ -303,6 +307,14 @@ class InputDatasetTests(unittest.TestCase):
         self.assertIn("rm:inputDataOfWorkflow", ttl_text)
         self.assertIn("rm:usedByWorkflowRun", ttl_text)
         self.assertIn("rm:codeCommitLink", ttl_text)
+        self.assertIn(
+            '"https://example.org/traces/geoflow-collection"^^xsd:anyURI',
+            ttl_text,
+        )
+        self.assertIn(
+            '"https://example.org/traces/geoflow-run-1.zip"^^xsd:anyURI',
+            ttl_text,
+        )
         self.assertIn("https://example.org/dataset/source/one", ttl_text)
         self.assertIn("https://example.org/dataset/source/two", ttl_text)
         self.assertNotIn("rm:nodeName", ttl_text)
