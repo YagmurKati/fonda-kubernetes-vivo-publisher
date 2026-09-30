@@ -236,10 +236,11 @@ For automatic HU-Box archival, configure the account once:
 ./scripts/configure-hu-box.sh
 ```
 
-Put the selected library id printed by that command in
-`HU_BOX_REPOSITORY_ID`. For any run selected for preservation, one command then
-packages its retained evidence from the PVC, uploads it, creates a public
-download link, and replaces that run's VIVO record with the link:
+Select the destination library by number when prompted. The command stores the
+token and selected library in private, Git-ignored local files. For any run
+selected for preservation, one command then packages its retained evidence
+from the PVC, uploads it, creates a public download link, and replaces that
+run's VIVO record with the link:
 
 ```bash
 ./scripts/archive-publish-run.sh my-run-01

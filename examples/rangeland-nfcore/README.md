@@ -75,8 +75,9 @@ prints the available library names and ids:
 ./scripts/configure-hu-box.sh
 ```
 
-Set `HU_BOX_REPOSITORY_ID` in `config/publisher.env` to the selected id. Then
-archive and publish one selected run end to end:
+Select the destination library by number when prompted. The token and selected
+library are stored in private, Git-ignored local files. Then archive and
+publish one selected run end to end:
 
 ```bash
 ./scripts/archive-publish-run.sh RUN_ID

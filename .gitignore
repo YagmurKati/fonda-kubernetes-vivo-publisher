@@ -4,6 +4,7 @@ __pycache__/
 *.bak-*
 config/publisher.env
 config/*.publisher.env
+config/hu-box.env
 artifacts/
 wg0.conf
 *.key

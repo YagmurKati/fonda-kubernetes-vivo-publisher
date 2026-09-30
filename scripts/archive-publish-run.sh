@@ -10,6 +10,11 @@ need_command sed
 need_command shasum
 need_command tar
 load_config
+hu_config="${HU_BOX_CONFIG_FILE:-$ROOT_DIR/config/hu-box.env}"
+if [[ -r "$hu_config" ]]; then
+  # shellcheck disable=SC1090
+  source "$hu_config"
+fi
 
 RUN_ID="${1:-}"
 shift || true
