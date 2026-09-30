@@ -28,6 +28,9 @@ The profile expects:
 /workspace/results/RUN_ID/trace-RUN_ID.txt
 /workspace/results/RUN_ID/nextflow-RUN_ID.log
 /workspace/results/RUN_ID/nextflow-debug-RUN_ID.log
+/workspace/results/RUN_ID/report-RUN_ID.html
+/workspace/results/RUN_ID/timeline-RUN_ID.html
+/workspace/results/RUN_ID/dag-RUN_ID.html
 /workspace/.nextflow/assets/nf-core/rangeland
 ```
 
@@ -55,6 +58,29 @@ release `1.0.0`; re-resolve them for a different revision.
 Open the [FONDA VIVO Runs page](https://vivo-fonda.hu-berlin.de/vivo/runs) and
 check the new record. The TTL, metrics audit, and receipt are written to
 `/workspace/vivo-outbox`.
+
+### Optional trace archive
+
+VIVO stores searchable metadata derived from the execution evidence; it does
+not store the raw trace files. Archive only selected runs when required. A
+useful run bundle contains the Nextflow trace, console and debug logs, report,
+timeline, DAG, the generated `.metrics.json`, `.ttl`, and `.published.json`,
+plus `SHA256SUMS`. Review it for credentials, private paths, IP addresses, and
+personal data before making it public.
+
+Upload the bundle to HU-Box (or another durable public repository), copy the
+exact public download URL, and replace only that run's VIVO record:
+
+```bash
+FORCE_REPUBLISH=1 ./scripts/publish-run.sh RUN_ID \
+  --run-trace-archive "https://box.hu-berlin.de/d/REPLACE_WITH_PUBLIC_SHARE_TOKEN/"
+```
+
+This does not rerun nf-core/rangeland. `WORKFLOW_TRACE_REPOSITORY` is separate:
+use it only for a workflow-wide collection page, such as the eventual Workflow
+Trace Archive collection. A future WTA deposit should retain the DAG and the
+task-to-resource and energy relationships; the native bundle is evidence for
+that conversion, not itself a claim of WTA-format conformance.
 
 ## 5. Remove a publication
 

@@ -11,10 +11,16 @@ RUN_ID="${1:-}"
 shift || true
 dry_run="${DRY_RUN:-0}"
 force_republish="${FORCE_REPUBLISH:-0}"
+run_trace_archive=""
 while (($#)); do
   case "$1" in
     --dry-run) dry_run=1 ;;
-    *) die "Usage: $0 RUN_ID [--dry-run]" ;;
+    --run-trace-archive)
+      (($# >= 2)) || die "--run-trace-archive requires an HTTP(S) URL"
+      run_trace_archive="$2"
+      shift
+      ;;
+    *) die "Usage: $0 RUN_ID [--dry-run] [--run-trace-archive URL]" ;;
   esac
   shift
 done
@@ -26,6 +32,7 @@ done
   die "DRY_RUN must be 0 or 1"
 [[ "$force_republish" == "0" || "$force_republish" == "1" ]] ||
   die "FORCE_REPUBLISH must be 0 or 1"
+optional_http_uri "$run_trace_archive" "--run-trace-archive"
 
 include_cached="${INCLUDE_CACHED_ORIGIN_METRICS:-0}"
 [[ "$include_cached" == "0" || "$include_cached" == "1" ]] ||
@@ -46,6 +53,9 @@ job_suffix="$(
 job_name="fonda-vivo-${job_suffix}-$(date +%s)"
 run_label="$(printf '%s' "$job_suffix" | cut -c1-63)"
 output_stamp="$(date -u +%Y%m%dT%H%M%SZ)"
+escaped_run_trace_archive="$(
+  printf '%s' "$run_trace_archive" | sed -e 's/[\\&/]/\\&/g'
+)"
 if is_snakemake_engine; then
   job_template="$ROOT_DIR/k8s/snakemake-publisher-job.yaml"
 else
@@ -65,6 +75,7 @@ sed \
   -e "s/__INCLUDE_CACHED_ORIGIN_METRICS__/$include_cached/g" \
   -e "s/__DRY_RUN__/$dry_run/g" \
   -e "s/__FORCE_REPUBLISH__/$force_republish/g" \
+  -e "s/__RUN_TRACE_ARCHIVE__/$escaped_run_trace_archive/g" \
   "$job_template" |
   kubectl -n "$NS" apply -f -
 

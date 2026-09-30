@@ -216,6 +216,20 @@ After run `my-run-01` has finished successfully:
 The last command collects the metadata and uploads it to VIVO automatically.
 No browser upload and no second command are required.
 
+Trace links have two different scopes. Set `WORKFLOW_TRACE_REPOSITORY` in the
+profile only for a collection or repository page that applies to the workflow
+as a whole. After uploading one run's evidence bundle, attach its exact public
+download URL only to that run:
+
+```bash
+./scripts/publish-run.sh my-run-01 \
+  --run-trace-archive "https://example.org/traces/my-run-01.tar.gz"
+```
+
+`RUN_TRACE_ARCHIVE` provides an optional profile-wide default. The deprecated
+`TRACE_ARCHIVE` remains a compatibility fallback for older profiles, but it
+assigns the same URL to both scopes and should not be used for new profiles.
+
 Validate collection and RDF generation without contacting VIVO:
 
 ```bash
