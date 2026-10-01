@@ -26,7 +26,7 @@ data:
   SUBPROJECT_URIS: http://141.20.184.157:8080/vivo/individual/fonda-group-b5-transparent-multi-site-data-analysis-workflows-for-earth-observation
   LANGUAGE_URIS: http://example.org/vivo-import/run-metadata/language/shell
   APPLICATION_DOMAIN_URI: ""
-  RUN_OPERATOR_URI: ""
+  RUN_OPERATOR_URI: "https://fonda.hu-berlin.de/?page_id=2066#YagmurKati"
   RUN_IDENTITY_SCOPE: fonda
   BACKEND_URI: http://172.28.33.178:8080/vivo/individual/n5703
   CLUSTER_URI: http://example.org/vivo-import/run-metadata/cluster/fonda-cluster
@@ -169,7 +169,10 @@ spec:
 
               printf '\n<http://141.20.184.157:8080/vivo/individual/a1-external-author-friedrich-tschirpke-8f38595d> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://xmlns.com/foaf/0.1/Person> ;\n  <http://www.w3.org/2000/01/rdf-schema#label> "Friedrich Tschirpke" .\n' >> "$ttl_file"
               [[ "$(grep -c 'rm:responsibleResearcher' "$ttl_file")" == "2" ]]
-              ! grep -Eiq 'rm:runOperator|yagmur' "$ttl_file"
+              [[ "$(grep -c 'rm:runOperator' "$ttl_file")" == "1" ]]
+              # The operational namespace must stay out of the public TTL; only the
+              # run operator ("run by") line may name the operator.
+              ! grep -v 'rm:runOperator' "$ttl_file" | grep -Eiq 'yagmur'
 
               python3 /opt/fonda-vivo/publisher.py \
                 "$ttl_file" \

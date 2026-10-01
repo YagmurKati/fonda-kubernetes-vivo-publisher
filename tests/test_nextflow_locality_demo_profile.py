@@ -46,22 +46,22 @@ class NextflowLocalityDemoProfileTests(unittest.TestCase):
             "usedby=yagmur", manifest + config + publisher_manifest + reader_manifest
         )
 
-    def test_public_attribution_has_two_researchers_and_no_operator(self) -> None:
+    def test_public_attribution_has_two_researchers_and_the_operator(self) -> None:
         settings = (PROFILE / "publisher.env.example").read_text()
         match = re.search(r'^RESPONSIBLE_RESEARCHER_URIS="([^"]+)"$', settings, re.M)
         self.assertIsNotNone(match)
         self.assertEqual(len(match.group(1).split(",")), 2)
         self.assertIn("#FabianLehmann", match.group(1))
         self.assertIn("friedrich-tschirpke", match.group(1))
-        self.assertIn('RUN_OPERATOR_URI=""', settings)
+        self.assertIn('RUN_OPERATOR_URI="https://fonda.hu-berlin.de/?page_id=2066#YagmurKati"', settings)
         self.assertIn('RUN_IDENTITY_SCOPE="fonda"', settings)
-        self.assertNotIn("YagmurKati", settings)
 
         publisher_manifest = (PROFILE / "k8s-publish.yaml").read_text()
-        self.assertIn("RUN_OPERATOR_URI: \"\"", publisher_manifest)
+        self.assertIn('RUN_OPERATOR_URI: "https://fonda.hu-berlin.de/?page_id=2066#YagmurKati"', publisher_manifest)
         self.assertIn("RUN_IDENTITY_SCOPE: fonda", publisher_manifest)
         self.assertIn("grep -c 'rm:responsibleResearcher'", publisher_manifest)
-        self.assertRegex(publisher_manifest, r"rm:runOperator\|yagmur")
+        self.assertIn("grep -c 'rm:runOperator'", publisher_manifest)
+        self.assertIn("grep -v 'rm:runOperator'", publisher_manifest)
 
     def test_successful_publication_summary_is_privacy_clean(self) -> None:
         summary = json.loads(SUMMARY_PATH.read_text())

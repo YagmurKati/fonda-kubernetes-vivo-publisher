@@ -1165,6 +1165,15 @@ def build_args() -> argparse.Namespace:
         help="Optional URI of the responsible researcher to link this workflow to",
     )
     parser.add_argument(
+        "--run-operator-uri",
+        default=os.environ.get("RUN_OPERATOR_URI", ""),
+        help=(
+            "URI of the VIVO person who executed this run (rm:runOperator, shown as "
+            "'run by'). VIVO uses it to decide who may edit the run page. "
+            "Defaults to the RUN_OPERATOR_URI environment variable."
+        ),
+    )
+    parser.add_argument(
         "--cluster-label",
         default="Fonda Cluster",
         help="Human-readable label for the compute cluster entity",
@@ -1295,6 +1304,16 @@ def main() -> None:
     detected_energy_metric = find_energy_metric(metric_names)
     excluded_task_ids = split_csv(args.exclude_task_ids)
     linked_resource_uri = args.publication_uri or args.software_uri
+    run_operator_uri = (args.run_operator_uri or "").strip()
+    if not run_operator_uri or "REPLACE_ME" in run_operator_uri:
+        print(
+            "WARNING: RUN_OPERATOR_URI / --run-operator-uri is empty; the run will be "
+            "published without rm:runOperator (\"run by\").",
+            file=sys.stderr,
+        )
+        run_operator_uri = ""
+    elif not run_operator_uri.startswith(("http://", "https://")):
+        raise RuntimeError("--run-operator-uri must be an absolute http(s) URI")
 
     if args.publication_uri and args.software_uri:
         raise RuntimeError("Use either --publication-uri or --software-uri, not both")
@@ -1768,6 +1787,7 @@ def main() -> None:
         f"  dcterms:title {ttl_literal(metadata_title)}@en ;",
         f"  rm:describesSoftwareExecution {software_uri} ;",
         f"  rm:workflow {workflow_entity_uri} ;",
+        *([f"  rm:runOperator {as_ttl_uri(run_operator_uri)} ;"] if run_operator_uri else []),
         f"  rm:computeCluster {cluster_uri} ;",
         f"  rm:codeVersion {ttl_literal(code_version)} ;",
         *([f"  rm:gitCommit {ttl_literal(git_commit)} ;"] if git_commit else []),

@@ -10,6 +10,20 @@ die() {
   exit 1
 }
 
+warn() {
+  printf 'WARNING: %s\n' "$*" >&2
+}
+
+# The run operator ("run by" in VIVO) is the person who executed the run. VIVO uses it
+# to decide who may edit the run page, so every published run should carry it.
+warn_missing_run_operator() {
+  local value="$1"
+  if [[ -z "$value" || "$value" == *REPLACE_ME* ]]; then
+    warn "RUN_OPERATOR_URI is empty: the run will be published without rm:runOperator (\"run by\")."
+    warn "Set RUN_OPERATOR_URI to the VIVO person URI of whoever executed the run."
+  fi
+}
+
 need_command() {
   command -v "$1" >/dev/null 2>&1 || die "Required command not found: $1"
 }
@@ -171,6 +185,7 @@ load_config() {
   optional_http_uri "$RUN_TRACE_ARCHIVE" "RUN_TRACE_ARCHIVE"
   optional_http_uri "$APPLICATION_DOMAIN_URI" "APPLICATION_DOMAIN_URI"
   optional_http_uri "$RUN_OPERATOR_URI" "RUN_OPERATOR_URI"
+  warn_missing_run_operator "$RUN_OPERATOR_URI"
   optional_http_uri "$BACKEND_URI" "BACKEND_URI"
   validate_uri_list "$RESPONSIBLE_RESEARCHER_URIS" "RESPONSIBLE_RESEARCHER_URIS"
   validate_uri_list "$SUBPROJECT_URIS" "SUBPROJECT_URIS"

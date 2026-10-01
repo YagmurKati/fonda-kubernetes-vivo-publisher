@@ -171,6 +171,11 @@ class RaplMetadataTests(unittest.TestCase):
         self.assertNotIn("rm:traceTypes", workflow_block)
         self.assertNotIn("rdfs:label", workflow_block)
         self.assertIn(collector.RESEARCHER, workflow_block)
+        self.assertNotIn("rm:runOperator", ttl)
+        operator = "https://fonda.hu-berlin.de/?page_id=2066#YagmurKati"
+        ttl_op, _ = collector.build_ttl(summary, rows, [], "b" * 64, run_operator_uri=operator)
+        run_block = next(b for b in ttl_op.split("\n\n") if b.startswith("<" + run + ">"))
+        self.assertIn("rm:runOperator <" + operator + ">", run_block)
 
     def test_existing_page_prevents_publication(self):
         response = mock.MagicMock()

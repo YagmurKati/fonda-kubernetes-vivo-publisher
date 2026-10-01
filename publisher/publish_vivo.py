@@ -99,6 +99,20 @@ def turtle_prefixes_and_body(turtle: str) -> Tuple[List[str], str]:
     return prefixes, body
 
 
+def run_has_operator(turtle: str) -> bool:
+    """Return True when the rm:RunMetadata block asserts rm:runOperator.
+
+    VIVO uses rm:runOperator ("run by") to decide who may edit a run page, so a
+    run published without it can only be edited by an administrator.
+    """
+    blocks = re.split(r"\r?\n\s*\r?\n", turtle.strip())
+    for block in blocks:
+        if re.search(r"(?m)^\s*rdf:type\s+rm:RunMetadata\s*[;.]", block):
+            if re.search(r"(?m)^\s*rm:runOperator\s+<", block):
+                return True
+    return False
+
+
 def run_owned_resource_iris(turtle: str) -> List[str]:
     """Return the run, date, and process IRIs owned by one collected run."""
     blocks = re.split(r"\r?\n\s*\r?\n", turtle.strip())
@@ -511,6 +525,14 @@ def main() -> None:
     update, run_iri, owned_resource_count = turtle_to_run_replace_update(
         turtle, args.graph
     )
+
+    if not run_has_operator(turtle):
+        print(
+            "WARNING: the run has no rm:runOperator (\"run by\"); only a VIVO "
+            "administrator will be able to edit it. Set RUN_OPERATOR_URI when "
+            "collecting.",
+            file=sys.stderr,
+        )
 
     if args.dry_run:
         print(f"TTL validated: {args.ttl_file}")

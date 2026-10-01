@@ -242,5 +242,25 @@ class HttpPublicationTests(unittest.TestCase):
                 )
 
 
+
+class RunOperatorTests(unittest.TestCase):
+    def test_run_without_operator_is_detected(self) -> None:
+        self.assertFalse(publish_vivo.run_has_operator(RUN_TTL))
+
+    def test_run_with_operator_is_detected(self) -> None:
+        turtle = RUN_TTL.replace(
+            "rdf:type rm:RunMetadata ;",
+            "rdf:type rm:RunMetadata ;\n  rm:runOperator <https://example.org/person/a> ;",
+        )
+        self.assertTrue(publish_vivo.run_has_operator(turtle))
+
+    def test_operator_on_another_resource_does_not_count(self) -> None:
+        turtle = RUN_TTL.replace(
+            "rm:hasRun <urn:fonda:run-1> .",
+            "rm:runOperator <https://example.org/person/a> ;\n  rm:hasRun <urn:fonda:run-1> .",
+        )
+        self.assertFalse(publish_vivo.run_has_operator(turtle))
+
+
 if __name__ == "__main__":
     unittest.main()

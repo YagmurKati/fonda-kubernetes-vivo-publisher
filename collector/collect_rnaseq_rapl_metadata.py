@@ -11,6 +11,7 @@ from datetime import datetime, timedelta, timezone, time
 import hashlib
 import json
 import math
+import os
 from pathlib import Path
 import re
 import sys
@@ -222,7 +223,7 @@ def validate(evidence, cluster):
     return summary, rows, inputs
 
 
-def build_ttl(summary, rows, inputs, archive_sha, backend_uri=None):
+def build_ttl(summary, rows, inputs, archive_sha, backend_uri=None, run_operator_uri=None):
     # Session UUID makes the run identity stable across repeated collections.
     key = "rnaseq-rapl-" + summary["session_id"]
     run, date = BASE + "run/" + key, BASE + "datetime/" + key
@@ -290,6 +291,13 @@ def build_ttl(summary, rows, inputs, archive_sha, backend_uri=None):
         from publish_vivo import validate_absolute_iri
         validate_absolute_iri(backend_uri, "backend URI")
         props.append(("rm:backend", uri(backend_uri)))
+    if run_operator_uri:
+        # rm:runOperator ("run by"): the person who executed the run; VIVO uses it
+        # to decide who may edit the run page.
+        sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "publisher"))
+        from publish_vivo import validate_absolute_iri
+        validate_absolute_iri(run_operator_uri, "run operator URI")
+        props.append(("rm:runOperator", uri(run_operator_uri)))
     props += [("rm:containerImage", literal(image)) for image in summary["image_ids"]]
     props += [("rm:codeCommitLink", literal("https://github.com/" + repo + "/commit/" + commit, "xsd:anyURI")) for repo, commit in COMMITS.items()]
     datasets = [BASE + "input-dataset/ena-srr16287545-paired-reads", BASE + "input-dataset/ensembl-106-drosophila-bdgp6-32-cdna"]
@@ -322,7 +330,18 @@ def main():
     parser.add_argument("--cluster", type=Path, required=True, help="Exported evidence/cluster directory")
     parser.add_argument("--output", type=Path, required=True, help="New local publication directory")
     parser.add_argument("--backend-uri", help="Optional existing VIVO backend resource URI")
+    parser.add_argument("--run-operator-uri", default=os.environ.get("RUN_OPERATOR_URI", ""),
+                        help="VIVO person URI of whoever executed the run (rm:runOperator, 'run by'); "
+                             "defaults to the RUN_OPERATOR_URI environment variable")
     args = parser.parse_args()
+    args.run_operator_uri = (args.run_operator_uri or "").strip()
+    if not args.run_operator_uri or "REPLACE_ME" in args.run_operator_uri:
+        print("WARNING: RUN_OPERATOR_URI / --run-operator-uri is empty; the run will be published "
+              "without rm:runOperator (\"run by\").", file=sys.stderr)
+        args.run_operator_uri = ""
+    else:
+        require(args.run_operator_uri.startswith(("http://", "https://")),
+                "--run-operator-uri must be an absolute http(s) URI")
     require(not args.output.exists(), "Output directory already exists; preserve it and choose a fresh path")
     summary, rows, inputs = validate(args.evidence, args.cluster)
     meta = read_json(args.evidence / "rapl/metadata.json")
@@ -363,7 +382,7 @@ def main():
         for name, digest in checksums.items():
             require(hashlib.sha256(archive.extractfile(name).read()).hexdigest() == digest, "Archive checksum mismatch")
     archive_sha = sha(archive_path)
-    ttl, run = build_ttl(summary, rows, inputs, archive_sha, args.backend_uri)
+    ttl, run = build_ttl(summary, rows, inputs, archive_sha, args.backend_uri, args.run_operator_uri)
     summary.update(run_uri=run, workflow_uri=WORKFLOW, archive_sha256=archive_sha, trace_archive_public_url=None,
                    ttl_sha256=hashlib.sha256((ttl + "\n").encode()).hexdigest())
     for name, value in (("run.ttl", ttl), ("validation.json", json.dumps(summary, indent=2)),
