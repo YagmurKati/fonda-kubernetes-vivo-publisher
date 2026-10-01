@@ -11,6 +11,7 @@ RUN_ID="${1:-}"
 shift || true
 dry_run="${DRY_RUN:-0}"
 force_republish="${FORCE_REPUBLISH:-0}"
+allow_incomplete_node_metadata="${ALLOW_INCOMPLETE_NODE_METADATA:-0}"
 run_trace_archive=""
 while (($#)); do
   case "$1" in
@@ -32,6 +33,9 @@ done
   die "DRY_RUN must be 0 or 1"
 [[ "$force_republish" == "0" || "$force_republish" == "1" ]] ||
   die "FORCE_REPUBLISH must be 0 or 1"
+[[ "$allow_incomplete_node_metadata" == "0" ||
+   "$allow_incomplete_node_metadata" == "1" ]] ||
+  die "ALLOW_INCOMPLETE_NODE_METADATA must be 0 or 1"
 optional_http_uri "$run_trace_archive" "--run-trace-archive"
 
 include_cached="${INCLUDE_CACHED_ORIGIN_METRICS:-0}"
@@ -75,6 +79,7 @@ sed \
   -e "s/__INCLUDE_CACHED_ORIGIN_METRICS__/$include_cached/g" \
   -e "s/__DRY_RUN__/$dry_run/g" \
   -e "s/__FORCE_REPUBLISH__/$force_republish/g" \
+  -e "s/__ALLOW_INCOMPLETE_NODE_METADATA__/$allow_incomplete_node_metadata/g" \
   -e "s/__RUN_TRACE_ARCHIVE__/$escaped_run_trace_archive/g" \
   "$job_template" |
   kubectl -n "$NS" apply -f -
@@ -98,6 +103,27 @@ while true; do
   if [[ "$status" == *\|True ]]; then
     kubectl -n "$NS" logs -l "job-name=$job_name" \
       --all-containers=true --prefix=true || true
+    exit_code="$(kubectl -n "$NS" get pods -l "job-name=$job_name" \
+      -o jsonpath='{.items[0].status.containerStatuses[0].state.terminated.exitCode}')"
+    if [[ "$exit_code" == "42" && "$dry_run" == "0" &&
+          "$allow_incomplete_node_metadata" == "0" ]]; then
+      [[ -t 0 ]] || die \
+        "Hardware metadata is incomplete. Run interactively to confirm, or set ALLOW_INCOMPLETE_NODE_METADATA=1 after reviewing the warning."
+      printf '%s\n' \
+        'WARNING: this publication is missing some hardware metadata.' \
+        'The details are shown in the Job log above.'
+      read -r -p 'Publish this run anyway? Type PUBLISH to continue: ' confirmation
+      [[ "$confirmation" == "PUBLISH" ]] || die "Publication cancelled"
+      retry_args=("$RUN_ID")
+      if [[ -n "$run_trace_archive" ]]; then
+        retry_args+=(--run-trace-archive "$run_trace_archive")
+      fi
+      ALLOW_INCOMPLETE_NODE_METADATA=1 \
+        FORCE_REPUBLISH="$force_republish" \
+        DRY_RUN=0 \
+        "$0" "${retry_args[@]}"
+      exit $?
+    fi
     die "Publication Job $job_name failed; no TTL was published"
   fi
   if ((SECONDS >= deadline)); then

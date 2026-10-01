@@ -235,6 +235,15 @@ After run `my-run-01` has finished successfully:
 The last command collects the metadata and uploads it to VIVO automatically.
 No browser upload and no second command are required.
 
+The collector reads the hardware details of every execution node from the
+Kubernetes API. When a namespace is not allowed to read cluster-scoped Node
+objects, it falls back to the equivalent `kube_node_info` and
+`kube_node_status_allocatable` metrics in Prometheus. If both sources leave
+required hardware fields unresolved, the script shows the missing fields and
+asks you to type `PUBLISH` before it sends the incomplete record to VIVO.
+For a reviewed noninteractive publication, set
+`ALLOW_INCOMPLETE_NODE_METADATA=1` explicitly.
+
 Validate collection and RDF generation without contacting VIVO:
 
 ```bash
