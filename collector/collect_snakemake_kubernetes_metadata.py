@@ -817,6 +817,20 @@ def main() -> None:
         args, tasks, run_start - padding, run_end + padding, energy_metric
     )
     images = enrich_metrics_from_pods(pod_metrics, pods)
+    node_names = core.unique(
+        metrics.node_name for metrics in pod_metrics.values()
+    )
+    node_infos = core.collect_node_info(node_names, args.prom_url)
+    missing_hardware = core.missing_node_metadata(node_names, node_infos)
+    if missing_hardware:
+        details = "; ".join(
+            f"{node}: {', '.join(fields)}"
+            for node, fields in missing_hardware.items()
+        )
+        print(
+            "WARNING: publication is missing hardware metadata: " + details,
+            file=sys.stderr,
+        )
     any_metrics = any(
         value.cpu_seconds is not None
         or value.energy_joules is not None
@@ -881,7 +895,7 @@ def main() -> None:
         git_dirty=True,
         energy_metric=energy_metric,
         carbon_info=carbon_info,
-        node_infos=[],
+        node_infos=node_infos,
         images=images,
         responsible_researchers=[],
         responsible_researcher_uris=csv_env("RESPONSIBLE_RESEARCHER_URIS"),

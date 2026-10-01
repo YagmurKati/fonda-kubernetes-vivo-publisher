@@ -66,6 +66,15 @@ DEFAULT_OUTPUT_STEM = "fonda-nextflow-run-metadata"
 DEFAULT_TRACE_TYPES = "Nextflow trace, execution report, timeline, and execution logs"
 DEFAULT_TRACE_DATA_FORMAT = "TSV, HTML, and plain text"
 
+REQUIRED_NODE_METADATA = (
+    ("allocatable", "cpu", "allocatable CPU"),
+    ("allocatable", "memory", "allocatable memory"),
+    ("node_info", "architecture", "architecture"),
+    ("node_info", "osImage", "OS image"),
+    ("node_info", "kernelVersion", "kernel version"),
+    ("node_info", "kubeletVersion", "kubelet version"),
+)
+
 BERLIN_TZ = ZoneInfo("Europe/Berlin")
 MONTHS = {
     "Jan": 1,
@@ -1593,25 +1602,176 @@ def parse_k8s_bytes(quantity: str) -> Optional[float]:
     return value * multiplier if multiplier is not None else None
 
 
-def collect_node_info(node_names: Sequence[str]) -> List[Dict[str, Any]]:
+def prometheus_label_value(value: str) -> str:
+    return value.replace("\\", "\\\\").replace('"', '\\"').replace("\n", "\\n")
+
+
+def prometheus_number_text(value: Optional[float]) -> Optional[str]:
+    if value is None:
+        return None
+    if value.is_integer():
+        return str(int(value))
+    return format(value, ".15g")
+
+
+def collect_prometheus_node_info(
+    prom_url: str, node_name: str
+) -> Dict[str, Any]:
+    """Read kube-state-metrics node facts without cluster-scoped RBAC."""
+    node = prometheus_label_value(node_name)
+    try:
+        info_result = prom_query(
+            prom_url, f'kube_node_info{{node="{node}"}}'
+        )
+    except Exception:
+        info_result = []
+    metric = (
+        info_result[0].get("metric", {})
+        if isinstance(info_result, list) and info_result
+        else {}
+    )
+    label_map = {
+        "architecture": "architecture",
+        "kernel_version": "kernelVersion",
+        "kubelet_version": "kubeletVersion",
+        "os_image": "osImage",
+    }
+    node_info = {
+        target: metric[source]
+        for source, target in label_map.items()
+        if metric.get(source)
+    }
+    if not node_info.get("architecture"):
+        try:
+            uname_result = prom_query(
+                prom_url, f'node_uname_info{{nodename="{node}"}}'
+            )
+        except Exception:
+            uname_result = []
+        uname_metric = (
+            uname_result[0].get("metric", {})
+            if isinstance(uname_result, list) and uname_result
+            else {}
+        )
+        machine_to_kubernetes_arch = {
+            "x86_64": "amd64",
+            "aarch64": "arm64",
+            "armv7l": "arm",
+        }
+        machine = uname_metric.get("machine")
+        if machine:
+            node_info["architecture"] = machine_to_kubernetes_arch.get(
+                machine, machine
+            )
+        if uname_metric.get("release") and not node_info.get("kernelVersion"):
+            node_info["kernelVersion"] = uname_metric["release"]
+
+    allocatable: Dict[str, str] = {}
+    for resource in ("cpu", "memory"):
+        try:
+            result = prom_query(
+                prom_url,
+                "kube_node_status_allocatable"
+                f'{{node="{node}",resource="{resource}"}}',
+            )
+        except Exception:
+            result = []
+        value = prometheus_number_text(first_finite_value(result))
+        if value is not None:
+            allocatable[resource] = value
+
+    return {
+        "name": node_name,
+        "node_info": node_info,
+        "allocatable": allocatable,
+        "labels": {},
+        "metadata_sources": ["prometheus"],
+    }
+
+
+def merge_node_info(
+    primary: Dict[str, Any], fallback: Dict[str, Any]
+) -> Dict[str, Any]:
+    merged = {
+        "name": primary.get("name") or fallback.get("name"),
+        "node_info": dict(primary.get("node_info", {})),
+        "allocatable": dict(primary.get("allocatable", {})),
+        "labels": dict(primary.get("labels", {})),
+        "metadata_sources": list(primary.get("metadata_sources", [])),
+    }
+    for section in ("node_info", "allocatable", "labels"):
+        for key, value in fallback.get(section, {}).items():
+            if value not in (None, ""):
+                merged[section].setdefault(key, value)
+    for source in fallback.get("metadata_sources", []):
+        if source not in merged["metadata_sources"]:
+            merged["metadata_sources"].append(source)
+    return merged
+
+
+def missing_node_metadata(
+    node_names: Sequence[str], node_infos: Sequence[Dict[str, Any]]
+) -> Dict[str, List[str]]:
+    expected_nodes = unique(node_names)
+    if not expected_nodes:
+        return {
+            "execution nodes unresolved": [
+                label for _section, _key, label in REQUIRED_NODE_METADATA
+            ]
+        }
+    by_name = {str(item.get("name")): item for item in node_infos}
+    missing: Dict[str, List[str]] = {}
+    for node_name in expected_nodes:
+        item = by_name.get(node_name, {})
+        absent = [
+            label
+            for section, key, label in REQUIRED_NODE_METADATA
+            if item.get(section, {}).get(key) in (None, "")
+        ]
+        if absent:
+            missing[node_name] = absent
+    return missing
+
+
+def collect_node_info(
+    node_names: Sequence[str], prom_url: Optional[str] = None
+) -> List[Dict[str, Any]]:
     result: List[Dict[str, Any]] = []
     for node_name in node_names:
+        record: Dict[str, Any] = {
+            "name": node_name,
+            "node_info": {},
+            "allocatable": {},
+            "labels": {},
+            "metadata_sources": [],
+        }
         try:
             node = kubectl_json(["get", "node", node_name])
-        except Exception as exc:
-            print(
-                f"WARNING: could not read Kubernetes node {node_name}: {exc}",
-                file=sys.stderr,
-            )
-            continue
-        result.append(
-            {
+            record = {
                 "name": node_name,
                 "node_info": node.get("status", {}).get("nodeInfo", {}),
                 "allocatable": node.get("status", {}).get("allocatable", {}),
                 "labels": node.get("metadata", {}).get("labels", {}),
+                "metadata_sources": ["kubernetes-api"],
             }
-        )
+        except Exception as exc:
+            print(
+                f"WARNING: could not read Kubernetes node {node_name} via "
+                f"the API; trying Prometheus: {exc}",
+                file=sys.stderr,
+            )
+
+        if prom_url and missing_node_metadata([node_name], [record]):
+            try:
+                fallback = collect_prometheus_node_info(prom_url, node_name)
+                record = merge_node_info(record, fallback)
+            except Exception as exc:
+                print(
+                    f"WARNING: could not read node metadata for {node_name} "
+                    f"from Prometheus: {exc}",
+                    file=sys.stderr,
+                )
+        result.append(record)
     return result
 
 
@@ -2751,6 +2911,10 @@ def build_ttl(
         )
         add_resource(lines, ttl_uri(stage["uri"]), predicates)
 
+    expected_nodes = unique(
+        metrics.node_name for metrics in pod_metrics.values()
+    )
+    missing_hardware = missing_node_metadata(expected_nodes, node_infos)
     audit = {
         "workflow_name": args.workflow_name,
         "workflow_uri": workflow_uri,
@@ -2843,6 +3007,13 @@ def build_ttl(
             for stage in stage_records
         ],
         "nodes": list(node_infos),
+        "node_metadata": {
+            "complete": not missing_hardware,
+            "missing_by_node": missing_hardware,
+            "required_fields": [
+                label for _section, _key, label in REQUIRED_NODE_METADATA
+            ],
+        },
         "images": list(images),
     }
     return "\n".join(lines).rstrip() + "\n", audit
@@ -3254,7 +3425,17 @@ def main() -> None:
     node_names = unique(
         metrics.node_name for metrics in pod_metrics.values()
     )
-    node_infos = collect_node_info(node_names)
+    node_infos = collect_node_info(node_names, args.prom_url)
+    missing_hardware = missing_node_metadata(node_names, node_infos)
+    if missing_hardware:
+        details = "; ".join(
+            f"{node}: {', '.join(fields)}"
+            for node, fields in missing_hardware.items()
+        )
+        print(
+            "WARNING: publication is missing hardware metadata: " + details,
+            file=sys.stderr,
+        )
     stages = group_tasks(tasks)
     responsible_researchers = (
         args.responsible_researcher

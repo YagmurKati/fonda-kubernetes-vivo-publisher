@@ -150,6 +150,13 @@ Receipt: ...published.json
 
 No additional upload is needed.
 
+Node hardware metadata is collected first through the Kubernetes API and then,
+when Node access is denied, through Prometheus. The required fields are
+allocatable CPU and memory, architecture, OS image, kernel version, and
+kubelet version. If any remain unavailable, `publish-run.sh` lists what is
+missing and asks you to type `PUBLISH` before continuing. For a reviewed
+noninteractive publication, set `ALLOW_INCOMPLETE_NODE_METADATA=1`.
+
 Validate collection and RDF generation without contacting VIVO:
 
 ```bash
@@ -227,6 +234,8 @@ publishing the run again.
   `FORCE_REPUBLISH=1` is deliberately set. The forced publication replaces the
   run's existing VIVO record instead of adding a second set of values.
 - A dry run gets a new timestamped TTL and audit but no receipt or VIVO write.
+- Incomplete node hardware metadata produces a warning. An interactive
+  publication asks for confirmation before continuing.
 - A removed publication can be replaced after its receipt has been marked with
   the successful removal.
 

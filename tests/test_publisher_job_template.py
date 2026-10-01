@@ -47,6 +47,32 @@ class PublisherJobTemplateTests(unittest.TestCase):
         )
         self.assertIn('value: "__RUN_TRACE_ARCHIVE__"', template)
 
+    def test_incomplete_node_metadata_stops_before_publication(self) -> None:
+        for name in ("publisher-job.yaml", "snakemake-publisher-job.yaml"):
+            template = (
+                Path(__file__).resolve().parents[1] / "k8s" / name
+            ).read_text(encoding="utf-8")
+            with self.subTest(template=name):
+                warning_gate = template.index(
+                    "FONDA_NODE_METADATA_CONFIRMATION_REQUIRED"
+                )
+                publisher = template.index("publisher_args=(")
+                self.assertLess(warning_gate, publisher)
+                self.assertIn("ALLOW_INCOMPLETE_NODE_METADATA", template)
+                self.assertIn("raise SystemExit(42)", template)
+
+    def test_publish_script_prompts_after_hardware_warning(self) -> None:
+        script = (
+            Path(__file__).resolve().parents[1]
+            / "scripts"
+            / "publish-run.sh"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn('[[ "$exit_code" == "42"', script)
+        self.assertIn("Publish this run anyway?", script)
+        self.assertIn('[[ "$confirmation" == "PUBLISH" ]]', script)
+        self.assertIn("ALLOW_INCOMPLETE_NODE_METADATA=1", script)
+
     def test_removal_job_uses_preserved_ttl_and_receipt(self) -> None:
         template = (
             Path(__file__).resolve().parents[1]
