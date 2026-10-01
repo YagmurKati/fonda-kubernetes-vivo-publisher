@@ -33,6 +33,7 @@ spec:
               output_dir="${RUN_ROOT}/vivo-outbox"
               artifact_base="${RUN_ID}-${OUTPUT_STAMP}"
               ttl_file="${output_dir}/${artifact_base}.ttl"
+              audit_file="${output_dir}/${artifact_base}.metrics.json"
               receipt_file="${output_dir}/${artifact_base}.published.json"
               mkdir -p "$output_dir"
 
@@ -55,6 +56,48 @@ spec:
                 --run-id "$RUN_ID" \
                 --input-metadata-file /opt/fonda-vivo/input_datasets.json \
                 --output-file "$ttl_file"
+
+              python3 - "$audit_file" "$DRY_RUN" \
+                "$ALLOW_INCOMPLETE_NODE_METADATA" <<'PY'
+              import json
+              import sys
+
+              audit_path, dry_run, allow_incomplete = sys.argv[1:]
+              with open(audit_path, encoding="utf-8") as handle:
+                  audit = json.load(handle)
+              status = audit.get("node_metadata", {})
+              if status.get("complete"):
+                  raise SystemExit(0)
+
+              missing = status.get("missing_by_node", {})
+              details = "; ".join(
+                  f"{node}: {', '.join(fields)}"
+                  for node, fields in missing.items()
+              ) or "execution nodes or required fields could not be resolved"
+              print(
+                  "WARNING: this publication is missing hardware metadata: "
+                  + details,
+                  file=sys.stderr,
+              )
+              if dry_run == "1":
+                  print(
+                      "Dry run only; a real publication will ask whether to "
+                      "continue.",
+                      file=sys.stderr,
+                  )
+                  raise SystemExit(0)
+              if allow_incomplete == "1":
+                  print(
+                      "Continuing after explicit confirmation.",
+                      file=sys.stderr,
+                  )
+                  raise SystemExit(0)
+              print(
+                  "FONDA_NODE_METADATA_CONFIRMATION_REQUIRED",
+                  file=sys.stderr,
+              )
+              raise SystemExit(42)
+              PY
 
               publisher_args=(
                 python3 /opt/fonda-vivo/publisher.py
@@ -83,6 +126,8 @@ spec:
               value: "__DRY_RUN__"
             - name: FORCE_REPUBLISH
               value: "__FORCE_REPUBLISH__"
+            - name: ALLOW_INCOMPLETE_NODE_METADATA
+              value: "__ALLOW_INCOMPLETE_NODE_METADATA__"
             - name: ELECTRICITY_MAPS_API_TOKEN
               valueFrom:
                 secretKeyRef:

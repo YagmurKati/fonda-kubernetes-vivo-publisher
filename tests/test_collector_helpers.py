@@ -14,11 +14,13 @@ from collector.collect_nextflow_run_metadata import (
     TaskRecord,
     build_ttl,
     classify_stage,
+    collect_node_info,
     commit_url,
     derive_status,
     energy_measurement_coverage,
     group_tasks,
     load_input_datasets,
+    missing_node_metadata,
     parse_cpu_percent,
     parse_log_metadata,
     stage_run_label,
@@ -202,6 +204,90 @@ class ContainerImageSelectionTests(unittest.TestCase):
         self.assertEqual(
             select_container_images([], [], ["example/fallback:1"]),
             ["example/fallback:1"],
+        )
+
+
+class NodeMetadataTests(unittest.TestCase):
+    def test_prometheus_fallback_recovers_all_required_hardware_fields(
+        self,
+    ) -> None:
+        def prom_result(_url: str, query: str):
+            if query.startswith("kube_node_info"):
+                return [
+                    {
+                        "metric": {
+                            "kernel_version": "5.15.0-177-generic",
+                            "kubelet_version": "v1.27.7",
+                            "os_image": "Ubuntu 22.04.4 LTS",
+                        },
+                        "value": [1, "1"],
+                    }
+                ]
+            if query.startswith("node_uname_info"):
+                return [
+                    {
+                        "metric": {
+                            "machine": "x86_64",
+                            "release": "5.15.0-177-generic",
+                        },
+                        "value": [1, "1"],
+                    }
+                ]
+            if 'resource="cpu"' in query:
+                return [{"metric": {}, "value": [1, "32"]}]
+            if 'resource="memory"' in query:
+                return [
+                    {"metric": {}, "value": [1, "269780221952"]}
+                ]
+            self.fail(f"Unexpected Prometheus query: {query}")
+
+        with mock.patch(
+            "collector.collect_nextflow_run_metadata.kubectl_json",
+            side_effect=RuntimeError("forbidden"),
+        ), mock.patch(
+            "collector.collect_nextflow_run_metadata.prom_query",
+            side_effect=prom_result,
+        ):
+            nodes = collect_node_info(
+                ["hu-worker-c41"], "http://prometheus:9090"
+            )
+
+        self.assertEqual(nodes[0]["allocatable"]["cpu"], "32")
+        self.assertEqual(
+            nodes[0]["allocatable"]["memory"], "269780221952"
+        )
+        self.assertEqual(nodes[0]["node_info"]["architecture"], "amd64")
+        self.assertEqual(nodes[0]["metadata_sources"], ["prometheus"])
+        self.assertEqual(missing_node_metadata(["hu-worker-c41"], nodes), {})
+
+    def test_missing_node_metadata_names_each_absent_field(self) -> None:
+        missing = missing_node_metadata(
+            ["hu-worker-c41"],
+            [
+                {
+                    "name": "hu-worker-c41",
+                    "allocatable": {"cpu": "32"},
+                    "node_info": {"architecture": "amd64"},
+                }
+            ],
+        )
+
+        self.assertEqual(
+            missing["hu-worker-c41"],
+            [
+                "allocatable memory",
+                "OS image",
+                "kernel version",
+                "kubelet version",
+            ],
+        )
+
+    def test_unresolved_execution_nodes_are_incomplete(self) -> None:
+        missing = missing_node_metadata([], [])
+
+        self.assertIn("execution nodes unresolved", missing)
+        self.assertIn(
+            "allocatable CPU", missing["execution nodes unresolved"]
         )
 
 
