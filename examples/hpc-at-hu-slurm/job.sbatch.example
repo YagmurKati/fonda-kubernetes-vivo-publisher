@@ -5,11 +5,13 @@
 #SBATCH --cpus-per-task=2
 #SBATCH --time=01:00:00
 # Example Slurm job for HPC@HU that records the node samples needed for VIVO.
-# Only the last line differs from a normal job: the real command is wrapped.
+# Only the last lines differ from a normal job: the real command is wrapped.
 
 WORK=/lustre/GROUP/USER/fonda
 PUBLISHER="$WORK/fonda-kubernetes-vivo-publisher"
 EVIDENCE="$HOME/vivo-evidence/$SLURM_JOB_ID"
+# Seconds between IPMI power readings: 1 for short jobs, 10 for jobs of hours.
+export SAMPLE_INTERVAL=1
 
 "$PUBLISHER/collector/slurm/run-with-node-sampler.sh" "$EVIDENCE" -- \
   bash ./my_workflow.sh

@@ -232,6 +232,77 @@ class SlurmCollectorTests(unittest.TestCase):
         self.assertNotIn("rm:carbonEmissionKgCO2e", ttl)
 
 
+# Whole-node job on HPC@HU (job 1598432, 2026-10-02): Slurm accounting and the
+# 72 IPMI power readings (watts) taken one second apart while it ran.
+WHOLE_NODE_SACCT = """\
+1598432|rangeland-test|COMPLETED|2026-10-02T21:04:19|2026-10-02T21:05:33|74|23:46.794|256|||hpc-cms01-005|1|standard|0:0|billing=256,cpu=256,mem=32G,node=1
+1598432.batch|batch|COMPLETED|2026-10-02T21:04:19|2026-10-02T21:05:33|74|23:46.794|256||36498|hpc-cms01-005|1||0:0|billing=256,cpu=256,mem=32G,node=1
+"""
+WHOLE_NODE_WATTS = [
+    412, 374, 402, 427, 453, 492, 405, 476, 449, 449, 471, 475, 420, 420, 426, 295, 294, 350, 481, 541, 541, 514,
+    464, 712, 437, 412, 612, 687, 719, 756, 647, 460, 445, 445, 423, 539, 467, 525, 462, 484, 480, 457, 483, 504,
+    504, 434, 536, 469, 453, 545, 556, 446, 502, 498, 538, 538, 516, 507, 462, 445, 575, 770, 665, 730, 758, 767,
+    471, 471, 438, 444, 444, 434]
+
+
+class WholeNodeEnergyTests(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.root = Path(self.tmp.name)
+        (self.root / "sacct.txt").write_text(WHOLE_NODE_SACCT)
+        self.start = datetime(2026, 10, 2, 21, 4, 20, tzinfo=TZ).timestamp()
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def collect(self, watts, node_cpus=256):
+        evidence = self.root / "evidence"
+        evidence.mkdir()
+        times = [self.start + i for i in range(len(watts) - 1)] + [self.start + len(watts) - 2 + 1.49]
+        (evidence / "node-samples.tsv").write_text("".join(
+            f"{t:.3f}\t{1000 + 20 * i:.3f}\t{node_cpus}\t{w}\n" for i, (t, w) in enumerate(zip(times, watts))))
+        (evidence / "job-info.tsv").write_text(
+            "slurm_job_id\t1598432\nhostname\thpc-cms01-005\nsample_interval_seconds\t1\n")
+        stderr = io.StringIO()
+        with mock.patch("sys.stdout", io.StringIO()), mock.patch("sys.stderr", stderr):
+            slurm.main(["--job-id", "1598432", "--evidence-dir", str(evidence), "--output-dir", str(self.root / "out"),
+                        "--sacct-file", str(self.root / "sacct.txt"), "--workflow-uri", WORKFLOW,
+                        "--run-operator-uri", OPERATOR, "--no-carbon"])
+        summary = json.loads((self.root / "out" / "summary.json").read_text())
+        return (self.root / "out" / "run.ttl").read_text(), summary, stderr.getvalue(), times
+
+    def test_whole_node_job_uses_the_sampled_ipmi_power(self):
+        ttl, summary, stderr, times = self.collect(WHOLE_NODE_WATTS)
+        window = times[-1] - times[0]
+        expected = sum((a + b) / 2 * (t1 - t0) for a, b, t0, t1 in zip(
+            WHOLE_NODE_WATTS, WHOLE_NODE_WATTS[1:], times, times[1:])) * 74 / window
+        self.assertTrue(summary["whole_node"])
+        self.assertEqual(summary["energy_basis"], "sampled")
+        self.assertEqual(summary["cpu_share"], 1.0)
+        self.assertAlmostEqual(summary["energy_joules"], expected, places=6)
+        self.assertAlmostEqual(summary["energy_joules"], 37154, delta=40)  # value published for this job
+        self.assertEqual(summary["slurm_node_energy_joules"], 36498.0)
+        self.assertIn("read about every 1.0 s while the job ran (72 readings, 294 to 770 W", ttl)
+        self.assertIn("Slurm accounting (acct_gather_energy/ipmi) reports 36498 J", ttl)
+        self.assertIn("The whole node was allocated to this job", ttl)
+        self.assertNotIn("CPU-time share", ttl)
+        self.assertNotIn("the job shared its node", stderr)
+
+    def test_whole_node_job_without_power_readings_uses_the_slurm_energy(self):
+        ttl, summary, stderr, _ = self.collect(["NA"] * 72)
+        self.assertEqual(summary["energy_basis"], "slurm")
+        self.assertEqual(summary["energy_joules"], 36498.0)
+        self.assertIn("too few IPMI power readings", stderr)
+        self.assertIn("Slurm acct_gather_energy/ipmi ConsumedEnergyRaw, 36498 J", ttl)
+
+    def test_job_on_a_shared_node_is_an_estimate_and_says_so(self):
+        ttl, summary, stderr, _ = self.collect(WHOLE_NODE_WATTS, node_cpus=512)
+        self.assertFalse(summary["whole_node"])
+        self.assertEqual(summary["energy_basis"], "slurm")
+        self.assertIn("NOTE: the job shared its node", stderr)
+        self.assertIn("Energy is an estimate", ttl)
+
+
 class NodeSamplerScriptTests(unittest.TestCase):
     def test_sampler_records_node_metrics_and_keeps_exit_status(self):
         script = ROOT / "collector" / "slurm" / "run-with-node-sampler.sh"
@@ -259,6 +330,19 @@ class NodeSamplerScriptTests(unittest.TestCase):
             node = (tmp / "ev" / "node-info.tsv").read_text()
             self.assertIn("architecture\t", node)
             self.assertIn("node_cpus\t", node)
+            fast = subprocess.run([str(script), str(tmp / "fast"), "--", "sleep", "1.6"],
+                                  env=dict(env, SAMPLE_INTERVAL="0.3"), capture_output=True, text=True, timeout=30)
+            self.assertEqual(fast.returncode, 0, fast.stderr)
+            stamps = [float(line.split("\t")[0]) for line in
+                      (tmp / "fast" / "node-samples.tsv").read_text().splitlines()]
+            gaps = [b - a for a, b in zip(stamps, stamps[1:])][:-1]
+            self.assertGreaterEqual(len(stamps), 5)
+            self.assertTrue(all(abs(gap - 0.3) < 0.15 for gap in gaps), gaps)
+            for bad in ("0", "-1", "abc"):
+                refused = subprocess.run([str(script), str(tmp / ("bad" + bad)), "--", "true"],
+                                         env=dict(env, SAMPLE_INTERVAL=bad), capture_output=True, text=True, timeout=30)
+                self.assertEqual(refused.returncode, 2)
+                self.assertIn("SAMPLE_INTERVAL", refused.stderr)
             again = subprocess.run([str(script), str(tmp / "ev"), "--", "true"], env=env,
                                    capture_output=True, text=True, timeout=30)
             self.assertEqual(again.returncode, 2)

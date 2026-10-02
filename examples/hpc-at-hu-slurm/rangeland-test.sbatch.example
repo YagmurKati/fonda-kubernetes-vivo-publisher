@@ -7,6 +7,11 @@
 #SBATCH --time=02:00:00
 # nf-core/rangeland 1.0.0, test profile, on one HPC@HU node.
 # Copy to $WORK/rangeland-test.sbatch and set WORK to your Lustre directory.
+#
+# The published example runs had one more line above that made the job
+# exclusive for the node. That is not recommended for other users of the
+# cluster, so the line has been removed here. The job runs without it; it then
+# shares its node, and its energy is an estimate (see README.md, "Energy").
 
 WORK=/lustre/GROUP/USER/fonda
 
@@ -19,6 +24,8 @@ export NXF_OPTS="-Xms1g -Xmx4g"
 mkdir -p "$APPTAINER_CACHEDIR" "$APPTAINER_TMPDIR"
 cd "$WORK"
 
+# Read the node's IPMI power every second while the workflow runs.
+export SAMPLE_INTERVAL=1
 "$WORK/fonda-kubernetes-vivo-publisher/collector/slurm/run-with-node-sampler.sh" \
   "$HOME/vivo-evidence/$SLURM_JOB_ID" -- \
   nextflow run nf-core/rangeland -r 1.0.0 -profile test,apptainer --outdir "results-$SLURM_JOB_ID"

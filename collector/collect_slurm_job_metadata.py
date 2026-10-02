@@ -3,14 +3,19 @@
 
 Inputs:
   * Slurm accounting (`sacct`) for the job: times, state, CPU time, memory and
-    the node energy measured by `acct_gather_energy/ipmi`;
+    the node energy recorded by `acct_gather_energy/ipmi`;
   * the node samples written by `collector/slurm/run-with-node-sampler.sh`
     while the job ran (node CPU use and IPMI power).
 
-IPMI measures the whole node. The job's energy is therefore estimated as its
-CPU-time share of the node energy:
+IPMI measures the power of the whole node.
 
-    job energy = node energy x (job CPU time / CPU time of everything on the node)
+  * Job with the whole node (all of the node's CPUs allocated): the energy is
+    measured. The sampled IPMI power is integrated over the job;
+    Slurm's own value, read at longer intervals, is kept for comparison.
+  * Job on a shared node: the energy can only be estimated, as the job's
+    CPU-time share of the node energy:
+
+        job energy = node energy x (job CPU time / CPU time of everything on the node)
 
 No cluster or network writes; the Turtle file is published separately with
 publisher/publish_vivo.py.
@@ -86,6 +91,16 @@ def read_sacct(job_id, sacct_file=None):
     jobs = [r for r in rows if r["JobID"] == str(job_id)]
     require(len(jobs) == 1, f"sacct has no single record for job {job_id}")
     return jobs[0], [r for r in rows if r["JobID"] != str(job_id)]
+
+
+def slurm_node_frequency():
+    """Slurm's node energy sampling interval, e.g. '30 sec'; None if unknown."""
+    try:
+        text = subprocess.run(["scontrol", "show", "config"], check=True, capture_output=True, text=True, timeout=30).stdout
+    except (OSError, subprocess.SubprocessError):
+        return None
+    match = re.search(r"AcctGatherNodeFreq\s*=\s*(.+)", text)
+    return match[1].strip() if match else None
 
 
 def read_info(evidence):
@@ -271,27 +286,56 @@ def summarize(job, steps, info, samples, tz):
     node_energy = max(energies) if energies else 0
     memory = [m for m in (parse_memory_bytes(r["MaxRSS"]) for r in [job, *steps]) if m is not None]
 
-    busy = [(t, b) for t, b, _, _ in samples if b is not None]
-    require(len(busy) >= 2, "Node samples contain no CPU readings; was node_exporter reachable?")
-    window = busy[-1][0] - busy[0][0]
-    coverage = window / elapsed
-    require(coverage >= MIN_SAMPLE_COVERAGE,
-            f"Node samples cover only {coverage:.0%} of the job; wrap the whole job command with the sampler")
-    node_busy = busy[-1][1] - busy[0][1]
-    require(node_busy > 0, "Node CPU counter did not increase")
-    # The job's CPU time is accounted over the whole job; scale the node's CPU
-    # time to the same length before dividing.
-    node_busy_job = node_busy * elapsed / window
-    share = min(job_cpu / node_busy_job, 1.0)
     cpu_counts = [c for _, _, c, _ in samples if c]
     node_cpus = max(cpu_counts) if cpu_counts else None
+    # All CPUs of the node allocated to this job: no other job can run on it,
+    # so the measured node energy is the job's energy and no share is needed.
+    whole_node = node_cpus is not None and int(job["NCPUS"]) >= node_cpus
+    busy = [(t, b) for t, b, _, _ in samples if b is not None]
+    if whole_node:
+        window = samples[-1][0] - samples[0][0]
+        require(window > 0, "Node samples span no time")
+        coverage = window / elapsed
+        node_busy_job = None
+        share = 1.0
+    else:
+        require(len(busy) >= 2, "Node samples contain no CPU readings; was node_exporter reachable?")
+        window = busy[-1][0] - busy[0][0]
+        coverage = window / elapsed
+        require(coverage >= MIN_SAMPLE_COVERAGE,
+                f"Node samples cover only {coverage:.0%} of the job; wrap the whole job command with the sampler")
+        node_busy = busy[-1][1] - busy[0][1]
+        require(node_busy > 0, "Node CPU counter did not increase")
+        # The job's CPU time is accounted over the whole job; scale the node's CPU
+        # time to the same length before dividing.
+        node_busy_job = node_busy * elapsed / window
+        share = min(job_cpu / node_busy_job, 1.0)
 
     start_ts, end_ts = start.timestamp(), end.timestamp()
     fraction, power_points = power_profile(samples, start_ts, end_ts)
-    if node_energy <= 0:
-        watts = [(t, w) for t, _, _, w in samples if w is not None]
-        require(len(watts) >= 2, "No IPMI energy from Slurm and no sampled power")
-        node_energy = sum((a[1] + b[1]) / 2 * (b[0] - a[0]) for a, b in zip(watts, watts[1:])) * elapsed / window
+    watts = [(t, w) for t, _, _, w in samples if w is not None]
+    # Node energy from the sampled IPMI power: trapezoid over the readings,
+    # scaled from the sampled window to the job duration.
+    sampled_energy, power_coverage, power_interval = None, 0.0, None
+    if len(watts) >= 2 and watts[-1][0] > watts[0][0]:
+        power_window = watts[-1][0] - watts[0][0]
+        power_coverage = power_window / elapsed
+        power_interval = power_window / (len(watts) - 1)
+        sampled_energy = sum((a[1] + b[1]) / 2 * (b[0] - a[0]) for a, b in zip(watts, watts[1:])) * elapsed / power_window
+    slurm_energy = float(node_energy) if node_energy > 0 else None
+    # Slurm reads the node power only every AcctGatherNodeFreq seconds, which
+    # is coarse for short jobs. For a whole-node job the sampler's readings
+    # (every few seconds) give the job's energy directly, so they are used
+    # and the Slurm value is kept for comparison.
+    energy_basis = "slurm"
+    if whole_node and sampled_energy is not None and power_coverage >= MIN_SAMPLE_COVERAGE:
+        node_energy = sampled_energy
+        energy_basis = "sampled"
+        energy_source = "IPMI power of the node (ipmi_exporter), sampled during the job and integrated over time"
+    elif node_energy <= 0:
+        require(sampled_energy is not None, "No IPMI energy from Slurm and no sampled power")
+        node_energy = sampled_energy
+        energy_basis = "sampled"
         energy_source = "integrated ipmi_exporter power samples (Slurm reported no ConsumedEnergy)"
     else:
         energy_source = "Slurm acct_gather_energy/ipmi ConsumedEnergyRaw"
@@ -305,6 +349,13 @@ def summarize(job, steps, info, samples, tz):
         duration_seconds=elapsed, cpu_seconds=job_cpu,
         memory_peak_gb=(max(memory) / 1e9) if memory else None,
         node_energy_joules=float(node_energy), node_energy_source=energy_source,
+        whole_node=whole_node, energy_basis=energy_basis, sampled_node_energy_joules=sampled_energy,
+        slurm_node_energy_joules=slurm_energy, power_coverage=power_coverage,
+        power_interval_seconds=power_interval,
+        sample_interval_actual_seconds=((samples[-1][0] - samples[0][0]) / (len(samples) - 1)),
+        power_reading_count=len(watts),
+        power_min_watts=min(w for _, w in watts) if watts else None,
+        power_max_watts=max(w for _, w in watts) if watts else None,
         node_busy_cpu_seconds=node_busy_job, sample_window_seconds=window, sample_coverage=coverage,
         sample_count=len(samples), power_sample_count=power_points,
         sample_interval_seconds=info.get("sample_interval_seconds", ""),
@@ -327,6 +378,11 @@ def fetch_carbon_optional(summary):
         print("WARNING: no carbon-intensity data matches this run's time (check ELECTRICITY_MAPS_API_TOKEN); "
               "carbon values are left out.", file=sys.stderr)
         return None
+
+
+def interval_text(seconds):
+    """Measured sampling interval for the method text: '1.0', '2.5', '10', '11'."""
+    return f"{seconds:.0f}" if seconds >= 9.5 else f"{seconds:.1f}"
 
 
 def run_period(start_utc, end_utc, tz):
@@ -355,14 +411,39 @@ def build_ttl(summary, args, tz):
     s = summary
     title = f"{args.run_label or s['job_name']} · run {run_period(s['start_utc'], s['end_utc'], tz)}"
     node_cpus = f" of {s['node_cpus']} node CPUs" if s["node_cpus"] else ""
-    scope = (f"Single node {s['node']} ({args.cluster_label}), shared with other jobs. Energy is an estimate: "
-             "the job's CPU-time share of the measured whole-node energy. Idle and other node power is "
-             "distributed by CPU time; cooling and network are excluded.")
-    method = (f"Node energy: {s['node_energy_source']}, {s['node_energy_joules']:.0f} J over the job "
+    if s["whole_node"]:
+        scope = (f"Single node {s['node']} ({args.cluster_label}), allocated entirely to this job "
+                 f"(all {s['node_cpus']} CPUs). Energy is the measured energy of the whole node, including its "
+                 "idle power; cooling and network are excluded.")
+        if s["energy_basis"] == "sampled":
+            measured = (f"Node energy: IPMI power of the node (ipmi_exporter) read about every "
+                        f"{interval_text(s['power_interval_seconds'])} s while the job ran ({s['power_reading_count']} readings, "
+                        f"{s['power_min_watts']:.0f} to {s['power_max_watts']:.0f} W, covering "
+                        f"{s['power_coverage']:.0%} of the job), integrated over time and scaled to the job "
+                        f"duration ({s['duration_seconds']:.0f} s): {s['node_energy_joules']:.0f} J. ")
+            comparison = ""
+            if s.get("slurm_node_energy_joules"):
+                frequency = f" every {s['slurm_node_freq']}" if s.get("slurm_node_freq") else " at longer intervals"
+                comparison = (f"For comparison, Slurm accounting (acct_gather_energy/ipmi) reports "
+                              f"{s['slurm_node_energy_joules']:.0f} J; it reads the power only{frequency}, "
+                              "which is less precise for a job of this length. ")
+        else:
+            measured = (f"Node energy: {s['node_energy_source']}, {s['node_energy_joules']:.0f} J over the job "
+                        f"({s['duration_seconds']:.0f} s). ")
+            comparison = ""
+        method = (measured + "The whole node was allocated to this job, so all of it is the job's energy, "
+                  f"converted to kilowatt-hours (1 kWh = 3,600,000 J): {s['energy_kwh']:.6f} kWh. "
+                  + comparison + scope)
+    else:
+        scope = (f"Single node {s['node']} ({args.cluster_label}), shared with other jobs. Energy is an estimate: "
+                 "the job's CPU-time share of the measured whole-node energy. Idle and other node power is "
+                 "distributed by CPU time; cooling and network are excluded.")
+    method = method if s["whole_node"] else (
+              f"Node energy: {s['node_energy_source']}, {s['node_energy_joules']:.0f} J over the job "
               f"({s['duration_seconds']:.0f} s, whole node). Job share = job CPU time {s['cpu_seconds']:.1f} s / "
               f"CPU time of all processes on the node in the same interval {s['node_busy_cpu_seconds']:.1f} s "
               f"(node_exporter node_cpu_seconds_total, all modes except idle and iowait; {s['sample_count']} samples "
-              f"every {s['sample_interval_seconds']} s, covering {s['sample_coverage']:.0%} of the job) = {s['cpu_share']:.4f}. "
+              f"about every {interval_text(s['sample_interval_actual_seconds'])} s, covering {s['sample_coverage']:.0%} of the job) = {s['cpu_share']:.4f}. "
               f"Job energy = {s['node_energy_joules']:.0f} J x {s['cpu_share']:.4f} = {s['energy_joules']:.0f} J, "
               f"converted to kilowatt-hours (1 kWh = 3,600,000 J): {s['energy_kwh']:.6f} kWh. " + scope)
     props = [("rdf:type", "rm:RunMetadata"), ("rdfs:label", label(title)), ("dcterms:title", label(title)),
@@ -375,7 +456,10 @@ def build_ttl(summary, args, tz):
              ("rm:cpuTimeSeconds", literal(s["cpu_seconds"])),
              ("rm:cpuTimeCalculationMethod", literal(f"Slurm TotalCPU of the job (user + system CPU time of all steps); {s['ncpus']} CPUs allocated{node_cpus}.")),
              ("rm:energyKWh", literal(s["energy_kwh"])), ("rm:energyCalculationMethod", literal(method)),
-             ("rm:energyMetricSource", literal("Slurm acct_gather_energy/ipmi; Prometheus node_exporter and ipmi_exporter on the compute node")),
+             ("rm:energyMetricSource", literal(
+                 "IPMI power of the compute node read through its Prometheus ipmi_exporter; Slurm acct_gather_energy/ipmi for comparison"
+                 if s["energy_basis"] == "sampled" and s["whole_node"] else
+                 "Slurm acct_gather_energy/ipmi; Prometheus node_exporter and ipmi_exporter on the compute node")),
              ("rm:energyCalculationUsesFallbackEstimate", literal(False)),
              ("rm:resourceAccountingScope", literal(scope)),
              ("rm:resourceAccountingStartTime", local(s["start_utc"])), ("rm:resourceAccountingEndTime", local(s["end_utc"])),
@@ -571,6 +655,13 @@ def main(argv=None):
     tz = ZoneInfo(args.timezone)
     job, steps = read_sacct(args.job_id, args.sacct_file)
     summary = summarize(job, steps, read_info(args.evidence_dir), read_samples(args.evidence_dir), tz)
+    summary["slurm_node_freq"] = None if args.sacct_file else slurm_node_frequency()
+    if not summary["whole_node"]:
+        print("NOTE: the job shared its node, so its energy is an estimate (the job's CPU-time share of the "
+              "node energy).", file=sys.stderr)
+    elif summary["energy_basis"] != "sampled":
+        print("WARNING: too few IPMI power readings were recorded; using Slurm's coarser node energy.",
+              file=sys.stderr)
     summary["node_info"] = read_node_info(args.evidence_dir)
     if not summary["node_info"]:
         print("WARNING: no node-info.tsv; node hardware is left out.", file=sys.stderr)
@@ -591,8 +682,9 @@ def main(argv=None):
         public["carbon"] = {k: v for k, v in public["carbon"].items() if k not in ("attempts",)}
     public["run_uri"] = run
     (args.output_dir / "summary.json").write_text(json.dumps(public, indent=2, default=str) + "\n")
-    print(json.dumps({k: public[k] for k in ("status", "duration_seconds", "cpu_seconds", "cpu_share",
-                                             "node_energy_joules", "energy_kwh", "run_uri")}, indent=2))
+    print(json.dumps({k: public[k] for k in ("status", "duration_seconds", "cpu_seconds", "whole_node", "energy_basis",
+                                             "slurm_node_energy_joules", "sampled_node_energy_joules", "energy_kwh",
+                                             "run_uri")}, indent=2))
     print("TTL: " + str(args.output_dir / "run.ttl"))
 
 

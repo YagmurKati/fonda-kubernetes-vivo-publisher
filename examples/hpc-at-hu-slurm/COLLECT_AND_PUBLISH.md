@@ -55,15 +55,23 @@ cd "$WORK/fonda-kubernetes-vivo-publisher"
 sed "s#^WORK=.*#WORK=$WORK#" examples/hpc-at-hu-slurm/rangeland-test.sbatch.example > "$WORK/rangeland-test.sbatch"
 ```
 
-The job file is a normal Slurm job. Its last command is wrapped with
-`collector/slurm/run-with-node-sampler.sh`, which records the node's hardware,
-CPU use and power while the job runs:
+Two things in the job file matter for the metadata:
+
+```bash
+export SAMPLE_INTERVAL=1
+```
+
+The node's IPMI power is read every second. Use `10` for jobs that run for
+hours.
 
 ```bash
 "$WORK/fonda-kubernetes-vivo-publisher/collector/slurm/run-with-node-sampler.sh" \
   "$HOME/vivo-evidence/$SLURM_JOB_ID" -- \
   nextflow run nf-core/rangeland -r 1.0.0 -profile test,apptainer --outdir "results-$SLURM_JOB_ID"
 ```
+
+The job's command is wrapped with the sampler, which records the node's
+hardware, CPU use and power while the command runs.
 
 ## 3. Run the job
 
@@ -85,7 +93,8 @@ squeue -u "$USER"
 sacct -j JOB_ID --format=JobID,State,Elapsed,TotalCPU,MaxRSS,ConsumedEnergyRaw,NodeList
 ```
 
-`State` must be `COMPLETED`. If not, read `slurm-JOB_ID.out`.
+`State` must be `COMPLETED`. If not, read `slurm-JOB_ID.out`. For
+`OUT_OF_MEMORY`, raise `#SBATCH --mem` in the job file and submit again.
 
 ## 5. Collect the metadata (dry run)
 
@@ -99,16 +108,31 @@ Nothing is sent to VIVO. Expected output:
 ```text
 {
   "status": "Succeeded",
-  "duration_seconds": 915.0,
-  "cpu_seconds": 2176.151,
-  "cpu_share": 0.0811,
-  "node_energy_joules": 724680.0,
-  "energy_kwh": 0.01633,
+  "duration_seconds": 74.0,
+  "cpu_seconds": 1426.794,
+  "whole_node": true,
+  "energy_basis": "sampled",
+  "slurm_node_energy_joules": 36498.0,
+  "sampled_node_energy_joules": 37154.2,
+  "energy_kwh": 0.01032,
   "run_uri": "http://example.org/vivo-import/run-metadata/run/hpc-at-hu-slurm-JOB_ID-..."
 }
 TTL: /home/.../vivo-evidence/JOB_ID/publication-.../run.ttl
 TTL validated: ...
 Run-owned resources replaced on publication: 14
+```
+
+This is the output of a published example run, which had the whole node:
+`whole_node` is `true` and `energy_basis` is `sampled`, so the energy comes
+from the IPMI power readings taken during the job, and
+`slurm_node_energy_joules` is Slurm's own, coarser value for comparison.
+
+With the example job file your job shares its node. Then `whole_node` is
+`false`, `energy_basis` is `slurm`, and this line is printed, which is
+expected:
+
+```text
+NOTE: the job shared its node, so its energy is an estimate (the job's CPU-time share of the node energy).
 ```
 
 There must be no `WARNING` line:
@@ -118,6 +142,7 @@ There must be no `WARNING` line:
 | `RUN_OPERATOR_URI ... is empty`, `the run has no rm:runOperator` | `RUN_OPERATOR_URI` not set in `slurm.env` |
 | `no carbon-intensity data matches` | Electricity Maps token missing or wrong |
 | `no node-info.tsv` | the job was not wrapped with the sampler |
+| `too few IPMI power readings` | the node's IPMI exporter (port 9290) did not answer during the job |
 | `none of the given Nextflow logs/traces` | `NEXTFLOW_LAUNCH_DIR` or `NEXTFLOW_TRACE_GLOB` wrong |
 
 ## 6. Publish
@@ -155,7 +180,7 @@ workflow, cluster and dataset records and the local files stay.
    `LANGUAGE_URIS` and `INPUT_DATA_URIS` for your workflow. For jobs without
    Nextflow, leave `NEXTFLOW_LAUNCH_DIR` and `NEXTFLOW_TRACE_GLOB` empty and
    set `GIT_COMMIT`.
-2. In your own job file, wrap the main command as in
-   [`job.sbatch.example`](job.sbatch.example). The job must use one node.
+2. In your own job file, set `SAMPLE_INTERVAL` and wrap the main command, as
+   in [`job.sbatch.example`](job.sbatch.example). The job must use one node.
 
 Steps 3 to 7 are the same.
