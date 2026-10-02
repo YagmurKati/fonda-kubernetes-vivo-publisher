@@ -23,6 +23,10 @@ shift 2
 NODE_EXPORTER_URL="${NODE_EXPORTER_URL:-http://localhost:9100/metrics}"
 IPMI_EXPORTER_URL="${IPMI_EXPORTER_URL:-http://localhost:9290/metrics}"
 SAMPLE_INTERVAL="${SAMPLE_INTERVAL:-10}"
+if ! [[ "$SAMPLE_INTERVAL" =~ ^[0-9]+([.][0-9]+)?$ ]] || ! awk -v i="$SAMPLE_INTERVAL" 'BEGIN { exit !(i > 0) }'; then
+  printf 'ERROR: SAMPLE_INTERVAL must be a positive number of seconds.\n' >&2
+  exit 2
+fi
 
 mkdir -p "$EVIDENCE_DIR"
 SAMPLES="$EVIDENCE_DIR/node-samples.tsv"
@@ -31,9 +35,16 @@ if [[ -e "$SAMPLES" ]]; then
   exit 2
 fi
 
+SAMPLER_TMP="$(mktemp -d)"
+
 sample() {
-  local now cpu power
+  local now cpu power ipmi_file ipmi_pid
   now="$(date +%s.%N)"
+  # Both exporters are read at the same time, so one sample takes as long as
+  # the slower of the two (the IPMI query).
+  ipmi_file="$SAMPLER_TMP/ipmi.$BASHPID"
+  curl -s -m 5 "$IPMI_EXPORTER_URL" > "$ipmi_file" 2>/dev/null &
+  ipmi_pid=$!
   cpu="$(curl -s -m 5 "$NODE_EXPORTER_URL" | awk '
     /^node_cpu_seconds_total\{/ {
       mode = $0; sub(/.*mode="/, "", mode); sub(/".*/, "", mode)
@@ -42,10 +53,11 @@ sample() {
       if (mode != "idle" && mode != "iowait") busy += $NF
     }
     END { n = 0; for (c in cpus) n++; if (n) printf "%.3f\t%d", busy, n; else printf "NA\tNA" }')"
-  power="$(curl -s -m 5 "$IPMI_EXPORTER_URL" | awk '
+  wait "$ipmi_pid" 2>/dev/null
+  power="$(awk '
     /^ipmi_dcmi_power_consumption_watts / { dcmi = $NF }
     /^ipmi_power_watts\{/ { sensor = $NF }
-    END { if (dcmi != "") print dcmi; else if (sensor != "") print sensor; else print "NA" }')"
+    END { if (dcmi != "") print dcmi; else if (sensor != "") print sensor; else print "NA" }' "$ipmi_file" 2>/dev/null)"
   [[ -n "$cpu" ]] || cpu=$'NA\tNA'
   [[ -n "$power" ]] || power="NA"
   printf '%s\t%s\t%s\n' "$now" "$cpu" "$power" >> "$SAMPLES"
@@ -59,8 +71,20 @@ sample() {
 } > "$EVIDENCE_DIR/job-info.tsv"
 "$(dirname "$0")/node-info.sh" > "$EVIDENCE_DIR/node-info.tsv" 2>/dev/null || true
 
+# Fixed rhythm: each sample starts SAMPLE_INTERVAL after the previous one
+# started. If a sample takes longer than the interval, the next one follows
+# immediately.
+first_sample_start="$(date +%s.%N)"
 sample
-( while sleep "$SAMPLE_INTERVAL"; do sample; done ) &
+(
+  next="$first_sample_start"
+  while :; do
+    read -r next pause < <(awk -v n="$next" -v i="$SAMPLE_INTERVAL" -v t="$(date +%s.%N)" \
+      'BEGIN { n += i; if (n < t) n = t; printf "%.6f %.6f\n", n, n - t }')
+    sleep "$pause"
+    sample
+  done
+) &
 SAMPLER_PID=$!
 
 "$@"
@@ -69,6 +93,7 @@ STATUS=$?
 kill "$SAMPLER_PID" 2>/dev/null
 wait "$SAMPLER_PID" 2>/dev/null
 sample
+rm -rf "$SAMPLER_TMP"
 {
   printf 'command_end_epoch\t%s\n' "$(date +%s.%N)"
   printf 'command_exit_status\t%s\n' "$STATUS"
