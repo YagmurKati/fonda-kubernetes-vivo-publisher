@@ -452,6 +452,8 @@ def build_ttl(summary, args, tz):
             processes.append((proc_uri, predicates))
     props += [("rm:traceTypes", literal("; ".join(trace_types))),
               ("rm:traceDataFormat", literal("TSV and plain text"))]
+    if args.trace_archive:
+        props.append(("rm:traceArchive", literal(args.trace_archive, "xsd:anyURI")))
     carbon = s.get("carbon")
     if carbon:
         props += [("rm:carbonEmissionKgCO2e", literal(carbon["package_kg"])),
@@ -536,6 +538,7 @@ def build_args(argv=None):
     parser.add_argument("--git-commit", help="Source commit of the code that ran")
     parser.add_argument("--nextflow-log", action="append", default=[], type=Path,
                         help="Candidate .nextflow.log files; the one written during the job is used (repeatable)")
+    parser.add_argument("--trace-archive", help="Public URL of this run's trace archive (rm:traceArchive)")
     parser.add_argument("--nextflow-trace", action="append", default=[], type=Path,
                         help="Candidate Nextflow execution_trace files; the one matching the job is used (repeatable)")
     parser.add_argument("--timezone", default="Europe/Berlin", help="Time zone of sacct and Nextflow timestamps")
@@ -544,6 +547,8 @@ def build_args(argv=None):
     args = parser.parse_args(argv)
     absolute_uri(args.workflow_uri, "--workflow-uri")
     absolute_uri(args.cluster_uri, "--cluster-uri")
+    if args.trace_archive:
+        absolute_uri(args.trace_archive, "--trace-archive")
     for value, name in [(args.backend_uri, "--backend-uri"), *[(l, "--language-uri") for l in args.language_uri],
                         *[(d, "--input-data-uri") for d in args.input_data_uri]]:
         if value:

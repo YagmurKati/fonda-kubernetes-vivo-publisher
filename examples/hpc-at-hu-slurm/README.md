@@ -9,6 +9,7 @@ Prometheus.
 
 1. [Connect HPC@HU to VIVO](CONNECT_HPC_TO_VIVO.md): one-time setup.
 2. [Collect and publish a run](COLLECT_AND_PUBLISH.md): for every run.
+3. [Archive a run's traces in HU-Box](ARCHIVE_TRACES.md): optional, for selected runs.
 
 Published example:
 [nf-core/rangeland 1.0.0 test profile, 2026-10-01](https://vivo-fonda.hu-berlin.de/vivo/individual?uri=http%3A%2F%2Fexample.org%2Fvivo-import%2Frun-metadata%2Frun%2Fhpc-at-hu-slurm-1596378-20261001t164208).
@@ -29,6 +30,7 @@ Published example:
 | Workflow engine, Nextflow version, code version, commit | `.nextflow.log` (Nextflow jobs) |
 | Container images | Apptainer images named in `.nextflow.log` (Nextflow jobs) |
 | Task count, workflow stages | Nextflow execution trace (Nextflow jobs) |
+| Trace archive | public HU-Box link, added by `archive-slurm-job.sh` (optional) |
 
 Not recorded: average memory. Slurm does not record memory use over time.
 
@@ -58,6 +60,7 @@ the run's energy calculation method field.
 | `collector/collect_slurm_job_metadata.py` | builds the run metadata (Turtle) |
 | `publish-slurm-job.sh` | collects and publishes one job |
 | `remove-slurm-job.sh` | removes one published job from VIVO |
+| `archive-slurm-job.sh` | uploads one job's traces to HU-Box and adds the link to VIVO |
 | `slurm.env.example` | settings template |
 | `rangeland-test.sbatch.example` | tested nf-core/rangeland job |
 | `job.sbatch.example` | minimal job for other workflows |
