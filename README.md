@@ -336,6 +336,17 @@ The second command asks for confirmation and uses the same non-admin VIVO
 account. It removes only that run's metadata and keeps the local workflow and
 audit files. See [Remove a published run](docs/USER_GUIDE.md#8-remove-a-published-run).
 
+## HPC@HU (Slurm)
+
+Runs on the HPC@HU Slurm cluster are published with a separate collector and
+have their own guides:
+
+1. [Connect HPC@HU to VIVO](examples/hpc-at-hu-slurm/CONNECT_HPC_TO_VIVO.md)
+2. [Collect and publish a run](examples/hpc-at-hu-slurm/COLLECT_AND_PUBLISH.md)
+
+See the [HPC@HU (Slurm) overview](examples/hpc-at-hu-slurm/README.md) for what
+is recorded and how energy is calculated.
+
 ## Documentation
 
 - [User guide](docs/USER_GUIDE.md)

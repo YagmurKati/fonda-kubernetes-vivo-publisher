@@ -12,8 +12,12 @@ The run used Spark's native Kubernetes backend because the Spark Operator was
 not installed. One driver and four executors completed the workflow, and the
 result was independently compared with the source corpus before metadata was
 generated. The publication identifies Soeren Becker as the responsible
-researcher and S1: Testbeds and Repositories as the owning subproject. No run
-operator is asserted.
+researcher and S1: Testbeds and Repositories as the owning subproject. The
+original publication carried no run operator; Yagmur Kati, who executed the run,
+was added in VIVO as its run operator (`rm:runOperator`, "run by") on
+2026-10-01 so that she can edit the run page. Future runs of this profile should
+set `RUN_OPERATOR_URI` when collecting. The checked-in publication summary below
+records the original publication and is left unchanged.
 
 The checked-in audit artifact is
 [`publication-summary.json`](publication-summary.json). It records the public
@@ -45,7 +49,7 @@ python3 -m unittest tests.test_spark_wordcount_profile
 ```
 
 The repository tests confirm the successful publication state, source
-revision, responsible researcher, absence of a run operator, and absence of
+revision, responsible researcher, and absence of
 internal infrastructure addresses in the public profile.
 
 ## 4. Publication

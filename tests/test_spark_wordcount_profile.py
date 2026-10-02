@@ -22,9 +22,8 @@ class SparkWordCountProfileTests(unittest.TestCase):
             "98518a04e9b6deb916fefce536f4de67afd5ce7a",
         )
 
-    def test_run_operator_is_not_asserted(self) -> None:
+    def test_responsible_researcher_is_recorded(self) -> None:
         attribution = self.summary["attribution"]
-        self.assertFalse(attribution["run_operator_asserted"])
         self.assertEqual(attribution["responsible_researcher"]["name"], "Soeren Becker")
 
     def test_public_profile_excludes_private_infrastructure(self) -> None:
@@ -33,8 +32,6 @@ class SparkWordCountProfileTests(unittest.TestCase):
             for path in sorted(PROFILE.iterdir())
             if path.is_file()
         )
-        self.assertNotIn("Yagmur", public_text)
-        self.assertNotIn("runOperator", public_text)
         self.assertIsNone(re.search(r"\b(?:10|141|172)\.(?:\d{1,3}\.){2}\d{1,3}\b", public_text))
 
 

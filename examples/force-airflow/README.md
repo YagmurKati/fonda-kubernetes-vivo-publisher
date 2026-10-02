@@ -75,6 +75,7 @@ export DAG_ID="YOUR_DAG_ID"
 export RUN_ID="YOUR_AIRFLOW_RUN_ID"
 export CODE_NAME="workflow.py"
 export CODE_PATH="/absolute/path/to/your/workflow.py"
+export RUN_OPERATOR_URI="YOUR_VIVO_PERSON_URI"
 export OUTPUT_TTL="$PWD/force-airflow-${RUN_ID}-$(date -u +%Y%m%dT%H%M%SZ).ttl"
 ```
 
@@ -94,8 +95,15 @@ python3 collector/collect_airflow_kubernetes_metadata.py \
   --run-id "$RUN_ID" \
   --code-name "$CODE_NAME" \
   --code-path "$CODE_PATH" \
+  --run-operator-uri "$RUN_OPERATOR_URI" \
   --output-file "$OUTPUT_TTL"
 ```
+
+`RUN_OPERATOR_URI` is the VIVO person URI of whoever executed the run (for
+example `https://fonda.hu-berlin.de/?page_id=2066#YagmurKati`). It is published
+as `rm:runOperator`, shown as "run by" on the run page, and VIVO uses it to
+decide who may edit that page. If it is empty, the collector prints a warning
+and the run is published without it.
 
 The collector automatically looks for the Kubernetes Secret
 `electricity-maps-api-token` in `TASK_POD_NAMESPACE`. It never prints or saves

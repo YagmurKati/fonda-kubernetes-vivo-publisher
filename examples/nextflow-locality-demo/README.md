@@ -20,7 +20,11 @@ Published records:
 The VIVO workflow is linked through `rm:responsibleResearcher` to Fabian
 Lehmann and Friedrich Tschirpke and through `rm:subproject` to FONDA B5. These
 are responsibility/stewardship links; the Git commit remains the source-code
-provenance. No run-operator assertion is emitted.
+provenance. The run is linked through `rm:runOperator` ("run by") to Yagmur
+Kati, who executed it; VIVO uses this link to decide who may edit the run page.
+The run published on 2026-09-15 predates this setting (its
+`publication-summary.json` records `run_operator_asserted: false`); the run
+operator was added to that run in VIVO on 2026-10-01.
 `RUN_IDENTITY_SCOPE=fonda` also keeps the operational Kubernetes namespace out
 of the public run and date IRIs.
 
@@ -59,7 +63,8 @@ Use `publisher.env.example` as the publisher configuration and the empty
 `input_datasets.json` as input metadata. The workflow generates values
 internally and reads no external dataset. Before publication, assert that the
 generated Turtle contains exactly two `rm:responsibleResearcher` statements
-and contains neither `rm:runOperator` nor a Yagmur Kati URI.
+and exactly one `rm:runOperator` statement, and that no other line names the
+operational `yagmur` namespace.
 
 Missing Prometheus samples are allowed for this very short test fixture; all
 available task metrics plus the complete structural trace metadata are kept.
