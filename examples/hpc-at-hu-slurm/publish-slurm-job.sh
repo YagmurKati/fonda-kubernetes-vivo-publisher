@@ -28,6 +28,10 @@ IFS=',' read -r -a datasets <<< "${INPUT_DATA_URIS:-}"
 for d in "${datasets[@]}"; do [[ -n "$d" ]] && collector_args+=(--input-data-uri "$d"); done
 IFS=',' read -r -a researchers <<< "${RESPONSIBLE_RESEARCHER_URIS:-}"
 for r in "${researchers[@]}"; do [[ -n "$r" ]] && collector_args+=(--responsible-researcher-uri "$r"); done
+# Trace archive link saved by archive-slurm-job.sh, if any.
+if [[ -s "$EVIDENCE_DIR/trace-archive-url.txt" ]]; then
+  collector_args+=(--trace-archive "$(tr -d '\r\n' < "$EVIDENCE_DIR/trace-archive-url.txt")")
+fi
 # Nextflow runs: candidate logs and traces; the collector uses the ones written during this job.
 shopt -s nullglob
 if [[ -n "${NEXTFLOW_LAUNCH_DIR:-}" ]]; then

@@ -343,6 +343,7 @@ have their own guides:
 
 1. [Connect HPC@HU to VIVO](examples/hpc-at-hu-slurm/CONNECT_HPC_TO_VIVO.md)
 2. [Collect and publish a run](examples/hpc-at-hu-slurm/COLLECT_AND_PUBLISH.md)
+3. [Archive a run's traces in HU-Box](examples/hpc-at-hu-slurm/ARCHIVE_TRACES.md) (optional)
 
 See the [HPC@HU (Slurm) overview](examples/hpc-at-hu-slurm/README.md) for what
 is recorded and how energy is calculated.
