@@ -353,6 +353,7 @@ is recorded and how energy is calculated.
 - [User guide](docs/USER_GUIDE.md)
 - [Administrator onboarding](docs/ADMIN_SETUP.md)
 - [Adapting a Nextflow workflow](docs/ADAPT_NEXTFLOW.md)
+- [Node use of a run: exclusive or non-exclusive](docs/NODE_USE.md)
 - [Security](SECURITY.md)
 
 ## Scope
