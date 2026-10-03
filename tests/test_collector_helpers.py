@@ -21,6 +21,8 @@ from collector.collect_nextflow_run_metadata import (
     load_input_datasets,
     parse_cpu_percent,
     parse_log_metadata,
+    stage_run_label,
+    workflow_stage_uri,
     parse_size_bytes,
     resolve_electricity_maps_latest_intensity,
     resolve_output_path,
@@ -120,6 +122,37 @@ class EnergyMeasurementCoverageTests(unittest.TestCase):
     def test_run_without_pods_has_no_coverage(self) -> None:
         self.assertIsNone(energy_measurement_coverage(0, 0))
         self.assertIsNone(energy_measurement_coverage(None, 3))
+
+
+class WorkflowStageTests(unittest.TestCase):
+    def test_stage_uri_matches_the_stage_records_in_vivo(self) -> None:
+        slug, label = classify_stage(
+            "NFCORE_RANGELAND:RANGELAND:PREPROCESSING:FORCE_GENERATE_ANALYSIS_MASK (X0001)"
+        )
+        self.assertEqual(label, "FORCE GENERATE ANALYSIS MASK")
+        self.assertEqual(
+            workflow_stage_uri(
+                "http://example.org/vivo-import/run-metadata/",
+                "http://example.org/vivo-import/run-metadata/workflow/"
+                "long-term-vegetation-dynamics-in-the-mediterranean-nf-core",
+                slug,
+            ),
+            "http://example.org/vivo-import/run-metadata/stage/"
+            "long-term-vegetation-dynamics-in-the-mediterranean-nf-core/"
+            "nfcore-rangeland-rangeland-preprocessing-force-generate-analysis-mask",
+        )
+
+    def test_stage_execution_is_named_after_its_run(self) -> None:
+        summer = datetime(2026, 10, 2, 19, 4, 19, tzinfo=timezone.utc)
+        winter = datetime(2026, 12, 2, 19, 4, 19, tzinfo=timezone.utc)
+        self.assertEqual(
+            stage_run_label("FORCE MOSAIC", summer),
+            "FORCE MOSAIC \u00b7 run 2026-10-02 21:04",
+        )
+        self.assertEqual(
+            stage_run_label("FORCE MOSAIC", winter),
+            "FORCE MOSAIC \u00b7 run 2026-12-02 20:04",
+        )
 
 
 class CommitUrlTests(unittest.TestCase):
@@ -338,6 +371,22 @@ class InputDatasetTests(unittest.TestCase):
         self.assertIn(
             'rm:energyMeasurementCoverage "100% (1 of 1 pod)"', ttl_text
         )
+        # The stage execution is named after its run; the stage of the
+        # workflow keeps the plain name and lists the execution and the run.
+        self.assertIn('rdfs:label "Test \u00b7 run 2026-07-19 21:48"@en', ttl_text)
+        self.assertIn('rm:jobName "Test"', ttl_text)
+        stage = "<http://example.org/vivo-import/run-metadata/stage/geoflow/test>"
+        self.assertIn(
+            stage + "\n  rdf:type rm:WorkflowStage ;\n"
+            "  rdf:type vivo:InformationResource ;\n"
+            '  rdfs:label "Test"@en ;\n  dcterms:title "Test"@en ;\n'
+            "  rm:stageOfWorkflow <https://example.org/workflow/geoflow> ;\n"
+            "  rm:hasStageExecution <",
+            ttl_text,
+        )
+        self.assertIn("  rm:stageIncludedInRun <" + audit["run_uri"] + "> .", ttl_text)
+        self.assertIn("rm:usesWorkflowStage " + stage, ttl_text)
+        self.assertIn("rm:hasWorkflowStage " + stage, ttl_text)
         self.assertNotIn("rm:nodeName", ttl_text)
         self.assertNotIn("rm:carbonIntensityKgCO2ePerKWh", ttl_text)
         self.assertNotIn("rm:codeModified", ttl_text)
