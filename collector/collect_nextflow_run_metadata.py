@@ -1844,6 +1844,19 @@ def ttl_label(value: str) -> str:
     return f"{ttl_literal(value)}@en"
 
 
+def energy_measurement_coverage(
+    measured_pods: Optional[int], pod_count: int
+) -> Optional[str]:
+    """Share of a run's pods whose energy was measured: '14.3% (40 of 280 pods)'."""
+    if measured_pods is None or pod_count <= 0:
+        return None
+    percent = f"{100 * measured_pods / pod_count:.1f}"
+    if percent.endswith(".0"):
+        percent = percent[:-2]
+    unit = "pod" if pod_count == 1 else "pods"
+    return f"{percent}% ({measured_pods} of {pod_count} {unit})"
+
+
 def add_resource(
     lines: List[str],
     subject: str,
@@ -2506,6 +2519,13 @@ def build_ttl(
         energy_metric,
         carbon_info,
     )
+    coverage = energy_measurement_coverage(
+        overall.get("energy_pod_count"), len(all_pod_names)
+    )
+    if coverage:
+        run_predicates.append(
+            ("rm:energyMeasurementCoverage", ttl_literal(coverage))
+        )
     for image in images:
         run_predicates.append(("rm:containerImage", ttl_literal(image)))
     for node_name in node_names:

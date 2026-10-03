@@ -130,7 +130,9 @@ process.shell = ['/bin/bash', '-C', '-e', '-u', '-o', 'pipefail']
 The pipeline's `test` profile finishes most tasks in under a second, so
 kube-state-metrics and Kepler observe only a minority of pods. The collector
 falls back to the Nextflow trace for CPU and memory and records the coverage in
-`rm:cpuTimeCalculationMethod` and `rm:energyCalculationMethod`. Energy has no
+`rm:cpuTimeCalculationMethod` and `rm:energyCalculationMethod`. The share of
+pods with measured energy is also recorded as `rm:energyMeasurementCoverage`,
+for example `14.3% (40 of 280 pods)`. Energy has no
 trace fallback, so for such runs it covers only the observed pods and
 understates the run; a `test_full`-sized run gives Kepler pods long enough to
 measure.

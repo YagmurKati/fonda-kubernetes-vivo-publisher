@@ -16,6 +16,7 @@ from collector.collect_nextflow_run_metadata import (
     classify_stage,
     commit_url,
     derive_status,
+    energy_measurement_coverage,
     group_tasks,
     load_input_datasets,
     parse_cpu_percent,
@@ -102,6 +103,23 @@ class WorkflowStatusAndGroupingTests(unittest.TestCase):
         self.assertEqual(
             labels, ["MULTIQC", "SUB ONE / FASTQC", "SUB TWO / FASTQC"]
         )
+
+
+class EnergyMeasurementCoverageTests(unittest.TestCase):
+    def test_share_of_pods_with_measured_energy(self) -> None:
+        self.assertEqual(
+            energy_measurement_coverage(40, 280), "14.3% (40 of 280 pods)"
+        )
+        self.assertEqual(
+            energy_measurement_coverage(280, 280), "100% (280 of 280 pods)"
+        )
+        self.assertEqual(
+            energy_measurement_coverage(0, 12), "0% (0 of 12 pods)"
+        )
+
+    def test_run_without_pods_has_no_coverage(self) -> None:
+        self.assertIsNone(energy_measurement_coverage(0, 0))
+        self.assertIsNone(energy_measurement_coverage(None, 3))
 
 
 class CommitUrlTests(unittest.TestCase):
@@ -317,6 +335,9 @@ class InputDatasetTests(unittest.TestCase):
         )
         self.assertIn("https://example.org/dataset/source/one", ttl_text)
         self.assertIn("https://example.org/dataset/source/two", ttl_text)
+        self.assertIn(
+            'rm:energyMeasurementCoverage "100% (1 of 1 pod)"', ttl_text
+        )
         self.assertNotIn("rm:nodeName", ttl_text)
         self.assertNotIn("rm:carbonIntensityKgCO2ePerKWh", ttl_text)
         self.assertNotIn("rm:codeModified", ttl_text)

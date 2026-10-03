@@ -129,6 +129,16 @@ class SlurmCollectorTests(unittest.TestCase):
         self.assertEqual(slurm.parse_cpu_time("01:02:03"), 3723)
         self.assertEqual(slurm.parse_cpu_time("1-00:00:01"), 86401)
 
+    def test_coverage_text(self):
+        self.assertEqual(slurm.coverage_text({"whole_node": True, "cpu_share": 1.0}),
+                         "100% of the node (whole node, measured)")
+        self.assertEqual(slurm.coverage_text({"whole_node": False, "cpu_share": 0.0236}),
+                         "2.4% of the node (shared, estimate)")
+        self.assertEqual(slurm.coverage_text({"whole_node": False, "cpu_share": 0.5}),
+                         "50% of the node (shared, estimate)")
+        self.assertEqual(slurm.coverage_text({"whole_node": False, "cpu_share": 0.00042}),
+                         "0.042% of the node (shared, estimate)")
+
     def test_run_period_names_cet_and_cest(self):
         self.assertEqual(slurm.run_period("2026-10-01T16:42:08+00:00", "2026-10-01T16:57:23+00:00", TZ),
                          "2026-10-01 18:42–18:57 CEST")
@@ -150,6 +160,8 @@ class SlurmCollectorTests(unittest.TestCase):
         node_busy = NODE_BUSY_PER_SECOND * 601
         share = 600.284 / node_busy
         self.assertAlmostEqual(summary["cpu_share"], share, places=9)
+        self.assertIn('rm:energyMeasurementCoverage "2.5% of the node (shared, estimate)"', ttl)
+        self.assertEqual(summary["energy_measurement_coverage"], "2.5% of the node (shared, estimate)")
         self.assertAlmostEqual(summary["energy_kwh"], 640719 * share / 3_600_000, places=12)
         self.assertEqual(summary["status"], "Succeeded")
         self.assertAlmostEqual(summary["memory_peak_gb"], 71992 * 1024 / 1e9)
@@ -285,6 +297,7 @@ class WholeNodeEnergyTests(unittest.TestCase):
         self.assertIn("read about every 1.0 s while the job ran (72 readings, 294 to 770 W", ttl)
         self.assertIn("Slurm accounting (acct_gather_energy/ipmi) reports 36498 J", ttl)
         self.assertIn("The whole node was allocated to this job", ttl)
+        self.assertIn('rm:energyMeasurementCoverage "100% of the node (whole node, measured)"', ttl)
         self.assertNotIn("CPU-time share", ttl)
         self.assertNotIn("the job shared its node", stderr)
 

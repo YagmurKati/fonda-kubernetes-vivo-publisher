@@ -316,6 +316,18 @@ def detect_backend(
     return "Local"
 
 
+def energy_measurement_coverage(energy_queries: Dict[str, Optional[str]]) -> Optional[str]:
+    """Share of the run's pods whose energy was measured: '14.3% (40 of 280 pods)'."""
+    pod_count = len(energy_queries)
+    if pod_count == 0:
+        return None
+    measured = sum(1 for query in energy_queries.values() if query)
+    percent = f"{100 * measured / pod_count:.1f}"
+    if percent.endswith(".0"):
+        percent = percent[:-2]
+    return f"{percent}% ({measured} of {pod_count} {'pod' if pod_count == 1 else 'pods'})"
+
+
 def summarize_energy_method(
     detected_energy_metric: Optional[str],
     energy_queries: Dict[str, Optional[str]],
@@ -1830,6 +1842,9 @@ def main() -> None:
         ttl_lines.append(f"  rm:carbonIntensitySource {ttl_literal(carbon_intensity_source)} ;")
     ttl_lines.append(f"  rm:energyMetricSource {ttl_literal(detected_energy_metric or 'none')} ;")
     ttl_lines.append(f"  rm:energyCalculationMethod {ttl_literal(energy_method)} ;")
+    energy_coverage = energy_measurement_coverage(energy_queries)
+    if energy_coverage:
+        ttl_lines.append(f"  rm:energyMeasurementCoverage {ttl_literal(energy_coverage)} ;")
     ttl_lines.append(f"  rm:energyCalculationUsesFallbackEstimate {ttl_bool(energy_method_uses_fallback)} ;")
     if carbon_method is not None:
         ttl_lines.append(f"  rm:carbonCalculationMethod {ttl_literal(carbon_method)} ;")

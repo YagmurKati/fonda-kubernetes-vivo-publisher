@@ -115,6 +115,7 @@ Nothing is sent to VIVO. Expected output:
   "slurm_node_energy_joules": 36498.0,
   "sampled_node_energy_joules": 37154.2,
   "energy_kwh": 0.01032,
+  "energy_measurement_coverage": "100% of the node (whole node, measured)",
   "run_uri": "http://example.org/vivo-import/run-metadata/run/hpc-at-hu-slurm-JOB_ID-..."
 }
 TTL: /home/.../vivo-evidence/JOB_ID/publication-.../run.ttl
@@ -128,8 +129,9 @@ from the IPMI power readings taken during the job, and
 `slurm_node_energy_joules` is Slurm's own, coarser value for comparison.
 
 With the example job file your job shares its node. Then `whole_node` is
-`false`, `energy_basis` is `slurm`, and this line is printed, which is
-expected:
+`false`, `energy_basis` is `slurm`, `energy_measurement_coverage` is the job's
+share of the node, for example `2.4% of the node (shared, estimate)`, and this
+line is printed, which is expected:
 
 ```text
 NOTE: the job shared its node, so its energy is an estimate (the job's CPU-time share of the node energy).

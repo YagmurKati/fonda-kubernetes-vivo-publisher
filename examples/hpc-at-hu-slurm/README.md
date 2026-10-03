@@ -25,6 +25,7 @@ Published examples (nf-core/rangeland 1.0.0, test profile):
 | Peak memory | largest `sacct` MaxRSS of any job step |
 | GPU requested | `sacct` AllocTRES |
 | Energy | IPMI power of the node, read while the job runs, see below |
+| Energy measurement coverage | the job's share of its node, see below |
 | Carbon emission and intensity | hourly German grid intensity matched to the run time |
 | Execution host, CPU model, CPUs, memory, OS, kernel | recorded on the node at job start |
 | Compute cluster, backend | HPC@HU cluster and Slurm records in VIVO |
@@ -78,6 +79,23 @@ short jobs: in two 75-second test jobs it differed from the measured value by
 
 In both cases the calculation with its numbers is stored in the run's energy
 calculation method field.
+
+### Energy measurement coverage
+
+The run's energy measurement coverage field says how much of the measured node
+the job had:
+
+| Value | Meaning |
+|---|---|
+| `100% of the node (whole node, measured)` | the job had the whole node; its energy is measured |
+| `2.4% of the node (shared, estimate)` | the job's CPU time was 2.4% of all CPU time on the node; its energy is that share of the node energy |
+
+The lower the value, the more the energy depends on the CPU-time assumption,
+and the smaller the part of the node's idle power that is counted for the job.
+Runs with very different values are not comparable in energy.
+
+For Kubernetes runs the same field gives the share of pods whose energy was
+measured, for example `14.3% (40 of 280 pods)`.
 
 ## Files
 

@@ -380,6 +380,20 @@ def fetch_carbon_optional(summary):
         return None
 
 
+def coverage_text(summary):
+    """How much of the measured node the job had: the basis of its energy value."""
+    if summary["whole_node"]:
+        return "100% of the node (whole node, measured)"
+    percent = 100 * summary["cpu_share"]
+    if percent >= 0.1:
+        text = f"{percent:.1f}"
+        if text.endswith(".0"):
+            text = text[:-2]
+    else:
+        text = f"{percent:.2g}"
+    return f"{text}% of the node (shared, estimate)"
+
+
 def interval_text(seconds):
     """Measured sampling interval for the method text: '1.0', '2.5', '10', '11'."""
     return f"{seconds:.0f}" if seconds >= 9.5 else f"{seconds:.1f}"
@@ -460,6 +474,7 @@ def build_ttl(summary, args, tz):
                  "IPMI power of the compute node read through its Prometheus ipmi_exporter; Slurm acct_gather_energy/ipmi for comparison"
                  if s["energy_basis"] == "sampled" and s["whole_node"] else
                  "Slurm acct_gather_energy/ipmi; Prometheus node_exporter and ipmi_exporter on the compute node")),
+             ("rm:energyMeasurementCoverage", literal(coverage_text(s))),
              ("rm:energyCalculationUsesFallbackEstimate", literal(False)),
              ("rm:resourceAccountingScope", literal(scope)),
              ("rm:resourceAccountingStartTime", local(s["start_utc"])), ("rm:resourceAccountingEndTime", local(s["end_utc"])),
@@ -656,6 +671,7 @@ def main(argv=None):
     job, steps = read_sacct(args.job_id, args.sacct_file)
     summary = summarize(job, steps, read_info(args.evidence_dir), read_samples(args.evidence_dir), tz)
     summary["slurm_node_freq"] = None if args.sacct_file else slurm_node_frequency()
+    summary["energy_measurement_coverage"] = coverage_text(summary)
     if not summary["whole_node"]:
         print("NOTE: the job shared its node, so its energy is an estimate (the job's CPU-time share of the "
               "node energy).", file=sys.stderr)
@@ -684,7 +700,7 @@ def main(argv=None):
     (args.output_dir / "summary.json").write_text(json.dumps(public, indent=2, default=str) + "\n")
     print(json.dumps({k: public[k] for k in ("status", "duration_seconds", "cpu_seconds", "whole_node", "energy_basis",
                                              "slurm_node_energy_joules", "sampled_node_energy_joules", "energy_kwh",
-                                             "run_uri")}, indent=2))
+                                             "energy_measurement_coverage", "run_uri")}, indent=2))
     print("TTL: " + str(args.output_dir / "run.ttl"))
 
 
