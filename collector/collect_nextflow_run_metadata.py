@@ -1347,6 +1347,43 @@ def stage_label(base_name: str, depth: int = 1) -> str:
     return label[:1].upper() + label[1:]
 
 
+def stage_run_label(label: str, run_start: datetime) -> str:
+    """Name one execution of a stage after the stage and the start of its run.
+
+    "FORCE MOSAIC" is the stage of the workflow; "FORCE MOSAIC · run
+    2026-10-02 21:04" is that stage in one run. The time is the run's start in
+    Europe/Berlin, as in the run title, so the name never changes and is unique
+    per run.
+    """
+    started = run_start.astimezone(BERLIN_TZ).strftime("%Y-%m-%d %H:%M")
+    return f"{label} \N{MIDDLE DOT} run {started}"
+
+
+def workflow_stage_uri(base_uri: str, workflow_uri: str, stage_slug: str) -> str:
+    """URI of a stage of a workflow: <base>stage/<workflow>/<stage>."""
+    workflow_slug = slugify(re.split(r"[/#]", workflow_uri.rstrip("/#"))[-1])
+    return f"{base_uri.rstrip('/')}/stage/{workflow_slug}/{stage_slug}"
+
+
+def workflow_stage_predicates(
+    label: str, workflow_uri: str, run_uri: str, execution_uri: str
+) -> List[Tuple[str, str]]:
+    """The stage of the workflow that one stage execution belongs to.
+
+    The stage record is shared by all runs of the workflow; every run adds its
+    own execution and itself to it.
+    """
+    return [
+        ("rdf:type", "rm:WorkflowStage"),
+        ("rdf:type", "vivo:InformationResource"),
+        ("rdfs:label", ttl_label(label)),
+        ("dcterms:title", ttl_label(label)),
+        ("rm:stageOfWorkflow", ttl_uri(workflow_uri)),
+        ("rm:hasStageExecution", ttl_uri(execution_uri)),
+        ("rm:stageIncludedInRun", ttl_uri(run_uri)),
+    ]
+
+
 def lengthen_colliding_labels(groups: Iterable[Dict[str, Any]]) -> None:
     """Re-label stages whose short names are not unique within the run."""
     groups = list(groups)
@@ -2273,6 +2310,10 @@ def build_ttl(
                 "uri": stage_uri,
                 "slug": stage["slug"],
                 "label": stage["label"],
+                "run_label": stage_run_label(stage["label"], run_start),
+                "workflow_stage_uri": workflow_stage_uri(
+                    base_uri, workflow_uri, stage["slug"]
+                ),
                 "tasks": stage_tasks,
                 "pod_names": stage_pods,
                 "start": stage_start,
@@ -2435,6 +2476,10 @@ def build_ttl(
             ("rm:hasWorkflowRun", ttl_uri(run_uri)),
         ]
     )
+    for stage in stage_records:
+        workflow_predicates.append(
+            ("rm:hasWorkflowStage", ttl_uri(stage["workflow_stage_uri"]))
+        )
     add_resource(lines, ttl_uri(workflow_uri), workflow_predicates)
     for researcher_uri in responsible_researcher_uris:
         add_resource(
@@ -2683,6 +2728,9 @@ def build_ttl(
         run_predicates.append(
             ("rm:hasWorkflowProcess", ttl_uri(stage["uri"]))
         )
+        run_predicates.append(
+            ("rm:usesWorkflowStage", ttl_uri(stage["workflow_stage_uri"]))
+        )
     add_resource(lines, ttl_uri(run_uri), run_predicates)
 
     for dataset in input_datasets:
@@ -2766,8 +2814,8 @@ def build_ttl(
             ("rdf:type", "rm:WorkflowProcessRun"),
             ("rdf:type", "vivo:InformationResource"),
             ("rdf:type", "prov:Entity"),
-            ("rdfs:label", ttl_label(stage["label"])),
-            ("dcterms:title", ttl_label(stage["label"])),
+            ("rdfs:label", ttl_label(stage["run_label"])),
+            ("dcterms:title", ttl_label(stage["run_label"])),
             ("rm:jobName", ttl_literal(stage["label"])),
             ("rm:runStatus", ttl_literal(stage["status"])),
             (
@@ -2881,6 +2929,13 @@ def build_ttl(
             )
         )
         add_resource(lines, ttl_uri(stage["uri"]), predicates)
+        add_resource(
+            lines,
+            ttl_uri(stage["workflow_stage_uri"]),
+            workflow_stage_predicates(
+                stage["label"], workflow_uri, run_uri, stage["uri"]
+            ),
+        )
 
     audit = {
         "workflow_name": args.workflow_name,
