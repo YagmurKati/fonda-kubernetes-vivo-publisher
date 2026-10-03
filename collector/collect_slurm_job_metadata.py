@@ -484,7 +484,7 @@ def build_ttl(summary, args, tz):
         props += [("rm:memoryPeakGB", literal(s["memory_peak_gb"])),
                   ("rm:memoryCalculationMethod", literal(
                       "Peak memory: the largest resident memory (Slurm MaxRSS) of any job step, "
-                      "converted from bytes to gigabytes (1 GB = 1,000,000,000 bytes). "
+                      "converted from bytes to gigabytes. "
                       "No average memory: Slurm does not record memory use over time."))]
     node = s.get("node_info") or {}
     if node:
