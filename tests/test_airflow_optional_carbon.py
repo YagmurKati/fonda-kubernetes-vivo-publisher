@@ -12,9 +12,18 @@ sys.path.insert(0, str(COLLECTOR_DIR))
 
 from collect_airflow_kubernetes_metadata import (  # noqa: E402
     electricitymap_token_from_secret,
+    energy_measurement_coverage,
     fetch_carbon_intensity_kg,
     summarize_carbon_method,
 )
+
+
+class AirflowEnergyCoverageTests(unittest.TestCase):
+    def test_share_of_pods_with_measured_energy(self):
+        queries = {"pod-a": "increase(...)", "pod-b": None, "pod-c": "avg_over_time(...)"}
+        self.assertEqual(energy_measurement_coverage(queries), "66.7% (2 of 3 pods)")
+        self.assertEqual(energy_measurement_coverage({"pod-a": "increase(...)"}), "100% (1 of 1 pod)")
+        self.assertIsNone(energy_measurement_coverage({}))
 
 
 class OptionalAirflowCarbonTests(unittest.TestCase):
