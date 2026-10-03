@@ -1857,6 +1857,114 @@ def energy_measurement_coverage(
     return f"{percent}% ({measured_pods} of {pod_count} {unit})"
 
 
+# Pods that belong to a node rather than to a workload: daemons that run on
+# every node (DaemonSet) and static pods of the node itself.
+NODE_DAEMON_KINDS = {"DaemonSet", "Node"}
+NODE_USE_MAX_OTHER_CPUS_DEFAULT = 0.5
+
+
+def node_use_text(exclusive: bool, other_cpus: float, node_count: int) -> str:
+    """Value of rm:nodeUse: 'exclusive (...)' or 'non-exclusive (...)'."""
+    nodes = "node" if node_count == 1 else f"{node_count} nodes"
+    return (
+        f"{'exclusive' if exclusive else 'non-exclusive'} (other workloads "
+        f"used {other_cpus:.2f} CPUs on average on the run's {nodes})"
+    )
+
+
+def kubernetes_node_use(
+    prom_url: str,
+    node_names: Sequence[str],
+    own_pods: Optional[Iterable[Optional[str]]],
+    start: datetime,
+    end: datetime,
+    max_other_cpus: float = NODE_USE_MAX_OTHER_CPUS_DEFAULT,
+    own_namespace: Optional[str] = None,
+) -> Optional[Dict[str, Any]]:
+    """Whether a run had its Kubernetes nodes to itself.
+
+    Looks at every pod that was on the run's nodes between start and end
+    (kube_pod_info) and adds up the CPU time of the pods that are neither part
+    of the run nor node daemons (DaemonSet or static pods). Divided by the
+    length of the window this is the average number of CPUs other workloads
+    kept busy on the run's nodes. The run is 'exclusive' when that is at most
+    max_other_cpus: nobody else used the nodes, whether they are reserved for
+    one person or just happened to be idle.
+
+    own_pods are the run's pods (task pods and the engine's driver pod). When
+    own_pods is None, every pod of own_namespace counts as the run's; this is
+    for runs whose pod names are no longer known.
+
+    Returns None when Prometheus has no pod records for the nodes and window
+    (for example because the run is older than the retention time).
+    """
+    nodes = unique(node_names)
+    if not nodes:
+        return None
+    window = seconds_between(start, end)
+    at = int(end.timestamp())
+    node_regex = "|".join(name.replace(".", "[.]") for name in nodes)
+    info = prom_query(
+        prom_url,
+        "max by (namespace, pod, node, created_by_kind) (max_over_time("
+        f'kube_pod_info{{node=~"{node_regex}"}}[{window}s] @ {at}))',
+    )
+    if not info:
+        return None
+    usage = prom_query(
+        prom_url,
+        "sum by (namespace, pod) (increase(container_cpu_usage_seconds_total"
+        f'{{container!="",container!="POD"}}[{window}s] @ {at}))',
+    )
+    cpu_seconds: Dict[Tuple[str, str], float] = {}
+    for row in usage:
+        metric = row.get("metric", {})
+        try:
+            value = float(row["value"][1])
+        except (KeyError, IndexError, TypeError, ValueError):
+            continue
+        if math.isfinite(value):
+            cpu_seconds[(metric.get("namespace", ""), metric.get("pod", ""))] = value
+
+    own = None if own_pods is None else {name for name in own_pods if name}
+    seen: set = set()
+    totals = {"run": 0.0, "daemons": 0.0, "other": 0.0}
+    other_by_namespace: Dict[str, float] = {}
+    own_found = 0
+    for row in info:
+        metric = row.get("metric", {})
+        key = (metric.get("namespace", ""), metric.get("pod", ""))
+        if key in seen:
+            continue
+        seen.add(key)
+        used = cpu_seconds.get(key, 0.0)
+        if (key[1] in own) if own is not None else (key[0] == own_namespace):
+            totals["run"] += used
+            own_found += 1
+        elif metric.get("created_by_kind") in NODE_DAEMON_KINDS:
+            totals["daemons"] += used
+        else:
+            totals["other"] += used
+            other_by_namespace[key[0]] = other_by_namespace.get(key[0], 0.0) + used
+    other_cpus = totals["other"] / window
+    exclusive = other_cpus <= max_other_cpus
+    return {
+        "exclusive": exclusive,
+        "text": node_use_text(exclusive, other_cpus, len(nodes)),
+        "nodes": nodes,
+        "window_seconds": window,
+        "max_other_cpus": max_other_cpus,
+        "other_cpus": other_cpus,
+        "run_cpus": totals["run"] / window,
+        "node_daemon_cpus": totals["daemons"] / window,
+        "run_pods_found": own_found,
+        "pods_on_nodes": len(seen),
+        "other_cpu_seconds_by_namespace": dict(
+            sorted(other_by_namespace.items(), key=lambda item: -item[1])[:10]
+        ),
+    }
+
+
 def add_resource(
     lines: List[str],
     subject: str,
@@ -2032,6 +2140,7 @@ def build_ttl(
     subproject_uris: Sequence[str],
     language_uris: Sequence[str],
     input_datasets: Sequence[InputDatasetMetadata],
+    node_use: Optional[Dict[str, Any]] = None,
 ) -> Tuple[str, Dict[str, Any]]:
     engine_label = getattr(args, "engine_label", "Nextflow")
     base_uri = args.base_uri.rstrip("/") + "/"
@@ -2526,6 +2635,8 @@ def build_ttl(
         run_predicates.append(
             ("rm:energyMeasurementCoverage", ttl_literal(coverage))
         )
+    if node_use:
+        run_predicates.append(("rm:nodeUse", ttl_literal(node_use["text"])))
     for image in images:
         run_predicates.append(("rm:containerImage", ttl_literal(image)))
     for node_name in node_names:
@@ -2826,6 +2937,7 @@ def build_ttl(
             "energy_metric": energy_metric,
         },
         "carbon_intensity": asdict(carbon_info),
+        "node_use": node_use,
         "summary": overall,
         "tasks": [
             {
@@ -3023,6 +3135,16 @@ def build_args() -> argparse.Namespace:
     parser.add_argument("--engine-uri", default=DEFAULT_ENGINE_URI)
     parser.add_argument("--backend-uri", default=DEFAULT_BACKEND_URI)
     parser.add_argument("--prom-url", default=PROM_URL_DEFAULT)
+    parser.add_argument(
+        "--node-use-max-other-cpus",
+        type=float,
+        default=NODE_USE_MAX_OTHER_CPUS_DEFAULT,
+        help=(
+            "A run is published as 'exclusive' (rm:nodeUse) when other "
+            "workloads kept at most this many CPUs busy on its nodes, on "
+            "average during the run. Node daemons are not counted."
+        ),
+    )
     parser.add_argument(
         "--carbon-intensity",
         type=float,
@@ -3275,6 +3397,21 @@ def main() -> None:
         metrics.node_name for metrics in pod_metrics.values()
     )
     node_infos = collect_node_info(node_names)
+    node_use: Optional[Dict[str, Any]] = None
+    try:
+        node_use = kubernetes_node_use(
+            args.prom_url,
+            node_names,
+            [*pod_metrics.keys(), args.driver_pod],
+            metric_start,
+            metric_end,
+            args.node_use_max_other_cpus,
+        )
+    except Exception as exc:
+        print(
+            f"WARNING: could not determine the node use of the run: {exc}",
+            file=sys.stderr,
+        )
     stages = group_tasks(tasks)
     responsible_researchers = (
         args.responsible_researcher
@@ -3318,6 +3455,7 @@ def main() -> None:
         subproject_uris=subproject_uris,
         language_uris=language_uris,
         input_datasets=input_datasets,
+        node_use=node_use,
     )
 
     output_path = resolve_output_path(args, run_start)
