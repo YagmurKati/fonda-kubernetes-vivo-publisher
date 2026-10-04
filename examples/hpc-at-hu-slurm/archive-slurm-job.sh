@@ -2,9 +2,11 @@
 # Archive the trace files of one published HPC@HU Slurm run in HU-Box and add
 # the public download link to the run's VIVO page. Run on the login node.
 #
-# Usage: archive-slurm-job.sh JOB_ID [--package-only] [--no-vivo] [--allow-privacy-findings]
+# Usage: archive-slurm-job.sh JOB_ID [--package-only] [--shared-folder] [--no-vivo] [--allow-privacy-findings]
 #
 #   --package-only            build and check the bundle; no upload, VIVO unchanged
+#   --shared-folder           upload to the shared FONDA folder (no HU-Box account needed);
+#                             its owner makes the archive public and adds the link to VIVO
 #   --no-vivo                 upload and share; VIVO unchanged
 #   --allow-privacy-findings  continue although the privacy scan reported lines
 #
@@ -17,18 +19,21 @@ die() { printf 'ERROR: %s\n' "$*" >&2; exit 1; }
 JOB_ID="${1:-}"
 shift || true
 package_only=0
+shared_folder=0
 no_vivo=0
 allow_privacy_findings=0
+usage="Usage: $0 JOB_ID [--package-only] [--shared-folder] [--no-vivo] [--allow-privacy-findings]"
 while (($#)); do
   case "$1" in
     --package-only) package_only=1 ;;
+    --shared-folder) shared_folder=1 ;;
     --no-vivo) no_vivo=1 ;;
     --allow-privacy-findings) allow_privacy_findings=1 ;;
-    *) die "Usage: $0 JOB_ID [--package-only] [--no-vivo] [--allow-privacy-findings]" ;;
+    *) die "$usage" ;;
   esac
   shift
 done
-[[ "$JOB_ID" =~ ^[0-9]+$ ]] || die "Usage: $0 JOB_ID [--package-only] [--no-vivo] [--allow-privacy-findings]"
+[[ "$JOB_ID" =~ ^[0-9]+$ ]] || die "$usage"
 for tool in curl python3 tar; do
   command -v "$tool" >/dev/null || die "Missing command: $tool"
 done
@@ -161,6 +166,11 @@ printf 'Archive SHA-256: %s\n' "$archive_sha"
 
 if [[ "$package_only" == "1" ]]; then
   printf 'Package-only mode: no HU-Box upload and no VIVO update.\n'
+  exit 0
+fi
+
+if [[ "$shared_folder" == "1" ]]; then
+  python3 "$ROOT_DIR/publisher/upload_trace_archive.py" "$archive"
   exit 0
 fi
 

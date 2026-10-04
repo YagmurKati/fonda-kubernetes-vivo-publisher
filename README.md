@@ -43,7 +43,8 @@ sent to VIVO.
 3. a VIVO account that may publish runs. The VIVO administrator gives this
    right: same e-mail address as above;
 4. optional: an Electricity Maps token, for the carbon estimate;
-5. optional: a HU-Box account, to keep selected raw traces.
+5. optional: a HU-Box account, to keep selected raw traces. Without one, the
+   traces go to the shared FONDA folder or to your own storage (step 6).
 
 ## Publish a workflow run on the FONDA Kubernetes cluster
 
@@ -117,6 +118,20 @@ The first command is needed once per computer. Review the bundle made by
 `--package-only` before the last command, which uploads the archive and adds
 its public link to the run's VIVO page. Setup, privacy checks and error
 recovery: [HU-Box trace archive guide](docs/HU_BOX_TRACE_ARCHIVE.md).
+
+Without an HU-Box account, no setup is needed. Send the reviewed bundle to the
+[shared FONDA folder](docs/HU_BOX_TRACE_ARCHIVE.md#without-an-hu-box-account-the-shared-fonda-folder):
+
+```bash
+./scripts/archive-publish-run.sh RUN_ID --package-only
+./scripts/archive-publish-run.sh RUN_ID --shared-folder
+```
+
+Its owner makes the archive public and adds the link to the run in VIVO.
+
+Traces that are kept somewhere else, for example on Zenodo, are linked with
+`./scripts/publish-run.sh RUN_ID --run-trace-archive URL`:
+[Another place](docs/HU_BOX_TRACE_ARCHIVE.md#another-place-zenodo-or-your-own-storage).
 
 ## Automatic collection and publication
 

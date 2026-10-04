@@ -12,6 +12,86 @@ The end-to-end command currently supports Nextflow profiles whose evidence is
 retained on the configured Kubernetes PVC. The final section explains the
 fallback for other workflow engines.
 
+## Three ways to keep the traces of a run
+
+| You have | The archive goes to | Command |
+| --- | --- | --- |
+| an HU-Box account | your own HU-Box library | `./scripts/archive-publish-run.sh RUN_ID`: the rest of this guide |
+| no HU-Box account | the shared FONDA folder in HU-Box | `./scripts/archive-publish-run.sh RUN_ID --shared-folder`: next section |
+| your own storage, for example Zenodo | that place | upload it there, then `./scripts/publish-run.sh RUN_ID --run-trace-archive URL`: [Another place](#another-place-zenodo-or-your-own-storage) |
+
+In all three the link is shown on the run's page in VIVO as **trace archive**.
+
+## Without an HU-Box account: the shared FONDA folder
+
+FONDA members without an HU-Box account send the archive of a selected run to
+one shared HU-Box folder, "Traces of FONDA Workflows", from the same terminal,
+right after the run:
+
+1. Prepare as in steps 1, 2 and 5 of this guide: the working
+   `config/publisher.env`, the run ID, and a reviewed bundle from
+   `--package-only`. Steps 3 and 4 (HU-Box password and setup) are not needed.
+2. Send it:
+
+   ```bash
+   ./scripts/archive-publish-run.sh "$RUN_ID" --shared-folder
+   ```
+
+   The command packages the run again, uploads the archive and a small note
+   file that names the run, and ends with:
+
+   ```text
+   Uploaded: my-run-01-trace-bundle-20261004T100000Z.tar.gz (48211 bytes)
+   Run:      http://example.org/vivo-import/run-metadata/run/...
+   The archive is not public yet. ...
+   ```
+
+3. The owner of the folder makes the archive public and adds its link to the
+   run in VIVO. You do not have to write or do anything more.
+
+The upload goes through the folder's upload link,
+<https://box.hu-berlin.de/u/d/5c2fded0afbf4e2c95da/>. The link only takes
+files in: nobody can see, download or delete files through it. Review the
+bundle before you send it; once the owner has linked it, it is public.
+
+To test the link without uploading anything:
+
+```bash
+python3 publisher/upload_trace_archive.py --check
+```
+
+Other cases:
+
+- **HPC@HU:** `examples/hpc-at-hu-slurm/archive-slurm-job.sh JOB_ID --shared-folder`.
+- **Another workflow system:** put the reviewed traces and logs of the run
+  into one `.tar.gz` or `.zip` file, named `RUN_ID-trace-bundle-DATE.tar.gz`,
+  and name the run yourself (the part after `uri=` in the address of the run's
+  VIVO page, with `%3A` read as `:` and `%2F` as `/`):
+
+  ```bash
+  python3 publisher/upload_trace_archive.py my-run-01-trace-bundle-20261004.tar.gz \
+    --run-uri "http://example.org/vivo-import/run-metadata/run/..."
+  ```
+
+- **Another upload link:** set `HU_BOX_UPLOAD_LINK`.
+
+## Another place: Zenodo or your own storage
+
+The archive does not have to be in HU-Box. Upload the reviewed archive to a
+place that is public and stays (Zenodo, the storage of your university, a
+repository of your group), copy its public address and add it to the run:
+
+```bash
+./scripts/publish-run.sh "$RUN_ID" --run-trace-archive "https://zenodo.org/records/..."
+```
+
+On HPC@HU:
+
+```bash
+printf '%s\n' "https://zenodo.org/records/..." > ~/vivo-evidence/JOB_ID/trace-archive-url.txt
+examples/hpc-at-hu-slurm/publish-slurm-job.sh JOB_ID
+```
+
 ## What the command does
 
 For one `RUN_ID`, `archive-publish-run.sh`:

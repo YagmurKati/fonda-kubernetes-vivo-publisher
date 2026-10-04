@@ -197,6 +197,11 @@ HU-Box/WebDAV password, select only an authorized library, run
 `--package-only` and review the bundle first, and verify both the public HU-Box
 link and the run page afterward.
 
+Without an HU-Box account, send the reviewed bundle to the shared FONDA folder
+with `--shared-folder`, or keep the traces in your own storage and add their
+link to the run: see
+[Three ways to keep the traces of a run](HU_BOX_TRACE_ARCHIVE.md#three-ways-to-keep-the-traces-of-a-run).
+
 ## 8. Remove a published run
 
 Copy the publication ID from the receipt filename. For

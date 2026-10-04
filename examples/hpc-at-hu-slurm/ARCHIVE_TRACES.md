@@ -107,8 +107,19 @@ Moving, deleting or unsharing the file in HU-Box breaks the link in VIVO.
 | Option | Effect |
 |---|---|
 | `--package-only` | build and check the bundle; no upload, VIVO unchanged |
+| `--shared-folder` | upload to the shared FONDA folder instead of your own library; steps 2 and 3 are not needed. Its owner makes the archive public and adds the link to VIVO |
 | `--no-vivo` | upload and share; VIVO unchanged. `publish-slurm-job.sh JOB_ID` adds the link later |
 | `--allow-privacy-findings` | continue after you have confirmed every reported line is harmless |
 
 The link is saved in `~/vivo-evidence/JOB_ID/trace-archive-url.txt`, so
 publishing the same job again keeps it.
+
+## Traces kept somewhere else
+
+Traces that are in another public place, for example on Zenodo, are linked
+without an upload: write the address into that file and publish the job again.
+
+```bash
+printf '%s\n' "https://zenodo.org/records/..." > ~/vivo-evidence/JOB_ID/trace-archive-url.txt
+examples/hpc-at-hu-slurm/publish-slurm-job.sh JOB_ID
+```

@@ -19,15 +19,17 @@ fi
 RUN_ID="${1:-}"
 shift || true
 package_only=0
+shared_folder=0
 no_vivo=0
 allow_privacy_findings=0
 while (($#)); do
   case "$1" in
     --package-only) package_only=1 ;;
+    --shared-folder) shared_folder=1 ;;
     --no-vivo) no_vivo=1 ;;
     --allow-privacy-findings) allow_privacy_findings=1 ;;
     *)
-      die "Usage: $0 RUN_ID [--package-only] [--no-vivo] [--allow-privacy-findings]"
+      die "Usage: $0 RUN_ID [--package-only] [--shared-folder] [--no-vivo] [--allow-privacy-findings]"
       ;;
   esac
   shift
@@ -251,6 +253,14 @@ printf 'Archive SHA-256: %s\n' "$archive_sha"
 
 if [[ "$package_only" == "1" ]]; then
   printf 'Package-only mode: no HU-Box upload and no VIVO update.\n'
+  exit 0
+fi
+
+# Without an HU-Box account: send the archive to the shared FONDA folder
+# through its upload link. The folder's owner makes it public and adds the
+# link to the run in VIVO.
+if [[ "$shared_folder" == "1" ]]; then
+  python3 "$ROOT_DIR/publisher/upload_trace_archive.py" "$archive"
   exit 0
 fi
 
