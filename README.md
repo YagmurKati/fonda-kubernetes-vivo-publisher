@@ -11,6 +11,9 @@ Publishes the metadata of finished workflow runs to
 | HPC@HU (Slurm) | [HPC@HU guides](examples/hpc-at-hu-slurm/README.md) |
 | Any other cluster | [Connect another cluster to FONDA VIVO](examples/other-cluster/README.md) |
 
+Your workflow is not among the [tested profiles](#tested-workflow-profiles):
+[Publish a workflow that is not listed](docs/NEW_WORKFLOW.md).
+
 FONDA members without a VIVO account: send an e-mail to
 [yagmur.kati@hu-berlin.de](mailto:yagmur.kati@hu-berlin.de).
 
@@ -225,10 +228,11 @@ Nextflow profiles: task tags such as tile or sample identifiers are grouped
 under the process name. This keeps large RDF files compact; the metrics audit
 keeps the values of every task.
 
-A workflow that is not listed needs its own profile, and another workflow
-engine needs its own collector. Both reuse the RDF model and
-`publisher/publish_vivo.py`. See
-[Adapting a Nextflow workflow](docs/ADAPT_NEXTFLOW.md).
+A workflow that is not listed can be published as well, and its first run
+creates its workflow page in VIVO. For Nextflow and Airflow workflows your own
+settings are enough; Snakemake, Spark and programs run as Kubernetes Jobs need
+a part of their own in the collector. See
+[Publish a workflow that is not listed](docs/NEW_WORKFLOW.md).
 
 ## Engine-specific execution evidence
 
@@ -301,6 +305,7 @@ audit files. See [Remove a published run](docs/USER_GUIDE.md#8-remove-a-publishe
 
 - [User guide](docs/USER_GUIDE.md)
 - [Administrator onboarding](docs/ADMIN_SETUP.md)
+- [Publish a workflow that is not listed](docs/NEW_WORKFLOW.md)
 - [Adapting a Nextflow workflow](docs/ADAPT_NEXTFLOW.md)
 - [Node use of a run: exclusive or non-exclusive](docs/NODE_USE.md)
 - [HU-Box trace archive](docs/HU_BOX_TRACE_ARCHIVE.md)
