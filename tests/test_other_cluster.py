@@ -15,7 +15,33 @@ def stub(directory: Path, name: str, body: str) -> None:
     path.chmod(path.stat().st_mode | stat.S_IXUSR)
 
 
+# Commands of schedulers. The computer that runs the tests may have some of
+# them installed (GitHub's runners have kubectl), so the tests hide them and
+# add stand-ins for the cluster they describe.
+SCHEDULER_COMMANDS = {
+    "sinfo", "sbatch", "srun", "sacct", "sstat", "scontrol", "squeue",
+    "qsub", "qstat", "qdel", "pbsnodes", "tracejob", "qmgr", "qacct", "qhost", "qconf",
+    "bsub", "bjobs", "bhist", "bacct", "lsid", "lsload",
+    "condor_submit", "condor_q", "condor_history", "condor_status", "condor_version",
+    "kubectl", "flux", "oarsub",
+}
+
+
 class OtherClusterTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        # the system's tools without any scheduler command
+        cls.system = tempfile.TemporaryDirectory()
+        for directory in ("/bin", "/usr/bin"):
+            for tool in Path(directory).iterdir():
+                link = Path(cls.system.name) / tool.name
+                if tool.name not in SCHEDULER_COMMANDS and not link.is_symlink():
+                    link.symlink_to(tool)
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.system.cleanup()
+
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
         self.root = Path(self.tmp.name)
@@ -24,7 +50,7 @@ class OtherClusterTests(unittest.TestCase):
         # no network in tests: every curl call "fails to connect"
         stub(self.bin, "curl", 'printf "000"\nexit 7\n')
         # the test job does not wait in tests
-        self.env = dict(os.environ, PATH=f"{self.bin}:{os.environ['PATH']}", HOME=str(self.root),
+        self.env = dict(os.environ, PATH=f"{self.bin}:{self.system.name}", HOME=str(self.root),
                         VIVO_CHECK_SECONDS="0")
 
     def tearDown(self):
@@ -98,7 +124,7 @@ class OtherClusterTests(unittest.TestCase):
                                 f'  *"-j 4242"*) echo "$@" > "{self.root}/sacct-test-job"; echo "4242|COMPLETED|60|1|31000" ;;\n'
                                 '  *) echo "1001|00:10:00|1|52000" ;;\nesac\n')
         stub(self.bin, "sstat", 'echo "4242.0|00:00:01|3000K|900"\n')
-        stub(self.bin, "squeue", 'printf "4242\\n4100\\n"\n')
+        stub(self.bin, "squeue", 'printf "4242\\n987654321\\n"\n')
         # stand-in for srun: run the piped checks here and record the options
         stub(self.bin, "srun", f'echo "$@" > "{self.root}/srun-options"\nwhile [ $# -gt 0 ] && [ "$1" != "bash" ]; do shift; done\n'
                                'SLURM_CPUS_ON_NODE=1 SLURM_JOB_ID=4242 "$@"\n')
@@ -121,15 +147,13 @@ class OtherClusterTests(unittest.TestCase):
                          "== 8. Slurm: what was recorded for the test job", "4242|COMPLETED|60|1|31000", "End of report."):
             self.assertIn(expected, report)
         self.assertNotIn("controller-name", report)
-        self.assertNotIn("4100", report)  # other jobs are counted, not listed
+        self.assertNotIn("987654321", report)  # other jobs are counted, not listed
         self.assertIn("ConsumedEnergyRaw", (self.root / "sacct-test-job").read_text())
         self.assertIn("--partition=short", (self.root / "srun-options").read_text())
         self.assertIn("--time=2", (self.root / "srun-options").read_text())
 
     def run_check(self):
-        # only the stand-in commands and the system's basic tools
-        env = dict(self.env, PATH=f"{self.bin}:/usr/bin:/bin")
-        result = subprocess.run(["bash", str(FOLDER / "check-cluster.sh")], cwd=self.root, env=env,
+        result = subprocess.run(["bash", str(FOLDER / "check-cluster.sh")], cwd=self.root, env=self.env,
                                 capture_output=True, text=True)
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("End of report.", result.stdout)
