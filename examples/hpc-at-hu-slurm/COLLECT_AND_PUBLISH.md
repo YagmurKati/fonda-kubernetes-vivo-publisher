@@ -171,6 +171,11 @@ workflow, cluster and dataset records and the local files stay.
 
 ## Other jobs
 
+Any command can be published, with or without a workflow system, as long as
+the whole workflow runs inside one Slurm job on one node. For a workflow that
+is not in VIVO yet, see
+[Publish a workflow that is not listed](../../docs/NEW_WORKFLOW.md#hpchu-slurm).
+
 1. In `slurm.env`, set `WORKFLOW_URI`, `RUN_LABEL`, `CODE_REPO_URL`,
    `LANGUAGE_URIS` and `INPUT_DATA_URIS` for your workflow. For jobs without
    Nextflow, leave `NEXTFLOW_LAUNCH_DIR` and `NEXTFLOW_TRACE_GLOB` empty and
