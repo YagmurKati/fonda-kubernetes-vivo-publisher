@@ -363,6 +363,7 @@ is recorded and how energy is calculated.
 - [Administrator onboarding](docs/ADMIN_SETUP.md)
 - [Adapting a Nextflow workflow](docs/ADAPT_NEXTFLOW.md)
 - [Node use of a run: exclusive or non-exclusive](docs/NODE_USE.md)
+- [Connect another Slurm cluster to FONDA VIVO](examples/other-slurm-cluster/README.md)
 - [Security](SECURITY.md)
 
 ## Scope
