@@ -60,6 +60,15 @@ DEFAULT_LANGUAGE_LABELS = {
     "http://example.org/vivo-import/run-metadata/language/shell": "Shell",
 }
 DEFAULT_CLUSTER_URI = "http://example.org/vivo-import/run-metadata/cluster/fonda-cluster"
+# What the Kepler energy of a pod contains on the FONDA cluster.
+FONDA_KEPLER_IDLE_NOTE = (
+    " Idle power is included: Kepler on the FONDA cluster does not report "
+    "idle energy separately (checked on 2026-10-04). It divides the energy "
+    "it measures on a node (CPU, memory and, from the node's power meter, "
+    "the rest of the machine such as fans and power supply) among the pods "
+    "on that node. The value is therefore not independent of node "
+    "temperature."
+)
 DEFAULT_ENGINE_URI = "http://example.org/vivo-import/run-metadata/engine/nextflow"
 DEFAULT_BACKEND_URI = ""
 DEFAULT_OUTPUT_STEM = "fonda-nextflow-run-metadata"
@@ -1533,6 +1542,7 @@ def metric_methods(
     pod_count: int,
     carbon_info: CarbonIntensityInfo,
     cached_origin_metrics: bool = False,
+    cluster_uri: Optional[str] = None,
 ) -> Dict[str, str]:
     if summary.get("cpu_source") == "trace":
         cpu_method = (
@@ -1608,6 +1618,8 @@ def metric_methods(
         cpu_method += cache_note
         memory_method += cache_note
         energy_method += cache_note
+    if summary["energy_pod_count"] and cluster_uri == DEFAULT_CLUSTER_URI:
+        energy_method += FONDA_KEPLER_IDLE_NOTE
     return {
         "cpu": cpu_method,
         "memory": memory_method,
@@ -2405,6 +2417,7 @@ def build_ttl(
         len(all_pod_names),
         carbon_info,
         args.include_cached_origin_metrics,
+        cluster_uri=cluster_uri,
     )
     status_counts = Counter(task.status for task in tasks)
     node_names = unique(
@@ -2462,6 +2475,7 @@ def build_ttl(
             len(stage_pods),
             carbon_info,
             cached_only and args.include_cached_origin_metrics,
+            cluster_uri=cluster_uri,
         )
         stage_key = f"{args.workflow_name}-{stage['slug']}-{session_key}"
         stage_uri = f"{base_uri}process/{slugify(stage_key)}"

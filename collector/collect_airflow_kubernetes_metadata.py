@@ -328,11 +328,24 @@ def energy_measurement_coverage(energy_queries: Dict[str, Optional[str]]) -> Opt
     return f"{percent}% ({measured} of {pod_count} {'pod' if pod_count == 1 else 'pods'})"
 
 
+# What the Kepler energy of a pod contains on the FONDA cluster.
+FONDA_CLUSTER_SLUG = "fonda-cluster"
+FONDA_KEPLER_IDLE_NOTE = (
+    " Idle power is included: Kepler on the FONDA cluster does not report "
+    "idle energy separately (checked on 2026-10-04). It divides the energy "
+    "it measures on a node (CPU, memory and, from the node's power meter, "
+    "the rest of the machine such as fans and power supply) among the pods "
+    "on that node. The value is therefore not independent of node "
+    "temperature."
+)
+
+
 def summarize_energy_method(
     detected_energy_metric: Optional[str],
     energy_queries: Dict[str, Optional[str]],
     task_count: Optional[int] = None,
     pod_count: Optional[int] = None,
+    cluster_slug: Optional[str] = None,
 ) -> Tuple[str, bool]:
     used_queries = [query for query in energy_queries.values() if query]
     used_fallback = any("avg_over_time" in query for query in used_queries)
@@ -357,6 +370,8 @@ def summarize_energy_method(
     else:
         method = f"Energy could not be derived from Prometheus/Kepler metrics{scope}."
 
+    if used_queries and cluster_slug == FONDA_CLUSTER_SLUG:
+        method += FONDA_KEPLER_IDLE_NOTE
     return method, used_fallback
 
 
@@ -1517,7 +1532,9 @@ def main() -> None:
     )
     memory_avg_gb = bytes_to_gb(memory["avg"])
     memory_peak_gb = bytes_to_gb(memory["peak"])
-    energy_method, energy_method_uses_fallback = summarize_energy_method(detected_energy_metric, energy_queries)
+    energy_method, energy_method_uses_fallback = summarize_energy_method(
+        detected_energy_metric, energy_queries, cluster_slug=args.cluster_slug
+    )
     carbon_method = summarize_carbon_method(args.carbon_intensity, energy_kwh is not None)
     code_version = f"sha256:{sha256_file(args.code_path)}"
     # Git provenance for the DAG file. The commit is only emitted when the
@@ -1652,6 +1669,7 @@ def main() -> None:
         process_energy_method, _ = summarize_energy_method(
             detected_energy_metric, process_energy_queries,
             task_count=len(process_task_ids), pod_count=len(process_pod_names),
+            cluster_slug=args.cluster_slug,
         )
         process_cpu_method = summarize_cpu_method(
             len(process_task_ids), len(process_pod_names), process_cpu_max_over_time_count
