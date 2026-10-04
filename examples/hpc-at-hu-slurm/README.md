@@ -14,10 +14,8 @@ Prometheus.
 This collector is built for HPC@HU only. Another Slurm cluster gets its own:
 see [Connect another Slurm cluster to FONDA VIVO](../other-slurm-cluster/README.md).
 
-Published examples (nf-core/rangeland 1.0.0, test profile):
-
-- [run 2026-10-02 21:04](https://vivo-fonda.hu-berlin.de/vivo/individual?uri=http%3A%2F%2Fexample.org%2Fvivo-import%2Frun-metadata%2Frun%2Fhpc-at-hu-slurm-1598432-20261002t190419), power read every second
-- [run 2026-10-02 11:32](https://vivo-fonda.hu-berlin.de/vivo/individual?uri=http%3A%2F%2Fexample.org%2Fvivo-import%2Frun-metadata%2Frun%2Fhpc-at-hu-slurm-1597982-20261002t093223), with trace archive
+Published example (nf-core/rangeland 1.0.0, test profile, with trace archive):
+[run 2026-10-02 11:32](https://vivo-fonda.hu-berlin.de/vivo/individual?uri=http%3A%2F%2Fexample.org%2Fvivo-import%2Frun-metadata%2Frun%2Fhpc-at-hu-slurm-1597982-20261002t093223).
 
 ## What is recorded
 
@@ -60,13 +58,13 @@ the collector prints a note saying so.
 
 ### Whole node: measured
 
-The published example runs had the whole node to themselves. Reserving a whole
+The published example run had the whole node to itself. Reserving a whole
 node is not recommended for other users of the cluster, and the example job
 files do not request it.
 
 When a job has all of the node's CPUs, the collector uses the node's IPMI
-power, which the sampler reads every `SAMPLE_INTERVAL` seconds while the job
-runs (1 second in the example job), and integrates it over the job's duration:
+power, which the sampler reads every 10 seconds while the job runs, and
+integrates it over the job's duration:
 
 ```text
 job energy = node power, integrated over the time the job ran
