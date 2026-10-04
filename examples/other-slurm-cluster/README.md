@@ -38,8 +38,8 @@ is checked in two rounds before the collector is written:
 | C | VIVO administrator | Builds the collector for your cluster and writes its guide. |
 | D | you | Set up and publish, following your cluster's own guide. |
 
-**Contact:** Yagmur Kati, FONDA VIVO administrator
-([VIVO page](https://vivo-fonda.hu-berlin.de/vivo/individual?uri=https%3A%2F%2Ffonda.hu-berlin.de%2F%3Fpage_id%3D2066%23YagmurKati)).
+**Contact:** Yagmur Kati, FONDA VIVO administrator,
+[yagmur.kati@hu-berlin.de](mailto:yagmur.kati@hu-berlin.de).
 
 Nothing has to be installed by an administrator of your cluster; everything
 runs with your own account. Run all commands on the login node.
