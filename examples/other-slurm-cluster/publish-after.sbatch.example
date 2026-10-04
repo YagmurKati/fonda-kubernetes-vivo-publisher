@@ -1,0 +1,23 @@
+#!/bin/bash
+#SBATCH --job-name=vivo-publish
+#SBATCH --nodes=1
+#SBATCH --ntasks=1
+#SBATCH --time=00:15:00
+# Publishes one finished job to VIVO. Not submitted by hand:
+# submit-with-publish.sh submits it so that it starts when the run has ended.
+# Needs compute nodes that reach VIVO (cluster check, section 5).
+
+# The publish script of your cluster, from your cluster's own guide.
+# For HPC@HU: .../fonda-kubernetes-vivo-publisher/examples/hpc-at-hu-slurm/publish-slurm-job.sh
+PUBLISH_SCRIPT=/path/to/fonda-kubernetes-vivo-publisher/examples/REPLACE_ME/REPLACE_ME.sh
+# The Python module of your cluster (3.9 or newer). Delete the line if the
+# cluster's own python3 is new enough.
+module load python/REPLACE_ME
+
+: "${RUN_JOB_ID:?submit this file with submit-with-publish.sh}"
+# Slurm's accounting can be a few seconds behind the end of a job.
+for _ in 1 2 3 4 5 6; do
+  state="$(sacct -X -n -j "$RUN_JOB_ID" -o State | awk '{print $1; exit}')"
+  case "$state" in ""|PENDING|RUNNING|COMPLETING) sleep 20 ;; *) break ;; esac
+done
+"$PUBLISH_SCRIPT" "$RUN_JOB_ID"
