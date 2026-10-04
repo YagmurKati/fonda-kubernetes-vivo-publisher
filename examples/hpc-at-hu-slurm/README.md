@@ -11,8 +11,8 @@ Prometheus.
 2. [Collect and publish a run](COLLECT_AND_PUBLISH.md): for every run.
 3. [Archive a run's traces in HU-Box](ARCHIVE_TRACES.md): optional, for selected runs.
 
-This collector is built for HPC@HU only. Another Slurm cluster gets its own:
-see [Connect another Slurm cluster to FONDA VIVO](../other-slurm-cluster/README.md).
+This collector is built for HPC@HU only. Another cluster gets its own:
+see [Connect another cluster to FONDA VIVO](../other-cluster/README.md).
 
 Published example (nf-core/rangeland 1.0.0, test profile, with trace archive):
 [run 2026-10-02 11:32](https://vivo-fonda.hu-berlin.de/vivo/individual?uri=http%3A%2F%2Fexample.org%2Fvivo-import%2Frun-metadata%2Frun%2Fhpc-at-hu-slurm-1597982-20261002t093223).

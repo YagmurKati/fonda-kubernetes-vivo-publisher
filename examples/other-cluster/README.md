@@ -1,25 +1,26 @@
-# Connect another Slurm cluster to FONDA VIVO
+# Connect another cluster to FONDA VIVO
 
-For users of a Slurm cluster that is not connected yet (for example at TU
-Berlin, FU Berlin or GFZ) who want their runs to appear in
-[FONDA VIVO](https://vivo-fonda.hu-berlin.de/vivo/runs).
+For users of a cluster that is not connected yet (for example at TU Berlin,
+FU Berlin or GFZ) who want their runs to appear in
+[FONDA VIVO](https://vivo-fonda.hu-berlin.de/vivo/runs). It does not matter
+which scheduler the cluster uses: Slurm, Kubernetes, PBS or another one.
 
 **Every cluster gets its own collector.** A collector is the program that
 reads a finished job, works out its time, CPU, memory and energy, writes the
 run as a Turtle file (`run.ttl`) and sends it to VIVO. Clusters record jobs
 and measure energy in different ways, so a collector is written for one
 cluster only. Today there are two: one for the FONDA Kubernetes cluster and
-one for [HPC@HU](../hpc-at-hu-slurm/README.md).
+one for [HPC@HU](../hpc-at-hu-slurm/README.md) (Slurm).
 
 **The aim** is that the properties of a run in VIVO are read from the cluster
 itself, as many as the cluster can give:
 
 | Run property in VIVO | Where it can come from |
 |---|---|
-| Start, end, duration, status, CPU time | Slurm's job records |
-| Peak and average memory | Slurm's job records; Slurm profiling for values over time |
-| GPU requested, GPU use | Slurm's job records, GPU tools on the node |
-| Energy | Slurm's own energy records, energy tools of the cluster, monitoring on the node (per job or per node), counters and sensors |
+| Start, end, duration, status, CPU time | the scheduler's job records |
+| Peak and average memory | the scheduler's job records; its profiling or the cluster's monitoring for values over time |
+| GPU requested, GPU use | the scheduler's job records, GPU tools on the node |
+| Energy | the scheduler's own energy records, energy tools of the cluster, monitoring (per job or per node), counters and sensors on the node |
 | Energy measurement coverage, node use | whether jobs share nodes, the job's part of its node, other jobs on the node |
 | Execution host, CPU model, CPUs, memory, operating system, kernel | read on the node |
 | Node temperature | sensors and monitoring on the node |
@@ -33,7 +34,7 @@ is checked in two rounds before the collector is written:
 
 | Stage | Who | What |
 |---|---|---|
-| A | you | First check: which sources exist on your cluster (steps 1 to 3). |
+| A | you | First check: one script reports which scheduler and which sources your cluster has (steps 1 to 3). |
 | B | VIVO administrator, then you | Second check: commands written for your cluster, which read the sources that were found (step 4). |
 | C | VIVO administrator | Builds the collector for your cluster and writes its guide. |
 | D | you | Set up and publish, following your cluster's own guide. |
@@ -42,11 +43,14 @@ is checked in two rounds before the collector is written:
 [yagmur.kati@hu-berlin.de](mailto:yagmur.kati@hu-berlin.de).
 
 Nothing has to be installed by an administrator of your cluster; everything
-runs with your own account. Run all commands on the login node.
+runs with your own account.
 
 ---
 
-## A. First check: which sources exist
+## A. First check: which scheduler and which sources
+
+Do this where you submit your jobs: on the login node, or for Kubernetes on
+the computer where you use `kubectl`.
 
 ### 1. Download the publisher
 
@@ -61,38 +65,57 @@ cd fonda-kubernetes-vivo-publisher
 
 ### 2. Run the first check
 
-```bash
-examples/other-slurm-cluster/check-cluster.sh
-```
-
-If your cluster needs a partition or an account for every job, add them:
+The same command on every cluster. You do not have to know or describe your
+cluster: the script finds out which scheduler it uses and reports what is
+there.
 
 ```bash
-examples/other-slurm-cluster/check-cluster.sh --partition=NAME --account=NAME
+examples/other-cluster/check-cluster.sh
 ```
 
-The script only reads: it changes nothing and sends nothing. It starts one
-test job of about one minute (time limit: two minutes) and writes
+Slurm only: if your cluster needs a partition or an account for every job,
+add them:
+
+```bash
+examples/other-cluster/check-cluster.sh --partition=NAME --account=NAME
+```
+
+The script only reads: it changes nothing and sends nothing. It writes
 `vivo-cluster-check-HOST-DATE.txt` in the current directory. The file contains
-host names, Slurm settings, the names of monitoring services and metrics, node
-hardware and the job IDs of your last jobs; no passwords, no file contents and
-nothing about other users. Read it before you send it.
+host names, scheduler settings, the names of monitoring services and metrics,
+node hardware and the job IDs of your last jobs; no passwords, no file
+contents and nothing about other users. Read it before you send it.
 
-What it reports:
+What it does depends on the scheduler it finds:
+
+| Scheduler | What the first check does |
+|---|---|
+| Slurm | The complete check. It starts one test job of about one minute (time limit: two minutes) on a compute node. |
+| Kubernetes | Reports the version, the rights of your account, and the names of monitoring services. No test job. |
+| PBS, Torque, LSF, Grid Engine, HTCondor | Reports the scheduler, its version and its commands, and checks the login node. No test job. |
+| None of these | Says so. Write in your e-mail how you submit jobs. |
+
+For every scheduler except Slurm there is no ready check of the scheduler and
+of a compute node yet. The administrator prepares it from your report; you
+receive it in step 4.
+
+What the report contains:
 
 | Section | Question it answers |
 |---|---|
-| 1. Slurm settings | What does Slurm record for a job? Does it record energy, and from which source? |
-| 2. Partitions | Node sizes, time limits, whether jobs share nodes. |
-| 3. Your last jobs | What Slurm stored for them, and everything this Slurm can report for a job. |
-| 4. Tools | Which job reports and energy tools does the cluster offer? |
-| 5. Login node | Python version; does the login node reach VIVO? |
-| 6. Compute node | Which monitoring runs on the node? Which power, energy and temperature values does it offer, and are they given per job? Which counters and sensors can you read? GPUs, hardware, operating system. How Slurm sees the test job. |
-| 7. The test job | What Slurm recorded for it: time, CPU, memory, energy. |
+| 1. Scheduler | Which scheduler, which version? |
+| 2. Where you submit jobs | Python version; is VIVO reachable from there? |
+| 3. Tools | Which job reports and energy tools does the cluster offer? |
+| 4 to 6 (Slurm) | What does Slurm record for a job? Does it record energy, and from which source? Do jobs share nodes? What was stored for your last jobs? |
+| 7 (Slurm) | On a compute node: which monitoring runs there? Which power, energy and temperature values does it offer, and are they given per job? Which counters and sensors can you read? GPUs, hardware, operating system. |
+| 8 (Slurm) | What Slurm recorded for the test job: time, CPU, memory, energy. |
+| 4 and 5 (Kubernetes) | Which rights does your account have? Which monitoring services exist? |
+| 4 and 5 (other schedulers) | Which scheduler commands exist? The same node questions as for Slurm, answered for the login node. |
 
-### 3. Send this to the VIVO administrator
+### 3. Send the report
 
-One e-mail with:
+One e-mail to [yagmur.kati@hu-berlin.de](mailto:yagmur.kati@hu-berlin.de)
+with:
 
 - the cluster name;
 - the check file `vivo-cluster-check-....txt`, attached.
@@ -109,15 +132,17 @@ They read the sources found there, for one short test job, so that the values,
 their units and whether they belong to the job or to the whole node can be
 seen. You run them and send the output back.
 
-This round is skipped if the first report already shows everything.
+If your scheduler is not Slurm, these commands also check the scheduler and a
+compute node. On a Slurm cluster this round is skipped if the first report
+already shows everything.
 
 Other answers you may get instead:
 
 | The first check shows | Answer |
 |---|---|
-| Monitoring runs on the node, but you cannot read it | One or two precise questions for your cluster support, which you pass on. |
+| Monitoring exists, but you cannot read it | One or two precise questions for your cluster support, which you pass on. |
 | No energy source can be read with your account | Questions for your cluster support; or a collector without energy values, if that is still useful to you. |
-| The login node does not reach VIVO (not `403`) | Ask your cluster support to allow outgoing HTTPS to `vivo-fonda.hu-berlin.de`. |
+| VIVO is not reachable (not `403`) | Ask your cluster support to allow outgoing HTTPS to `vivo-fonda.hu-berlin.de`. |
 | No Python 3.9 or newer | Ask your cluster support for a Python module. |
 
 ---
@@ -136,8 +161,10 @@ receive:
 
 ## D. Set up and publish
 
-Follow your cluster's own guide. Steps 5 to 7 are the same on every cluster
-and can be done while you wait.
+Follow your cluster's own guide. Steps 5 to 7 apply when the collector runs
+with your own account on a login node (Slurm, PBS and similar), and can be
+done while you wait. For Kubernetes, your cluster's guide says where the VIVO
+login and the token are stored.
 
 ### 5. Python
 
@@ -197,7 +224,8 @@ your password.
 
 | Message | Cause and fix |
 |---|---|
-| The check's test job does not start | Add the options your cluster needs: `check-cluster.sh --partition=NAME --account=NAME`. |
+| Slurm: the check's test job does not start | Add the options your cluster needs: `check-cluster.sh --partition=NAME --account=NAME`. |
+| The check finds the wrong scheduler or none | Send the report anyway and write in the e-mail how you submit jobs. |
 | `No module named 'zoneinfo'` | Python is older than 3.9: load the Python module first. |
 | `VIVO rejected the update with HTTP 403` | Wrong e-mail or password, or your account may not publish yet: ask the administrator. |
 | `Disk quota exceeded` | Home directory full; free space there. The run records are small. |
@@ -212,45 +240,57 @@ cluster.
 
 ## For the VIVO administrator
 
-1. **First report (step 3).** For every run property in the table at the top,
-   note which source the report shows:
-   - sections 1, 3 and 7: what Slurm records itself. Energy: `AcctGatherEnergyType`
+1. **First report (step 3).** Section 1 names the scheduler. For every run
+   property in the table at the top, note which source the report shows.
+
+   Slurm:
+   - sections 4, 6 and 8: what Slurm records itself. Energy: `AcctGatherEnergyType`
      and `ConsumedEnergyRaw` of the test job. Values over time:
      `AcctGatherProfileType`. Whether the user sees other jobs: `PrivateData`.
-   - section 4: job reports and energy tools the cluster offers;
-   - section 6: monitoring services on the node, the metrics they offer and
+   - section 3: job reports and energy tools the cluster offers;
+   - section 7: monitoring services on the node, the metrics they offer and
      whether values carry a job label; counters and sensors the user can read;
      GPUs; whether the job shares its node (`OverSubscribe`, jobs on the node).
+
+   Another scheduler: the report gives the scheduler, its version and its
+   commands, and for Kubernetes the rights of the account and which
+   monitoring services exist. Write the check for that scheduler and send it
+   as the second check. It asks what the Slurm part asks: what the scheduler
+   records for a job, whether it records energy, whether jobs share nodes,
+   what a compute node offers, and what was recorded for one short test job.
+   Then add it to `check-cluster.sh` as that scheduler's part, so that the
+   next cluster with this scheduler gets the complete first check.
 2. **Second check (step 4).** Write commands for that cluster which read what
    was found, for one short test job. Read each source once at the start and
    once at the end of the job, not in a loop.
 
    | Found in the first report | The second check reads |
    |---|---|
-   | Slurm records energy | `sacct` and `sstat` energy of a job and of its steps; on a shared node, whether the value is the job's or the node's |
-   | Slurm profiling | the profile of the test job (`sh5util`) |
+   | The scheduler records energy | the energy it reports for a job and for its steps; on a shared node, whether the value is the job's or the node's |
+   | Profiling of the scheduler | the profile of the test job |
    | An energy tool or job report (for example `eacct`, `jobstats`) | its report for the test job |
-   | Metrics with a job label | the lines of the test job |
+   | Metrics with a job or pod label | the lines of the test job |
    | Power or energy of the whole node only (monitoring, sensors, counters) | the values, and what else ran on the node |
-   | GPUs | power and use per GPU, and what Slurm records for them |
+   | GPUs | power and use per GPU, and what the scheduler records for them |
    | Monitoring that the user cannot read | a question for the cluster's support: can a user read the values of their own job, and how |
 
    Prefer a source that gives the energy of the job itself. A value for the
    whole node is only the job's when the job had the node to itself;
    otherwise it is a share.
-3. Check the rest: Python and access to VIVO (section 5).
+3. Check the rest: Python and access to VIVO (section 2).
 4. Build the collector for that cluster as its own file, with its own example
    folder, and keep the names in line:
 
    | | Pattern | Example |
    |---|---|---|
-   | Collector | `collector/collect_<cluster>_slurm_job_metadata.py` | `collect_tu_berlin_slurm_job_metadata.py` |
-   | Folder with the cluster's guide and examples | `examples/<cluster>-slurm/` | `examples/tu-berlin-slurm/` |
-   | Start of every run address | `<cluster>-slurm-` | `tu-berlin-slurm-` |
-   | Tests | `tests/test_<cluster>_slurm_collector.py` | `test_tu_berlin_slurm_collector.py` |
+   | Collector | `collector/collect_<cluster>_<scheduler>_job_metadata.py` | `collect_tu_berlin_slurm_job_metadata.py` |
+   | Folder with the cluster's guide and examples | `examples/<cluster>-<scheduler>/` | `examples/tu-berlin-slurm/` |
+   | Start of every run address | `<cluster>-<scheduler>-` | `tu-berlin-slurm-` |
+   | Tests | `tests/test_<cluster>_<scheduler>_collector.py` | `test_tu_berlin_slurm_collector.py` |
 
-   Never change the start of the run addresses later: it is part of every
-   published run of that cluster. The energy part is written for that
+   `<scheduler>` is `slurm`, `pbs`, `kubernetes` and so on, as the report
+   names it. Never change the start of the run addresses later: it is part of
+   every published run of that cluster. The energy part is written for that
    cluster. Carbon values and publishing are the same on every cluster.
 5. In VIVO, create the cluster page (class Compute Cluster).
 6. Give the user's VIVO account the publishing right

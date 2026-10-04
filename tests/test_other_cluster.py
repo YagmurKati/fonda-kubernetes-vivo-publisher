@@ -6,7 +6,7 @@ import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-FOLDER = ROOT / "examples" / "other-slurm-cluster"
+FOLDER = ROOT / "examples" / "other-cluster"
 
 
 def stub(directory: Path, name: str, body: str) -> None:
@@ -15,7 +15,33 @@ def stub(directory: Path, name: str, body: str) -> None:
     path.chmod(path.stat().st_mode | stat.S_IXUSR)
 
 
-class OtherSlurmClusterTests(unittest.TestCase):
+# Commands of schedulers. The computer that runs the tests may have some of
+# them installed (GitHub's runners have kubectl), so the tests hide them and
+# add stand-ins for the cluster they describe.
+SCHEDULER_COMMANDS = {
+    "sinfo", "sbatch", "srun", "sacct", "sstat", "scontrol", "squeue",
+    "qsub", "qstat", "qdel", "pbsnodes", "tracejob", "qmgr", "qacct", "qhost", "qconf",
+    "bsub", "bjobs", "bhist", "bacct", "lsid", "lsload",
+    "condor_submit", "condor_q", "condor_history", "condor_status", "condor_version",
+    "kubectl", "flux", "oarsub",
+}
+
+
+class OtherClusterTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        # the system's tools without any scheduler command
+        cls.system = tempfile.TemporaryDirectory()
+        for directory in ("/bin", "/usr/bin"):
+            for tool in Path(directory).iterdir():
+                link = Path(cls.system.name) / tool.name
+                if tool.name not in SCHEDULER_COMMANDS and not link.is_symlink():
+                    link.symlink_to(tool)
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.system.cleanup()
+
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
         self.root = Path(self.tmp.name)
@@ -24,7 +50,7 @@ class OtherSlurmClusterTests(unittest.TestCase):
         # no network in tests: every curl call "fails to connect"
         stub(self.bin, "curl", 'printf "000"\nexit 7\n')
         # the test job does not wait in tests
-        self.env = dict(os.environ, PATH=f"{self.bin}:{os.environ['PATH']}", HOME=str(self.root),
+        self.env = dict(os.environ, PATH=f"{self.bin}:{self.system.name}", HOME=str(self.root),
                         VIVO_CHECK_SECONDS="0")
 
     def tearDown(self):
@@ -44,8 +70,9 @@ class OtherSlurmClusterTests(unittest.TestCase):
 
     def test_users_send_only_the_cluster_name_and_the_check_file(self):
         guide = (FOLDER / "README.md").read_text()
-        start = guide.index("### 3. Send this to the VIVO administrator")
+        start = guide.index("### 3. Send the report")
         step = guide[start:guide.index("### 4.", start)]
+        self.assertIn("yagmur.kati@hu-berlin.de", step)
         items = [line for line in step.splitlines() if line.startswith("- ")]
         self.assertEqual(len(items), 2)
         self.assertIn("cluster name", items[0])
@@ -56,7 +83,7 @@ class OtherSlurmClusterTests(unittest.TestCase):
         self.assertIn("is not assumed for yours", guide)
         self.assertNotRegex(guide, r"(?i)public documentation|web page")
         # two rounds: which sources exist, then commands written for that cluster
-        self.assertIn("## A. First check: which sources exist", guide)
+        self.assertIn("## A. First check: which scheduler and which sources", guide)
         self.assertIn("## B. Second check: read the sources that were found", guide)
         self.assertIn("not in a loop", guide)
         for text in (guide, (FOLDER / "check-cluster.sh").read_text()):
@@ -78,7 +105,9 @@ class OtherSlurmClusterTests(unittest.TestCase):
         self.assertNotIn("cluster-key", collector)
         guide = (FOLDER / "README.md").read_text()
         self.assertIn("Every cluster gets its own collector", guide)
-        self.assertIn("collector/collect_<cluster>_slurm_job_metadata.py", guide)
+        self.assertIn("collector/collect_<cluster>_<scheduler>_job_metadata.py", guide)
+        self.assertNotIn("other-slurm-cluster", guide + (ROOT / "README.md").read_text()
+                         + (ROOT / "examples" / "hpc-at-hu-slurm" / "README.md").read_text())
 
     def test_guide_and_examples_do_not_name_a_partition(self):
         for path in FOLDER.iterdir():
@@ -95,7 +124,7 @@ class OtherSlurmClusterTests(unittest.TestCase):
                                 f'  *"-j 4242"*) echo "$@" > "{self.root}/sacct-test-job"; echo "4242|COMPLETED|60|1|31000" ;;\n'
                                 '  *) echo "1001|00:10:00|1|52000" ;;\nesac\n')
         stub(self.bin, "sstat", 'echo "4242.0|00:00:01|3000K|900"\n')
-        stub(self.bin, "squeue", 'printf "4242\\n4100\\n"\n')
+        stub(self.bin, "squeue", 'printf "4242\\n987654321\\n"\n')
         # stand-in for srun: run the piped checks here and record the options
         stub(self.bin, "srun", f'echo "$@" > "{self.root}/srun-options"\nwhile [ $# -gt 0 ] && [ "$1" != "bash" ]; do shift; done\n'
                                'SLURM_CPUS_ON_NODE=1 SLURM_JOB_ID=4242 "$@"\n')
@@ -105,32 +134,79 @@ class OtherSlurmClusterTests(unittest.TestCase):
         reports = list(self.root.glob("vivo-cluster-check-*.txt"))
         self.assertEqual(len(reports), 1)
         report = reports[0].read_text()
-        for expected in ("acct_gather_energy/rapl", "slurm 23.11.4", "1001|00:10:00|1|52000", "standard*|up",
-                         "== 1. Slurm", "== 2. Partitions", "== 3. What Slurm recorded", "== 4. Job reports",
-                         "== 5. Login node", "== 6. Compute node (test job: srun --partition=short)",
-                         "VIVO reachable from the login node: HTTP 000", "VIVO reachable from the node: HTTP 000",
+        for expected in ("found: Slurm (slurm 23.11.4)", "acct_gather_energy/rapl", "1001|00:10:00|1|52000", "standard*|up",
+                         "== 1. Scheduler", "== 2. Where you submit jobs", "== 3. Job reports",
+                         "== 4. Slurm: accounting", "== 5. Slurm: partitions", "== 6. Slurm: your last finished jobs",
+                         "== 7. Compute node (test job: srun --partition=short)",
+                         "VIVO reachable from here: HTTP 000", "VIVO reachable from this node: HTTP 000",
                          "port 9100: HTTP 000", "monitoring services running on the node",
                          "RAPL energy counters:", "IPMI device present:", "python3: yes", "kernel:",
                          "JobID State ConsumedEnergyRaw TRESUsageInTot", "test job ID: 4242",
                          "jobs on this node that you can see (number only, this test job included): 2",
                          "readings when the test job is 0 seconds old", "4242.0|00:00:01|3000K|900",
-                         "== 7. What Slurm recorded for the test job", "4242|COMPLETED|60|1|31000", "End of report."):
+                         "== 8. Slurm: what was recorded for the test job", "4242|COMPLETED|60|1|31000", "End of report."):
             self.assertIn(expected, report)
         self.assertNotIn("controller-name", report)
-        self.assertNotIn("4100", report)  # other jobs are counted, not listed
+        self.assertNotIn("987654321", report)  # other jobs are counted, not listed
         self.assertIn("ConsumedEnergyRaw", (self.root / "sacct-test-job").read_text())
         self.assertIn("--partition=short", (self.root / "srun-options").read_text())
         self.assertIn("--time=2", (self.root / "srun-options").read_text())
 
-    def test_check_works_without_slurm(self):
-        env = dict(self.env, PATH=f"{self.bin}:/usr/bin:/bin")
-        result = subprocess.run(["bash", str(FOLDER / "check-cluster.sh")], cwd=self.root, env=env,
+    def run_check(self):
+        result = subprocess.run(["bash", str(FOLDER / "check-cluster.sh")], cwd=self.root, env=self.env,
                                 capture_output=True, text=True)
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertIn("(scontrol is not available)", result.stdout)
-        self.assertIn("(srun is not available)", result.stdout)
-        self.assertIn("(no test job to look up)", result.stdout)
         self.assertIn("End of report.", result.stdout)
+        return result.stdout
+
+    def test_check_without_a_known_scheduler(self):
+        report = self.run_check()
+        self.assertIn("found: none of Slurm, PBS, Torque, Grid Engine, LSF, HTCondor, Kubernetes.", report)
+        self.assertIn("Write in your e-mail how you submit jobs on this cluster.", report)
+        self.assertIn("There is no ready check for this scheduler yet.", report)
+        self.assertIn("== 5. This node (the login node; compute nodes can differ)", report)
+        self.assertIn("RAPL energy counters:", report)
+        self.assertNotIn("Slurm:", report)
+
+    def test_check_on_a_pbs_cluster_reports_scheduler_and_login_node(self):
+        stub(self.bin, "qstat", 'echo "pbs_version = 2022.1.1"\n')
+        stub(self.bin, "pbsnodes", f'touch "{self.root}/pbsnodes-called"\n')
+        stub(self.bin, "qsub", f'touch "{self.root}/job-submitted"\n')
+        report = self.run_check()
+        self.assertIn("found: PBS or Torque (pbs_version = 2022.1.1)", report)
+        for expected in ("qsub: yes", "pbsnodes: yes", "bsub: no", "There is no ready check for this scheduler yet.",
+                         "== 5. This node (the login node; compute nodes can differ)", "kernel:"):
+            self.assertIn(expected, report)
+        self.assertNotIn("Slurm:", report)
+        # no job is submitted and the nodes are not queried
+        self.assertFalse((self.root / "job-submitted").exists())
+        self.assertFalse((self.root / "pbsnodes-called").exists())
+
+    def test_check_on_kubernetes_reports_rights_and_monitoring_services(self):
+        stub(self.bin, "kubectl", f'echo "$@" >> "{self.root}/kubectl-calls"\ncase "$*" in\n'
+                                  '  version*) echo "Client Version: v1.30.1"; echo "Server Version: v1.29.4" ;;\n'
+                                  '  "auth can-i list nodes"*) echo no ;;\n'
+                                  '  "auth can-i"*) echo yes ;;\n'
+                                  '  "get services"*) printf "monitoring prometheus-server\\nmonitoring kepler\\nshop frontend\\n" ;;\n'
+                                  'esac\n')
+        report = self.run_check()
+        for expected in ("found: Kubernetes", "Server Version: v1.29.4", "may list nodes: no", "may list pods: yes",
+                         "monitoring/prometheus-server", "monitoring/kepler"):
+            self.assertIn(expected, report)
+        self.assertNotIn("frontend", report)       # only monitoring services are named
+        self.assertNotIn("This node", report)      # the computer with kubectl is not part of the cluster
+        calls = (self.root / "kubectl-calls").read_text()
+        self.assertNotRegex(calls, r"(?m)^(create|apply|delete|run|exec|patch|edit)\b")
+
+    def test_a_cluster_with_slurm_and_kubectl_gets_the_slurm_check(self):
+        stub(self.bin, "kubectl", 'echo "Client Version: v1.30.1"\n')
+        stub(self.bin, "sinfo", 'echo "slurm 23.11.4"\n')
+        report = self.run_check()
+        self.assertIn("found: Slurm (slurm 23.11.4)", report)
+        self.assertIn("found: Kubernetes", report)
+        self.assertIn("== 4. Slurm: accounting", report)
+        self.assertIn("(srun is not available)", report)
+        self.assertIn("(no test job to look up)", report)
 
 
 if __name__ == "__main__":
