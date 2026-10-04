@@ -24,8 +24,7 @@ export NXF_OPTS="-Xms1g -Xmx4g"
 mkdir -p "$APPTAINER_CACHEDIR" "$APPTAINER_TMPDIR"
 cd "$WORK"
 
-# Read the node's IPMI power every second while the workflow runs.
-export SAMPLE_INTERVAL=1
+# The sampler reads the node's CPU use and power while the workflow runs.
 "$WORK/fonda-kubernetes-vivo-publisher/collector/slurm/run-with-node-sampler.sh" \
   "$HOME/vivo-evidence/$SLURM_JOB_ID" -- \
   nextflow run nf-core/rangeland -r 1.0.0 -profile test,apptainer --outdir "results-$SLURM_JOB_ID"

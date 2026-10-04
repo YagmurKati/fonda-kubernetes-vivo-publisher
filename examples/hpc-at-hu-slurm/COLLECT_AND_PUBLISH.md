@@ -55,14 +55,7 @@ cd "$WORK/fonda-kubernetes-vivo-publisher"
 sed "s#^WORK=.*#WORK=$WORK#" examples/hpc-at-hu-slurm/rangeland-test.sbatch.example > "$WORK/rangeland-test.sbatch"
 ```
 
-Two things in the job file matter for the metadata:
-
-```bash
-export SAMPLE_INTERVAL=1
-```
-
-The node's IPMI power is read every second. Use `10` for jobs that run for
-hours.
+One thing in the job file matters for the metadata:
 
 ```bash
 "$WORK/fonda-kubernetes-vivo-publisher/collector/slurm/run-with-node-sampler.sh" \
@@ -71,7 +64,7 @@ hours.
 ```
 
 The job's command is wrapped with the sampler, which records the node's
-hardware, CPU use and power while the command runs.
+hardware and, every 10 seconds, its CPU use and power while the command runs.
 
 ## 3. Run the job
 
@@ -182,7 +175,7 @@ workflow, cluster and dataset records and the local files stay.
    `LANGUAGE_URIS` and `INPUT_DATA_URIS` for your workflow. For jobs without
    Nextflow, leave `NEXTFLOW_LAUNCH_DIR` and `NEXTFLOW_TRACE_GLOB` empty and
    set `GIT_COMMIT`.
-2. In your own job file, set `SAMPLE_INTERVAL` and wrap the main command, as
+2. In your own job file, wrap the main command, as
    in [`job.sbatch.example`](job.sbatch.example). The job must use one node.
 
 Steps 3 to 7 are the same.

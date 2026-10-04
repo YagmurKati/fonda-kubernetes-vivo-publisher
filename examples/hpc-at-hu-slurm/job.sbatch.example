@@ -10,8 +10,6 @@
 WORK=/lustre/GROUP/USER/fonda
 PUBLISHER="$WORK/fonda-kubernetes-vivo-publisher"
 EVIDENCE="$HOME/vivo-evidence/$SLURM_JOB_ID"
-# Seconds between IPMI power readings: 1 for short jobs, 10 for jobs of hours.
-export SAMPLE_INTERVAL=1
 
 "$PUBLISHER/collector/slurm/run-with-node-sampler.sh" "$EVIDENCE" -- \
   bash ./my_workflow.sh
