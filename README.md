@@ -1,43 +1,202 @@
-# FONDA Kubernetes workflow-run publisher for VIVO
+# FONDA workflow-run publisher for VIVO
 
-Publish metadata from supported workflow runs on the FONDA Kubernetes cluster
-directly to [FONDA VIVO](https://vivo-fonda.hu-berlin.de/vivo/runs). Tested
-adapters are included for Nextflow and tested Snakemake/Kubernetes
-reproductions. A published Apache Spark reproduction demonstrates how the same
-RDF publisher can be used with dedicated Spark event-log evidence.
+Publishes the metadata of finished workflow runs to
+[FONDA VIVO](https://vivo-fonda.hu-berlin.de/vivo/runs).
 
-The toolkit collects:
+## Start here
 
-- workflow identity, source revision, declared digest-pinned and
-  Kubernetes-discovered containers, tasks, status, and duration;
-- CPU time and average/peak memory from the complete Nextflow trace when its
-  `%cpu` and `peak_rss` fields are present, with Prometheus retained for an
-  independent comparison, plus Kepler energy from Prometheus;
-- a clearly labelled carbon estimate;
-- workflow, researcher, subproject, input, infrastructure, and provenance links.
+| Your cluster | Guide |
+| --- | --- |
+| FONDA Kubernetes cluster | this page |
+| HPC@HU (Slurm) | [HPC@HU guides](examples/hpc-at-hu-slurm/README.md) |
+| Any other cluster | [Connect another cluster to FONDA VIVO](examples/other-cluster/README.md) |
 
-It writes a timestamped Turtle file, a metrics audit, and a VIVO publication
-receipt to the workflow PVC. Only the Turtle RDF is sent to VIVO.
+FONDA members without a VIVO account: send an e-mail to
+[yagmur.kati@hu-berlin.de](mailto:yagmur.kati@hu-berlin.de).
 
-## Who can use it?
+## What is published
 
-You do **not** need to be a VIVO administrator. You need:
+For each run:
+
+- workflow, code version, containers, tasks, status and duration;
+- CPU time, average and peak memory, energy;
+- a carbon estimate, labelled as an estimate;
+- links to the workflow, researcher, subproject, input data and
+  infrastructure.
+
+On the FONDA Kubernetes cluster, CPU time and memory come from the complete
+Nextflow trace when it has the `%cpu` and `peak_rss` fields (Prometheus is
+kept for comparison), and energy comes from Kepler through Prometheus.
+
+The collector writes three files to the workflow PVC: the run as Turtle
+(`.ttl`), a metrics audit and a publication receipt. Only the Turtle file is
+sent to VIVO.
+
+## What you need on the FONDA Kubernetes cluster
 
 1. access to your FONDA Kubernetes namespace;
-2. a completed supported workflow run whose evidence is on a shared PVC;
-3. a personal or team **non-admin VIVO publisher account** provisioned by the
-   VIVO administrator;
-4. optionally, an Electricity Maps token for a latest-available carbon proxy;
-5. a HU-Box account only when preserving selected raw traces.
+2. a finished run of a [tested workflow](#tested-workflow-profiles), with its
+   evidence on a shared PVC;
+3. a VIVO account that may publish runs. The VIVO administrator gives this
+   right: same e-mail address as above;
+4. optional: an Electricity Maps token, for the carbon estimate;
+5. optional: a HU-Box account, to keep selected raw traces.
 
-Do not use or share the VIVO administrator account. See
-[Administrator onboarding](docs/ADMIN_SETUP.md).
+## Publish a workflow run on the FONDA Kubernetes cluster
+
+### 1. Download this repository
+
+```bash
+git clone https://github.com/YagmurKati/fonda-kubernetes-vivo-publisher.git
+cd fonda-kubernetes-vivo-publisher
+```
+
+Run the remaining commands from this directory.
+
+### 2. Create the TTL file
+
+Find your workflow in [Tested workflow profiles](#tested-workflow-profiles)
+and open its **Profile** link.
+
+- The profile uses `scripts/publish-run.sh`: go to
+  [Automatic collection and publication](#automatic-collection-and-publication).
+- The profile creates a local `.ttl` file: run every collection command of
+  that profile, including `export OUTPUT_TTL=...`. Stay in the same terminal
+  and continue with step 3.
+
+Carbon information is optional. A collector adds it when an Electricity Maps
+token is available. A TTL without it can still be validated and published.
+
+Confirm the path of the file:
+
+```bash
+printf 'TTL file: %s\n' "$OUTPUT_TTL"
+ls -lh "$OUTPUT_TTL"
+```
+
+The second command must show the TTL file. Leave the file where it is:
+`publish-local.sh` takes the full path.
+
+### 3. Validate the TTL
+
+```bash
+./scripts/publish-local.sh "$OUTPUT_TTL" --dry-run
+```
+
+This does not contact VIVO.
+
+### 4. Publish to VIVO
+
+```bash
+./scripts/publish-local.sh "$OUTPUT_TTL"
+```
+
+Enter your VIVO e-mail and password. The password is hidden and is not saved.
+
+### 5. Check the result
+
+Success is reported as `HTTP 200`. Open the
+[VIVO Runs page](https://vivo-fonda.hu-berlin.de/vivo/runs) and check the new
+record. Keep the TTL and the `.published.json` receipt created beside it.
+
+### 6. Publish the trace archive to HU-Box (optional)
+
+For a Nextflow profile whose trace files are still on the shared PVC, replace
+`RUN_ID`:
+
+```bash
+./scripts/configure-hu-box.sh
+./scripts/archive-publish-run.sh RUN_ID --package-only
+./scripts/archive-publish-run.sh RUN_ID
+```
+
+The first command is needed once per computer. Review the bundle made by
+`--package-only` before the last command, which uploads the archive and adds
+its public link to the run's VIVO page. Setup, privacy checks and error
+recovery: [HU-Box trace archive guide](docs/HU_BOX_TRACE_ARCHIVE.md).
+
+## Automatic collection and publication
+
+Only for profiles of the FONDA Kubernetes cluster that use
+`scripts/publish-run.sh`.
+
+Copy the two files of your profile, as step 1 of its guide shows. For example,
+Geoflow:
+
+```bash
+cp examples/geoflow/publisher.env.example config/publisher.env
+cp examples/geoflow/input_datasets.json config/input_datasets.json
+```
+
+Edit the copied settings file and replace every `REPLACE_ME` value. At least
+confirm:
+
+- `NS`, `PVC_NAME`;
+- `WORKFLOW_NAME`, `WORKFLOW_URI`;
+- `WORKFLOW_REPO_URL`, `CODE_URI`;
+- the evidence paths and selectors named in the profile.
+
+Store your VIVO login (hidden prompts):
+
+```bash
+./scripts/configure-secrets.sh
+```
+
+Deploy the code and settings into your namespace:
+
+```bash
+./scripts/deploy.sh
+```
+
+After run `my-run-01` has finished successfully, test without contacting
+VIVO:
+
+```bash
+./scripts/publish-run.sh my-run-01 --dry-run
+```
+
+Then collect the metadata and send it to VIVO:
+
+```bash
+./scripts/publish-run.sh my-run-01
+```
+
+**Node hardware.** It is read from the Kubernetes API. If your namespace may
+not read Node objects, the collector uses the `kube_node_info` and
+`kube_node_status_allocatable` metrics in Prometheus instead. If required
+fields are still missing, the script lists them and asks you to type
+`PUBLISH` before it sends the incomplete record. For a reviewed run without
+this question, set `ALLOW_INCOMPLETE_NODE_METADATA=1`.
+
+**Publishing again.** The same run ID is refused a second time unless
+`FORCE_REPUBLISH=1` is set. Then the run is collected again and replaces its
+record in VIVO (the run, its date node and its workflow processes), so values
+that change between collections, such as the live carbon intensity, are not
+listed twice.
+
+**Resumed Nextflow run.** To include the metrics of the original pods of
+cached tasks, while they are still kept:
+
+```bash
+INCLUDE_CACHED_ORIGIN_METRICS=1 ./scripts/publish-run.sh my-run-01-resume
+```
+
+**Right after the workflow.** Publication starts only when the workflow
+command succeeds:
+
+```bash
+RUN_ID="my-run-01"
+./your-existing-workflow-command "$RUN_ID" && \
+  ./scripts/publish-run.sh "$RUN_ID"
+```
+
+If VIVO is not reachable, run only `publish-run.sh` again, not the workflow.
 
 ## Tested workflow profiles
 
-The collector and publisher code is shared. Each workflow has a separate
-configuration profile because its workflow engine, execution-evidence paths,
-source repository, input data, and VIVO links differ.
+All profiles are for the FONDA Kubernetes cluster. The collector and publisher
+code is shared. Each workflow has its own profile because its engine, evidence
+paths, source repository, input data and VIVO links differ.
 
 | Workflow | Workflow engine | Published example | Profile |
 | --- | --- | --- | --- |
@@ -62,222 +221,18 @@ source repository, input data, and VIVO links differ.
 | Lotaru runtime prediction for scientific workflow tasks | Java (Kubernetes Job) | [Open in VIVO](https://vivo-fonda.hu-berlin.de/vivo/individual?uri=http%3A%2F%2Fexample.org%2Fvivo-import%2Frun-metadata%2Frun%2Fyagmur-lotaru-local-runtime-prediction-for-scientific-workflow-tasks-lotaru-2b07b18-20260920-2026-09-20t12-36-28-00-00) | [Lotaru profile](examples/lotaru/README.md) |
 | Long-term vegetation dynamics in the Mediterranean (Airflow) | Apache Airflow | [Open in VIVO](https://vivo-fonda.hu-berlin.de/vivo/individual?uri=http%3A%2F%2Fexample.org%2Fvivo-import%2Frun-metadata%2Frun%2Fdefault-long-term-vegetation-dynamics-in-the-mediterranean-manual-2026-05-06t08-55-57-785616-00-00-2026-05-06t09-38-03-582823-00-00) | [FORCE on Airflow profile](examples/force-airflow/README.md) |
 
-The [RNA-seq/RAPL profile](examples/rnaseq-rapl/README.md) includes a dedicated
-launcher and collector for direct CPU-package/DRAM counters. Follow its run,
-collect and publish commands. Carbon estimates use hourly grid data matched to
-the measured execution interval; publication stops if that data is unavailable.
+Nextflow profiles: task tags such as tile or sample identifiers are grouped
+under the process name. This keeps large RDF files compact; the metrics audit
+keeps the values of every task.
 
-For the Nextflow profiles, task tags such as tile or sample identifiers are
-aggregated under the real process name. This keeps large FORCE2NXF RDF files
-compact while the metrics audit retains the task-level evidence.
-
-## Publish a workflow run
-
-### 1. Download this repository
-
-```bash
-git clone https://github.com/YagmurKati/fonda-kubernetes-vivo-publisher.git
-cd fonda-kubernetes-vivo-publisher
-```
-
-Run the remaining commands from this directory.
-
-### 2. Create the TTL file
-
-Find your workflow in the [profile table above](#tested-workflow-profiles) and
-open its **Profile** link. For example, Airflow users open the
-[FORCE on Airflow profile](examples/force-airflow/README.md).
-
-- If the profile uses `scripts/publish-run.sh`, go to
-  [Automatic collection and publication](#automatic-collection-and-publication).
-- If the profile creates a local `.ttl` file, its collection command sets
-  `OUTPUT_TTL` to the exact timestamped file it creates. Run every collection
-  command in that profile, including its `export OUTPUT_TTL=...` command. Stay
-  in the same terminal, then continue with Step 3 below.
-
-Carbon information is optional. A collector can add it when an Electricity
-Maps token is available. A TTL without carbon information can still be
-validated and published.
-
-Confirm the exact path supplied by the profile:
-
-```bash
-printf 'TTL file: %s\n' "$OUTPUT_TTL"
-ls -lh "$OUTPUT_TTL"
-```
-
-The second command must show the TTL file. If the profile writes it outside
-this repository, leave it there: `publish-local.sh` accepts the full path in
-`OUTPUT_TTL`. Do not copy the TTL into `publisher/` and do not change into that
-directory.
-
-### 3. Validate the TTL
-
-```bash
-./scripts/publish-local.sh "$OUTPUT_TTL" --dry-run
-```
-
-This does not contact VIVO.
-
-### 4. Publish to VIVO
-
-```bash
-./scripts/publish-local.sh "$OUTPUT_TTL"
-```
-
-Enter the non-admin VIVO publisher email and password supplied by the VIVO
-administrator. The password is hidden and is not saved to a file. The wrapper
-calls `publisher/publish_vivo.py` from its correct repository location.
-
-### 5. Check the result
-
-Success is reported as `HTTP 200`. Open the
-[VIVO Runs page](https://vivo-fonda.hu-berlin.de/vivo/runs) and check the new
-record. Keep the TTL and the `.published.json` receipt created beside it.
-
-If you want to preserve this run's trace files in HU-Box, continue to Step 6.
-
-### 6. Publish the trace archive to HU-Box (optional)
-
-For a supported Nextflow profile whose trace files remain on the shared PVC,
-replace `RUN_ID` and run these commands from the repository directory:
-
-```bash
-./scripts/configure-hu-box.sh
-./scripts/archive-publish-run.sh RUN_ID --package-only
-./scripts/archive-publish-run.sh RUN_ID
-```
-
-The first command is needed only once per computer. Review the package-only
-bundle before running the final command, which uploads the archive and adds its
-public link to the run's VIVO page. For setup, privacy checks, verification, and
-error recovery, follow the [HU-Box trace archive guide](docs/HU_BOX_TRACE_ARCHIVE.md).
-
-## Automatic collection and publication
-
-Use this section only when your selected profile uses `scripts/publish-run.sh`.
-
-Choose one profile:
-
-```bash
-# Geoflow
-cp examples/geoflow/publisher.env.example config/publisher.env
-cp examples/geoflow/input_datasets.json config/input_datasets.json
-
-# OR: FORCE2NXF
-cp examples/force2nxf/publisher.env.example config/publisher.env
-cp examples/force2nxf/input_datasets.json config/input_datasets.json
-
-# OR: FONDA_trends European grasslands
-cp examples/fonda-trends/publisher.env.example config/publisher.env
-cp examples/fonda-trends/input_datasets.json config/input_datasets.json
-
-# OR: RNA-seq Salmon RS1
-cp examples/rnaseq-salmon-rs1/publisher.env.example config/publisher.env
-cp examples/rnaseq-salmon-rs1/input_datasets.json config/input_datasets.json
-
-# OR: RNA-seq Salmon RS2
-cp examples/rnaseq-salmon-rs2/publisher.env.example config/publisher.env
-cp examples/rnaseq-salmon-rs2/input_datasets.json config/input_datasets.json
-
-# OR: RNA-seq STAR RS1
-cp examples/rnaseq-star-rs1/publisher.env.example config/publisher.env
-cp examples/rnaseq-star-rs1/input_datasets.json config/input_datasets.json
-
-# OR: RNA-seq HISAT2 RS1
-cp examples/rnaseq-hisat2-rs1/publisher.env.example config/publisher.env
-cp examples/rnaseq-hisat2-rs1/input_datasets.json config/input_datasets.json
-
-# OR: RNA-seq HISAT2 RS2
-cp examples/rnaseq-hisat2-rs2/publisher.env.example config/publisher.env
-cp examples/rnaseq-hisat2-rs2/input_datasets.json config/input_datasets.json
-
-# OR: A2 MG-4 (Snakemake)
-cp examples/a2-mg4/publisher.env.example config/publisher.env
-cp examples/a2-mg4/input_datasets.json config/input_datasets.json
-
-# OR: PopinSnake (Snakemake)
-cp examples/popinsnake/publisher.env.example config/popinsnake.publisher.env
-cp examples/popinsnake/input_datasets.json config/input_datasets.json
-
-# OR: Lotaru (Java, one Kubernetes Job)
-cp examples/lotaru/publisher.env.example config/lotaru.publisher.env
-cp examples/lotaru/input_datasets.json config/input_datasets.json
-```
-
-Edit `config/publisher.env` and replace every `REPLACE_ME` value. At minimum
-confirm:
-
-- `NS`, `PVC_NAME`;
-- `WORKFLOW_NAME`, `WORKFLOW_URI`;
-- `WORKFLOW_REPO_URL`, `CODE_URI`;
-- the engine-specific evidence paths and selectors documented by the selected
-  profile.
-
-Store credentials with hidden terminal prompts:
-
-```bash
-./scripts/configure-secrets.sh
-```
-
-Deploy the reusable code and settings into your namespace:
-
-```bash
-./scripts/deploy.sh
-```
-
-After run `my-run-01` has finished successfully:
-
-```bash
-./scripts/publish-run.sh my-run-01
-```
-
-The last command collects the metadata and uploads it to VIVO automatically.
-No browser upload and no second command are required.
-
-The collector reads the hardware details of every execution node from the
-Kubernetes API. When a namespace is not allowed to read cluster-scoped Node
-objects, it falls back to the equivalent `kube_node_info` and
-`kube_node_status_allocatable` metrics in Prometheus. If both sources leave
-required hardware fields unresolved, the script shows the missing fields and
-asks you to type `PUBLISH` before it sends the incomplete record to VIVO.
-For a reviewed noninteractive publication, set
-`ALLOW_INCOMPLETE_NODE_METADATA=1` explicitly.
-
-Validate collection and RDF generation without contacting VIVO:
-
-```bash
-./scripts/publish-run.sh my-run-01 --dry-run
-```
-
-Publication is idempotency-guarded by receipts on the PVC. A repeated
-non-dry-run publication for the same run ID is refused unless
-`FORCE_REPUBLISH=1` is deliberately set. A forced publication collects the run
-again and replaces its existing VIVO record (the run, its date node and its
-workflow processes) in the same update, so values that change between
-collections, such as the live carbon intensity, are not listed twice.
-
-For a resumed Nextflow run, include metrics from the original pods of cached
-tasks when those metrics are still retained:
-
-```bash
-INCLUDE_CACHED_ORIGIN_METRICS=1 ./scripts/publish-run.sh my-run-01-resume
-```
-
-## Add it after an existing workflow command
-
-```bash
-RUN_ID="my-run-01"
-./your-existing-workflow-command "$RUN_ID" && \
-  ./scripts/publish-run.sh "$RUN_ID"
-```
-
-Publication starts only when the workflow command exits successfully. A VIVO
-outage does not rerun the scientific workflow; rerun only `publish-run.sh`.
+A workflow that is not listed needs its own profile, and another workflow
+engine needs its own collector. Both reuse the RDF model and
+`publisher/publish_vivo.py`. See
+[Adapting a Nextflow workflow](docs/ADAPT_NEXTFLOW.md).
 
 ## Engine-specific execution evidence
 
-### Nextflow profiles
+### Nextflow
 
 For one `RUN_ID`, the default configuration expects:
 
@@ -291,31 +246,28 @@ For one `RUN_ID`, the default configuration expects:
 The trace must include `task_id`, `hash`, `native_id`, `name`, `status`, and
 `submit`. See [Adapting a Nextflow workflow](docs/ADAPT_NEXTFLOW.md).
 
-### Snakemake profiles
+### Snakemake
 
-The Snakemake adapter discovers terminal workflow-attempt Pods through the
-read-only Kubernetes API, then uses a profile-specific evidence reader. MG-3 validates its final SAM checksum and count against the small-data run evidence; MG-4
-verifies its run marker, provenance, checksum, and final SAM; PopinSnake
-verifies `RUN_STATUS`, provenance, checksums, and the final compressed VCF. See
-the [A2 MG-4 profile](examples/a2-mg4/README.md) and
-[PopinSnake profile](examples/popinsnake/README.md).
+The collector finds the finished pods of the workflow through the read-only
+Kubernetes API and then checks the evidence of the profile:
 
-### Apache Spark published artifact
+- [MG-3](examples/a2-mg3/README.md): checksum and count of the final SAM;
+- [MG-4](examples/a2-mg4/README.md): run marker, provenance, checksum and
+  final SAM;
+- [PopinSnake](examples/popinsnake/README.md): `RUN_STATUS`, provenance,
+  checksums and the final compressed VCF.
 
-The [Spark filesystem word-count profile](examples/spark-wordcount-fs/README.md)
-uses a dedicated evidence adapter for a completed native Spark-on-Kubernetes
-run. It validates the output and consumes the Spark JSON Lines event log plus
-Prometheus and Kepler measurements before generating RDF. It is an audited
-published example rather than a selectable `publish-run.sh` engine.
+### Apache Spark and Apache Airflow
 
-### Apache Airflow published artifact
+Each has its own collector and is not an engine of `publish-run.sh`. Follow
+the profile:
 
-The [FORCE on Airflow profile](examples/force-airflow/README.md) uses a
-dedicated collector for DAG runs whose tasks are `KubernetesPodOperator`
-pods. It reads the run and task history from the Airflow scheduler, the task
-logs, and the pods those tasks created, then generates RDF. Like the Spark
-profile it is an audited published example rather than a selectable
-`publish-run.sh` engine.
+- [Spark filesystem word count](examples/spark-wordcount-fs/README.md): reads
+  the Spark event log and the Prometheus and Kepler measurements of a finished
+  Spark-on-Kubernetes run.
+- [FORCE on Airflow](examples/force-airflow/README.md): reads the run and task
+  history from the Airflow scheduler, the task logs and the pods of the
+  `KubernetesPodOperator` tasks.
 
 ## Output and verification
 
@@ -327,12 +279,12 @@ For the Nextflow profiles, a successful command prints paths like:
 /workspace/vivo-outbox/my-run-01-20260825T144622Z.published.json
 ```
 
-The Snakemake profiles write the same three artifact types under
+The Snakemake profiles write the same three files under
 `RUN_ROOT/vivo-outbox`.
 
 It also prints `HTTP 200`. Then open the
-[VIVO Runs page](https://vivo-fonda.hu-berlin.de/vivo/runs); allow a few seconds
-for its list to load.
+[VIVO Runs page](https://vivo-fonda.hu-berlin.de/vivo/runs); its list takes a
+few seconds to load.
 
 To remove a published run, use the publication ID from the receipt filename:
 
@@ -341,21 +293,9 @@ To remove a published run, use the publication ID from the receipt filename:
 ./scripts/remove-run.sh my-run-01-20260825T144622Z
 ```
 
-The second command asks for confirmation and uses the same non-admin VIVO
-account. It removes only that run's metadata and keeps the local workflow and
+The second command asks for confirmation and uses your VIVO account. It
+removes only that run's metadata from VIVO and keeps the local workflow and
 audit files. See [Remove a published run](docs/USER_GUIDE.md#8-remove-a-published-run).
-
-## HPC@HU (Slurm)
-
-Runs on the HPC@HU Slurm cluster are published with a separate collector and
-have their own guides:
-
-1. [Connect HPC@HU to VIVO](examples/hpc-at-hu-slurm/CONNECT_HPC_TO_VIVO.md)
-2. [Collect and publish a run](examples/hpc-at-hu-slurm/COLLECT_AND_PUBLISH.md)
-3. [Archive a run's traces in HU-Box](examples/hpc-at-hu-slurm/ARCHIVE_TRACES.md) (optional)
-
-See the [HPC@HU (Slurm) overview](examples/hpc-at-hu-slurm/README.md) for what
-is recorded and how energy is calculated.
 
 ## Documentation
 
@@ -363,16 +303,10 @@ is recorded and how energy is calculated.
 - [Administrator onboarding](docs/ADMIN_SETUP.md)
 - [Adapting a Nextflow workflow](docs/ADAPT_NEXTFLOW.md)
 - [Node use of a run: exclusive or non-exclusive](docs/NODE_USE.md)
+- [HU-Box trace archive](docs/HU_BOX_TRACE_ARCHIVE.md)
+- [HPC@HU (Slurm)](examples/hpc-at-hu-slurm/README.md)
 - [Connect another cluster to FONDA VIVO](examples/other-cluster/README.md)
 - [Security](SECURITY.md)
-
-## Scope
-
-This release supports Nextflow with the Kubernetes executor and the tested A2
-MG-3, MG-4 and PopinSnake Snakemake/Kubernetes layouts. The repository also
-contains one audited Apache Spark publication produced with a dedicated
-event-log adapter. Other workflow engines or layouts need an evidence adapter
-but can reuse the RDF model and `publisher/publish_vivo.py`.
 
 ## License
 
